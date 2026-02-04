@@ -1,22 +1,13 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { Oswald, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-
-const oswald = Oswald({ 
-  subsets: ["latin"],
-  variable: '--font-heading'
-});
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-sans'
-});
 
 export const metadata: Metadata = {
   title: 'Hawktrivia - Seahawks Super Bowl Trivia',
   description: 'Test your knowledge of Seahawks Super Bowl history! Compete with fellow 12s in daily trivia challenges.',
   generator: 'v0.app',
+  manifest: '/manifest.json',
   icons: {
     icon: [
       {
@@ -33,6 +24,22 @@ export const metadata: Metadata = {
       },
     ],
     apple: '/apple-icon.png',
+  },
+  openGraph: {
+    title: 'Hawktrivia - Seahawks Super Bowl Trivia',
+    description: 'Test your knowledge of Seahawks Super Bowl history! Compete with fellow 12s in daily trivia challenges.',
+    type: 'website',
+    siteName: 'Hawktrivia',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Hawktrivia - Seahawks Super Bowl Trivia',
+    description: 'Test your knowledge of Seahawks Super Bowl history!',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Hawktrivia',
   },
 }
 
@@ -51,9 +58,38 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${oswald.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
+      <body className="font-sans antialiased min-h-screen bg-background text-foreground">
         {children}
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(function(error) {
+                      console.log('ServiceWorker registration failed:', error);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )
