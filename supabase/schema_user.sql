@@ -280,19 +280,99 @@ INSERT INTO players (name, jersey_number, position, display_order, super_bowl_hi
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- STEP 12: Seed Data - Sample Trivia Questions
+-- STEP 12: Seed Data - Trivia Questions by Category
+-- Categories available for daily rounds:
+--   1. Super Bowl XLVIII (10 questions)
+--   2. Legion of Boom (6 questions)
+--   3. Russell Wilson Era (6 questions)
+--   4. Seahawks Legends (6 questions)
+--   5. Stadium & 12s (5 questions)
+--   6. Memorable Moments (6 questions)
+--   7. Players & Numbers (6 questions)
+--   8. Seahawks History (6 questions)
 -- ============================================
+
+-- Category: Super Bowl XLVIII
 INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
 ('What year did the Seattle Seahawks win their first Super Bowl?', '2012', '2013', '2014', '2015', 'b', 'easy', 'Super Bowl XLVIII'),
 ('Who was named MVP of Super Bowl XLVIII?', 'Russell Wilson', 'Marshawn Lynch', 'Malcolm Smith', 'Richard Sherman', 'c', 'easy', 'Super Bowl XLVIII'),
 ('What was the final score of Super Bowl XLVIII?', '43-8', '34-7', '38-10', '41-14', 'a', 'medium', 'Super Bowl XLVIII'),
 ('Which team did the Seahawks defeat in Super Bowl XLVIII?', 'New England Patriots', 'San Francisco 49ers', 'Denver Broncos', 'Green Bay Packers', 'c', 'easy', 'Super Bowl XLVIII'),
 ('Who returned an interception for a touchdown in Super Bowl XLVIII?', 'Richard Sherman', 'Earl Thomas', 'Malcolm Smith', 'Kam Chancellor', 'c', 'medium', 'Super Bowl XLVIII'),
-('What was the nickname of the Seahawks legendary defense?', 'Steel Curtain', 'Legion of Boom', 'Purple People Eaters', 'Monsters of the Midway', 'b', 'easy', 'Seahawks History'),
 ('How many seconds into Super Bowl XLVIII did the Seahawks score their first points?', '8 seconds', '12 seconds', '15 seconds', '20 seconds', 'b', 'hard', 'Super Bowl XLVIII'),
 ('Who caught the first touchdown pass in Super Bowl XLVIII?', 'Golden Tate', 'Doug Baldwin', 'Percy Harvin', 'Jermaine Kearse', 'd', 'hard', 'Super Bowl XLVIII'),
-('What jersey number did Beast Mode Marshawn Lynch wear?', '20', '22', '24', '28', 'c', 'easy', 'Seahawks History'),
-('Which Seahawk had the famous "tip" play in the NFC Championship?', 'Earl Thomas', 'Richard Sherman', 'Kam Chancellor', 'Byron Maxwell', 'b', 'medium', 'Seahawks History')
+('What stadium hosted Super Bowl XLVIII?', 'CenturyLink Field', 'MetLife Stadium', 'Lucas Oil Stadium', 'University of Phoenix Stadium', 'b', 'medium', 'Super Bowl XLVIII'),
+('Who kicked off Super Bowl XLVIII with a safety on the first play?', 'Cliff Avril', 'Michael Bennett', 'The snap went over Peyton Manning', 'Bobby Wagner', 'c', 'medium', 'Super Bowl XLVIII'),
+('How many turnovers did the Seahawks force in Super Bowl XLVIII?', '2', '3', '4', '5', 'c', 'hard', 'Super Bowl XLVIII')
+ON CONFLICT DO NOTHING;
+
+-- Category: Legion of Boom
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What was the nickname of the Seahawks legendary defense?', 'Steel Curtain', 'Legion of Boom', 'Purple People Eaters', 'Monsters of the Midway', 'b', 'easy', 'Legion of Boom'),
+('Which three players formed the core of the Legion of Boom secondary?', 'Sherman, Thomas, Chancellor', 'Sherman, Thomas, Maxwell', 'Chancellor, Browner, Thomas', 'Sherman, Chancellor, Lane', 'a', 'easy', 'Legion of Boom'),
+('What position did Richard Sherman play?', 'Free Safety', 'Strong Safety', 'Cornerback', 'Linebacker', 'c', 'easy', 'Legion of Boom'),
+('What jersey number did Earl Thomas wear?', '25', '29', '31', '33', 'b', 'medium', 'Legion of Boom'),
+('Which Legion of Boom member was known for devastating hits at the line of scrimmage?', 'Earl Thomas', 'Richard Sherman', 'Kam Chancellor', 'Brandon Browner', 'c', 'medium', 'Legion of Boom'),
+('In what year did the Legion of Boom lead the NFL in fewest points allowed?', '2012', '2013', '2014', '2015', 'b', 'hard', 'Legion of Boom')
+ON CONFLICT DO NOTHING;
+
+-- Category: Russell Wilson Era
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What round was Russell Wilson drafted in the 2012 NFL Draft?', '1st round', '2nd round', '3rd round', '4th round', 'c', 'medium', 'Russell Wilson Era'),
+('Which college did Russell Wilson transfer to before being drafted?', 'NC State', 'Wisconsin', 'Stanford', 'Oregon', 'b', 'medium', 'Russell Wilson Era'),
+('What jersey number did Russell Wilson wear with the Seahawks?', '1', '3', '7', '12', 'b', 'easy', 'Russell Wilson Era'),
+('How many Pro Bowls did Russell Wilson make as a Seahawk?', '5', '7', '9', '11', 'c', 'hard', 'Russell Wilson Era'),
+('Who did Russell Wilson marry in 2016?', 'Ashton Meem', 'Ciara', 'Gisele Bundchen', 'Carrie Underwood', 'b', 'medium', 'Russell Wilson Era'),
+('What was Russell Wilsons signature phrase?', 'Go Hawks', 'Why Not Us', 'Beast Mode', 'Blue Friday', 'b', 'easy', 'Russell Wilson Era')
+ON CONFLICT DO NOTHING;
+
+-- Category: Seahawks Legends
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('Who is the Seahawks all-time leading rusher?', 'Marshawn Lynch', 'Shaun Alexander', 'Chris Warren', 'Curt Warner', 'b', 'medium', 'Seahawks Legends'),
+('Which Seahawk won NFL MVP in 2005?', 'Matt Hasselbeck', 'Shaun Alexander', 'Walter Jones', 'Steve Largent', 'b', 'medium', 'Seahawks Legends'),
+('Who holds the Seahawks record for most receiving yards in a career?', 'Steve Largent', 'Doug Baldwin', 'Tyler Lockett', 'Brian Blades', 'a', 'easy', 'Seahawks Legends'),
+('Which legendary left tackle protected Seahawks QBs for 13 seasons?', 'Walter Jones', 'Russell Okung', 'Max Unger', 'Steve Hutchinson', 'a', 'medium', 'Seahawks Legends'),
+('Who was the head coach when Seattle went to Super Bowl XL?', 'Pete Carroll', 'Mike Holmgren', 'Chuck Knox', 'Tom Flores', 'b', 'medium', 'Seahawks Legends'),
+('Which Seahawks running back was known as "Beast Mode"?', 'Shaun Alexander', 'Marshawn Lynch', 'Thomas Rawls', 'Chris Carson', 'b', 'easy', 'Seahawks Legends')
+ON CONFLICT DO NOTHING;
+
+-- Category: Stadium & 12s
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What is the current name of the Seahawks home stadium?', 'CenturyLink Field', 'Lumen Field', 'Qwest Field', 'T-Mobile Park', 'b', 'easy', 'Stadium & 12s'),
+('Why is 12 a special number for Seahawks fans?', 'It was Steve Largents number', 'It represents the 12th man (fans)', 'The team was founded in 1912', 'They won 12 games their first season', 'b', 'easy', 'Stadium & 12s'),
+('The Seahawks retired what jersey number to honor their fans?', '1', '10', '12', '99', 'c', 'easy', 'Stadium & 12s'),
+('Seahawks fans once caused a minor earthquake during a game. Who were they playing?', 'San Francisco 49ers', 'New Orleans Saints', 'Green Bay Packers', 'Dallas Cowboys', 'b', 'hard', 'Stadium & 12s'),
+('What year did the Seahawks move into their current stadium?', '1998', '2000', '2002', '2004', 'c', 'medium', 'Stadium & 12s')
+ON CONFLICT DO NOTHING;
+
+-- Category: Memorable Moments
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('Which Seahawk had the famous "tip" play in the 2013 NFC Championship?', 'Earl Thomas', 'Richard Sherman', 'Kam Chancellor', 'Byron Maxwell', 'b', 'medium', 'Memorable Moments'),
+('What was the famous Marshawn Lynch run in the 2010 playoffs called?', 'The Run', 'Beast Quake', 'Thunder Run', 'Lynch Mob', 'b', 'easy', 'Memorable Moments'),
+('Against which team did the "Beast Quake" run occur?', 'Green Bay Packers', 'New Orleans Saints', 'Dallas Cowboys', 'Atlanta Falcons', 'b', 'medium', 'Memorable Moments'),
+('Who caught the game-winning touchdown in the 2014 NFC Championship overtime?', 'Doug Baldwin', 'Jermaine Kearse', 'Golden Tate', 'Percy Harvin', 'b', 'hard', 'Memorable Moments'),
+('What controversial play ended Super Bowl XLIX against the Patriots?', 'Fumble at the goal line', 'Interception by Malcolm Butler', 'Missed field goal', 'Incomplete pass', 'b', 'medium', 'Memorable Moments'),
+('Who intercepted the pass at the goal line in Super Bowl XLIX?', 'Darrelle Revis', 'Malcolm Butler', 'Brandon Browner', 'Devin McCourty', 'b', 'medium', 'Memorable Moments')
+ON CONFLICT DO NOTHING;
+
+-- Category: Players & Numbers
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What jersey number did Beast Mode Marshawn Lynch wear?', '20', '22', '24', '28', 'c', 'easy', 'Players & Numbers'),
+('What number did wide receiver Steve Largent wear?', '80', '81', '84', '88', 'a', 'medium', 'Players & Numbers'),
+('Which number did linebacker Bobby Wagner wear?', '50', '52', '54', '56', 'c', 'medium', 'Players & Numbers'),
+('What position did Michael Bennett play?', 'Linebacker', 'Defensive End', 'Safety', 'Cornerback', 'b', 'easy', 'Players & Numbers'),
+('What number did kicker Steven Hauschka wear?', '2', '4', '6', '8', 'b', 'hard', 'Players & Numbers'),
+('Which Seahawk wore number 89 and was a key receiver in the Super Bowl era?', 'Golden Tate', 'Doug Baldwin', 'Jermaine Kearse', 'Tyler Lockett', 'b', 'medium', 'Players & Numbers')
+ON CONFLICT DO NOTHING;
+
+-- Category: Seahawks History
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What year were the Seattle Seahawks founded?', '1974', '1976', '1978', '1980', 'b', 'medium', 'Seahawks History'),
+('What division are the Seahawks currently in?', 'NFC West', 'NFC North', 'AFC West', 'NFC South', 'a', 'easy', 'Seahawks History'),
+('Who was the Seahawks first head coach?', 'Chuck Knox', 'Jack Patera', 'Tom Flores', 'Dennis Erickson', 'b', 'hard', 'Seahawks History'),
+('How many times have the Seahawks appeared in the Super Bowl?', '1', '2', '3', '4', 'c', 'medium', 'Seahawks History'),
+('Which team did the Seahawks lose to in Super Bowl XL?', 'New England Patriots', 'Indianapolis Colts', 'Pittsburgh Steelers', 'Denver Broncos', 'c', 'medium', 'Seahawks History'),
+('What are the official team colors of the Seahawks?', 'Blue and Green', 'College Navy, Action Green, and Wolf Grey', 'Navy Blue and Silver', 'Royal Blue and Lime Green', 'b', 'medium', 'Seahawks History')
 ON CONFLICT DO NOTHING;
 
 -- ============================================
