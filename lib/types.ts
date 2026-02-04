@@ -46,6 +46,7 @@ export interface Player {
     value: string;
   }[];
   superBowlHighlight: string;
+  trivia: string[];
 }
 
 export interface Photo {
