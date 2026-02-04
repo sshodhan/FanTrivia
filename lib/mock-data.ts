@@ -111,11 +111,18 @@ export const samplePlayers: Player[] = [
     position: 'Quarterback',
     imageUrl: '/players/wilson.jpg',
     stats: [
-      { label: 'Pass Yards', value: '206' },
-      { label: 'TDs', value: '2' },
-      { label: 'Passer Rating', value: '123.1' },
+      { label: 'Passing Yards', value: '206' },
+      { label: 'Touchdowns', value: '2' },
+      { label: 'Completion %', value: '72.4%' },
+      { label: 'QBR', value: '123.1' },
     ],
-    superBowlHighlight: 'Led the offense with precision passing and two touchdown throws.'
+    superBowlHighlight: 'Led the offense with precision passing and two touchdown throws.',
+    trivia: [
+      'Became the 2nd Black QB to win a Super Bowl',
+      'Led game-opening 80-yard TD drive in 12 plays',
+      'Threw TD passes to Jermaine Kearse and Doug Baldwin',
+      'At 25, one of the youngest QBs to win a championship',
+    ],
   },
   {
     id: '2',
@@ -125,10 +132,17 @@ export const samplePlayers: Player[] = [
     imageUrl: '/players/lynch.jpg',
     stats: [
       { label: 'Rush Yards', value: '39' },
-      { label: 'TDs', value: '1' },
+      { label: 'Touchdowns', value: '1' },
       { label: 'Carries', value: '15' },
+      { label: 'Avg Yards', value: '2.6' },
     ],
-    superBowlHighlight: 'Beast Mode powered through for a crucial touchdown run.'
+    superBowlHighlight: 'Beast Mode powered through for a crucial touchdown run.',
+    trivia: [
+      'Scored on a 1-yard TD run in the 3rd quarter',
+      'Beast Mode nickname became iconic during playoff run',
+      'Had 5 receptions for 18 yards receiving',
+      'Key part of balanced offensive attack',
+    ],
   },
   {
     id: '3',
@@ -138,10 +152,17 @@ export const samplePlayers: Player[] = [
     imageUrl: '/players/sherman.jpg',
     stats: [
       { label: 'Tackles', value: '3' },
-      { label: 'INTs', value: '0' },
       { label: 'Pass Def', value: '2' },
+      { label: 'INTs', value: '0' },
+      { label: 'QB Hits', value: '0' },
     ],
-    superBowlHighlight: 'Locked down receivers as part of the Legion of Boom.'
+    superBowlHighlight: 'Locked down receivers as part of the Legion of Boom.',
+    trivia: [
+      'Helped hold Peyton Manning to just 1 passing TD',
+      'Part of secondary that forced 4 turnovers',
+      'Legion of Boom dominated Denver receivers',
+      'Stanford grad known for elite coverage skills',
+    ],
   },
   {
     id: '4',
@@ -151,10 +172,17 @@ export const samplePlayers: Player[] = [
     imageUrl: '/players/smith.jpg',
     stats: [
       { label: 'Tackles', value: '9' },
-      { label: 'INTs', value: '1' },
-      { label: 'TD', value: '1' },
+      { label: 'Interceptions', value: '1' },
+      { label: 'Touchdowns', value: '1' },
+      { label: 'Fumble Rec', value: '1' },
     ],
-    superBowlHighlight: 'Super Bowl MVP with a pick-six and fumble recovery.'
+    superBowlHighlight: 'Super Bowl MVP with a pick-six and fumble recovery.',
+    trivia: [
+      'Won Super Bowl MVP as a little-known linebacker',
+      'Returned interception 69 yards for a TD',
+      'Recovered a Demaryius Thomas fumble',
+      'First linebacker to win SB MVP since 2003',
+    ],
   },
   {
     id: '5',
@@ -164,10 +192,17 @@ export const samplePlayers: Player[] = [
     imageUrl: '/players/thomas.jpg',
     stats: [
       { label: 'Tackles', value: '5' },
-      { label: 'INTs', value: '0' },
       { label: 'Pass Def', value: '1' },
+      { label: 'INTs', value: '0' },
+      { label: 'Solo Tackles', value: '4' },
     ],
-    superBowlHighlight: 'Patrolled the deep middle and disrupted Denver\'s passing game.'
+    superBowlHighlight: 'Patrolled the deep middle and disrupted Denver\'s passing game.',
+    trivia: [
+      'Centerfielder of the Legion of Boom defense',
+      'Elite range disrupted Manning\'s deep passing',
+      'First-team All-Pro selection that season',
+      'Texas native drafted in 2010 first round',
+    ],
   },
   {
     id: '6',
@@ -177,10 +212,17 @@ export const samplePlayers: Player[] = [
     imageUrl: '/players/chancellor.jpg',
     stats: [
       { label: 'Tackles', value: '7' },
+      { label: 'Pass Def', value: '1' },
       { label: 'INTs', value: '0' },
-      { label: 'FF', value: '0' },
+      { label: 'Solo Tackles', value: '5' },
     ],
-    superBowlHighlight: 'Delivered bone-crushing hits that intimidated Denver receivers.'
+    superBowlHighlight: 'Delivered bone-crushing hits that intimidated Denver receivers.',
+    trivia: [
+      'Known as "Bam Bam" for his physical play',
+      'Intimidated receivers across the middle',
+      'Key enforcer in Legion of Boom secondary',
+      'Virginia Tech product drafted in 2010',
+    ],
   },
   {
     id: '7',
@@ -192,8 +234,15 @@ export const samplePlayers: Player[] = [
       { label: 'KR Yards', value: '87' },
       { label: 'KR TD', value: '1' },
       { label: 'Rec Yards', value: '45' },
+      { label: 'Receptions', value: '1' },
     ],
-    superBowlHighlight: 'Explosive 87-yard kickoff return TD to open the second half.'
+    superBowlHighlight: 'Explosive 87-yard kickoff return TD to open the second half.',
+    trivia: [
+      'Returned second-half kickoff 87 yards for TD',
+      'Fastest score to open a half in SB history',
+      'Had battled injuries throughout the season',
+      'Former Florida Gator and Vikings star',
+    ],
   },
   {
     id: '8',
@@ -204,9 +253,16 @@ export const samplePlayers: Player[] = [
     stats: [
       { label: 'Receptions', value: '5' },
       { label: 'Yards', value: '66' },
-      { label: 'TDs', value: '0' },
+      { label: 'Avg Yards', value: '13.2' },
+      { label: 'Touchdowns', value: '0' },
     ],
-    superBowlHighlight: 'Reliable target for Wilson throughout the game.'
+    superBowlHighlight: 'Reliable target for Wilson throughout the game.',
+    trivia: [
+      'Undrafted free agent who became star WR',
+      'Led team in receiving yards in the game',
+      'Stanford connection with Richard Sherman',
+      'Known as "Angry Doug" for competitive fire',
+    ],
   },
 ];
 
