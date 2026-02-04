@@ -253,6 +253,7 @@ CREATE POLICY "Settings are viewable" ON game_settings FOR SELECT USING (true);
 -- ============================================
 
 -- Update photo like count
+DROP FUNCTION IF EXISTS update_photo_like_count() CASCADE;
 CREATE OR REPLACE FUNCTION update_photo_like_count()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -273,6 +274,7 @@ CREATE TRIGGER trigger_update_photo_likes
   EXECUTE FUNCTION update_photo_like_count();
 
 -- Update user stats after answering
+DROP FUNCTION IF EXISTS update_user_stats() CASCADE;
 CREATE OR REPLACE FUNCTION update_user_stats()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -291,6 +293,7 @@ CREATE TRIGGER trigger_update_user_stats
   EXECUTE FUNCTION update_user_stats();
 
 -- Get leaderboard function
+DROP FUNCTION IF EXISTS get_leaderboard(INTEGER);
 CREATE OR REPLACE FUNCTION get_leaderboard(p_limit INTEGER DEFAULT 50)
 RETURNS TABLE (
   rank BIGINT,
