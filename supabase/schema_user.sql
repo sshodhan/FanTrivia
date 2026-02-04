@@ -139,7 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_players_active ON players(is_active, display_orde
 -- ============================================
 CREATE TABLE game_settings (
   id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  game_day_mode BOOLEAN DEFAULT false,
+  current_mode TEXT DEFAULT 'daily' CHECK (current_mode IN ('pre_game', 'daily', 'live', 'ended')),
   questions_per_day INTEGER DEFAULT 5,
   timer_duration INTEGER DEFAULT 15,
   scores_locked BOOLEAN DEFAULT false,
@@ -149,7 +149,7 @@ CREATE TABLE game_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-INSERT INTO game_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+INSERT INTO game_settings (id, current_mode) VALUES (1, 'daily') ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
 -- STEP 9: Enable Row Level Security

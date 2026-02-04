@@ -25,21 +25,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current game state
-    const { data: currentState, error: fetchError } = await supabase
-      .from('game_state')
+    // Get current game settings
+    const { data: currentSettings, error: fetchError } = await supabase
+      .from('game_settings')
       .select('*')
       .eq('id', 1)
       .single()
 
-    if (fetchError || !currentState) {
+    if (fetchError || !currentSettings) {
       return NextResponse.json(
-        { error: 'Failed to get current state' },
+        { error: 'Failed to get current settings' },
         { status: 500 }
       )
     }
 
-    if (currentState.current_mode !== 'live') {
+    if (currentSettings.current_mode !== 'live') {
       return NextResponse.json(
         { error: 'Game is not in live mode' },
         { status: 400 }
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Increment question index
-    const newIndex = currentState.live_question_index + 1
+    const newIndex = currentSettings.live_question_index + 1
 
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .update({
         live_question_index: newIndex,
         is_paused: false,
@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
       .from('admin_action_logs')
       .insert({
         action_type: 'next_question',
-        target_type: 'game_state',
+        target_type: 'game_settings',
         details: {
-          previous_index: currentState.live_question_index,
+          previous_index: currentSettings.live_question_index,
           new_index: newIndex
         }
       })
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      game_state: gameState,
+      game_settings: gameSettings,
       question_index: newIndex
     })
 

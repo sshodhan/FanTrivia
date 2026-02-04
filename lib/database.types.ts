@@ -237,9 +237,11 @@ export interface Player {
 // ============================================
 // GAME SETTINGS TYPES
 // ============================================
+export type GameMode = 'pre_game' | 'daily' | 'live' | 'ended'
+
 export interface GameSettings {
   id: number
-  game_day_mode: boolean
+  current_mode: GameMode
   questions_per_day: number
   timer_duration: number
   scores_locked: boolean
@@ -250,7 +252,7 @@ export interface GameSettings {
 }
 
 export interface GameSettingsUpdate {
-  game_day_mode?: boolean
+  current_mode?: GameMode
   questions_per_day?: number
   timer_duration?: number
   scores_locked?: boolean

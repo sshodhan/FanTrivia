@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
 
     const gameSettings: GameSettings = settings || {
       id: 1,
-      game_day_mode: false,
+      current_mode: 'daily',
       questions_per_day: 5,
       timer_duration: 15,
       scores_locked: false,

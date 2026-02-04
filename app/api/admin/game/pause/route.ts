@@ -33,16 +33,16 @@ export async function POST(request: NextRequest) {
 
     // Get current state if toggling
     if (paused === undefined) {
-      const { data: currentState } = await supabase
-        .from('game_state')
+      const { data: currentSettings } = await supabase
+        .from('game_settings')
         .select('is_paused')
         .eq('id', 1)
         .single()
 
-      const newPausedState = !(currentState?.is_paused ?? false)
+      const newPausedState = !(currentSettings?.is_paused ?? false)
 
-      const { data: gameState, error } = await supabase
-        .from('game_state')
+      const { data: gameSettings, error } = await supabase
+        .from('game_settings')
         .update({
           is_paused: newPausedState,
           updated_at: new Date().toISOString()
@@ -63,19 +63,19 @@ export async function POST(request: NextRequest) {
         .from('admin_action_logs')
         .insert({
           action_type: newPausedState ? 'game_pause' : 'game_resume',
-          target_type: 'game_state',
+          target_type: 'game_settings',
           details: {}
         })
 
       return NextResponse.json({
         success: true,
-        game_state: gameState
+        game_settings: gameSettings
       })
     }
 
     // Set explicit pause state
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .update({
         is_paused: shouldPause,
         updated_at: new Date().toISOString()
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       .from('admin_action_logs')
       .insert({
         action_type: shouldPause ? 'game_pause' : 'game_resume',
-        target_type: 'game_state',
+        target_type: 'game_settings',
         details: {}
       })
 
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      game_state: gameState
+      game_settings: gameSettings
     })
 
   } catch (error) {
