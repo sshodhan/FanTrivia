@@ -20,7 +20,7 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { team, todayPlayed } = useTeam();
+  const { team, todayPlayed, clearTeam } = useTeam();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
@@ -52,6 +52,11 @@ function AppContent() {
 
   const handleNavigation = (screen: NavScreen) => {
     setCurrentScreen(screen as AppScreen);
+  };
+
+  const handleResetFlow = () => {
+    clearTeam();
+    setCurrentScreen('entry');
   };
 
   // Map NavScreen to currentScreen for bottom nav
@@ -108,7 +113,10 @@ function AppContent() {
       )}
 
       {currentScreen === 'admin' && (
-        <AdminConsole onBack={() => setCurrentScreen('home')} />
+        <AdminConsole 
+          onBack={() => setCurrentScreen('home')} 
+          onResetFlow={handleResetFlow}
+        />
       )}
 
       {showNav && (
