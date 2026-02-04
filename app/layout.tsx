@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import "@/lib/error-tracking/client-logger"
+import { GlobalErrorHandler } from "@/components/global-error-handler"
 
 export const metadata: Metadata = {
   title: 'Hawktrivia - Seahawks Super Bowl Trivia',
@@ -72,7 +73,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="font-sans antialiased min-h-screen bg-background text-foreground">
-        {children}
+        <GlobalErrorHandler>
+          {children}
+        </GlobalErrorHandler>
         <Analytics />
         <script
           dangerouslySetInnerHTML={{

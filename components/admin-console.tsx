@@ -1,18 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { sampleQuestions, sampleLeaderboard } from '@/lib/mock-data';
 import { AVATARS, type AvatarId } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 
 interface AdminConsoleProps {
   onBack: () => void;
   onResetFlow?: () => void;
 }
 
-type AdminTab = 'questions' | 'scores' | 'photos' | 'settings';
+type AdminTab = 'questions' | 'scores' | 'photos' | 'settings' | 'logs';
+
+interface DebugLog {
+  id: string;
+  timestamp: string;
+  level: 'debug' | 'info' | 'warn';
+  component: string;
+  message: string;
+  data?: Record<string, unknown>;
+  url?: string;
+}
 
 interface Question {
   id: string;
@@ -32,11 +43,76 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
 
+  // Debug logs state
+  const [logs, setLogs] = useState<DebugLog[]>([]);
+  const [logsStats, setLogsStats] = useState<{ count: number; maxSize: number } | null>(null);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsFilter, setLogsFilter] = useState('');
+  const [verboseLogging, setVerboseLogging] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  // Initialize verbose logging state from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('adminVerboseLogging');
+      setVerboseLogging(stored === 'true');
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  // Toggle verbose logging
+  const handleToggleVerboseLogging = (enabled: boolean) => {
+    setVerboseLogging(enabled);
+    try {
+      if (enabled) {
+        localStorage.setItem('adminVerboseLogging', 'true');
+      } else {
+        localStorage.removeItem('adminVerboseLogging');
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
+  // Fetch debug logs from API
+  const fetchLogs = useCallback(async (clear = false) => {
+    setLogsLoading(true);
+    try {
+      const url = clear ? '/api/log-client-debug?clear=true' : '/api/log-client-debug';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        setLogs(data.logs || []);
+        setLogsStats(data.stats || null);
+      }
+    } catch (e) {
+      console.error('Failed to fetch logs:', e);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
+  // Auto-fetch logs when logs tab is active
+  useEffect(() => {
+    if (activeTab === 'logs') {
+      fetchLogs();
+    }
+  }, [activeTab, fetchLogs]);
+
+  // Filter logs
+  const filteredLogs = logs.filter(log =>
+    !logsFilter ||
+    log.component.toLowerCase().includes(logsFilter.toLowerCase()) ||
+    log.message.toLowerCase().includes(logsFilter.toLowerCase())
+  );
+
   const tabs: { id: AdminTab; label: string }[] = [
     { id: 'questions', label: 'Questions' },
     { id: 'scores', label: 'Scores' },
     { id: 'photos', label: 'Photos' },
     { id: 'settings', label: 'Settings' },
+    { id: 'logs', label: 'Logs' },
   ];
 
   const handleDeleteQuestion = (id: string) => {
@@ -276,13 +352,151 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
               <p className="text-sm text-muted-foreground mb-4">
                 Clear your registration and return to the first screen. This will reset your team name and avatar selection.
               </p>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={onResetFlow}
                 className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
               >
                 Reset to Registration Screen
               </Button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'logs' && (
+          <div className="space-y-4 pb-24">
+            {/* Verbose Logging Toggle */}
+            <div className="bg-card rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-foreground">Verbose Logging</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Enable to capture [v0] prefixed console logs
+                  </p>
+                </div>
+                <Switch
+                  checked={verboseLogging}
+                  onCheckedChange={handleToggleVerboseLogging}
+                />
+              </div>
+            </div>
+
+            {/* Log Controls */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Filter by component or message..."
+                value={logsFilter}
+                onChange={(e) => setLogsFilter(e.target.value)}
+                className="flex-1 bg-muted border-border text-foreground"
+              />
+              <Button
+                onClick={() => fetchLogs()}
+                disabled={logsLoading}
+                variant="outline"
+                className="bg-transparent border-border text-foreground hover:bg-muted"
+              >
+                {logsLoading ? (
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                    <path d="M16 21h5v-5"/>
+                  </svg>
+                )}
+              </Button>
+              <Button
+                onClick={() => fetchLogs(true)}
+                disabled={logsLoading}
+                variant="outline"
+                className="bg-transparent border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                Clear
+              </Button>
+            </div>
+
+            {/* Stats */}
+            {logsStats && (
+              <div className="text-sm text-muted-foreground">
+                Showing {filteredLogs.length} of {logsStats.count} logs (max {logsStats.maxSize})
+              </div>
+            )}
+
+            {/* Logs List */}
+            <div className="space-y-2">
+              {filteredLogs.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-50">
+                    <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                    <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/>
+                    <path d="M9 9h1"/>
+                    <path d="M9 13h6"/>
+                    <path d="M9 17h6"/>
+                  </svg>
+                  <p>No logs yet</p>
+                  <p className="text-xs mt-1">Enable verbose logging and use console.log("[v0] message")</p>
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={cn(
+                      'bg-card rounded-lg p-3 border-l-4 cursor-pointer transition-colors',
+                      log.level === 'warn' ? 'border-yellow-500' :
+                      log.level === 'info' ? 'border-blue-500' :
+                      'border-muted-foreground'
+                    )}
+                    onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={cn(
+                            'text-xs px-2 py-0.5 rounded-full font-medium',
+                            log.level === 'warn' ? 'bg-yellow-500/20 text-yellow-500' :
+                            log.level === 'info' ? 'bg-blue-500/20 text-blue-500' :
+                            'bg-muted text-muted-foreground'
+                          )}>
+                            {log.component}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground mt-1 break-words">{log.message}</p>
+                      </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={cn(
+                          'text-muted-foreground transition-transform flex-shrink-0',
+                          expandedLogId === log.id && 'rotate-180'
+                        )}
+                      >
+                        <path d="m6 9 6 6 6-6"/>
+                      </svg>
+                    </div>
+                    {expandedLogId === log.id && log.data && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <pre className="text-xs text-muted-foreground overflow-x-auto whitespace-pre-wrap break-all">
+                          {JSON.stringify(log.data, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import React, { Component, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import { logReactError } from '@/lib/error-tracking/client-logger'
 
 interface Props {
   children: ReactNode
@@ -26,6 +27,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught error:', error, errorInfo)
+    // Log to Vercel Runtime Logs
+    logReactError(error, { componentStack: errorInfo.componentStack })
     this.props.onError?.(error, errorInfo)
   }
 
