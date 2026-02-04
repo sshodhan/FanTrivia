@@ -1,165 +1,213 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
-import { sampleQuestions } from '@/lib/mock-data'
-import type { DailyTriviaResponse, QuestionWithoutAnswer } from '@/lib/database.types'
+import { createClient } from '@supabase/supabase-js'
+import type { TriviaQuestionPublic, DailyTriviaResponse, GameSettings } from '@/lib/database.types'
 
-/**
- * Get the current day identifier based on game schedule
- * Days -4, -3, -2, -1 before game day, then 'game_day'
- */
-function getCurrentDayIdentifier(): string {
-  // For demo, just use a fixed identifier
-  // In production, calculate based on game date
-  return 'day_minus_4'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-/**
- * Strip answer information from question for client
- */
-function stripAnswers(question: {
+// Demo questions when Supabase not configured
+const DEMO_QUESTIONS: TriviaQuestionPublic[] = [
+  {
+    id: 'demo-1',
+    question_text: 'What year did the Seattle Seahawks win their first Super Bowl?',
+    image_url: null,
+    option_a: '2012',
+    option_b: '2013',
+    option_c: '2014',
+    option_d: '2015',
+    hint_text: 'The season was 2013-2014',
+    time_limit_seconds: 15,
+    points: 100,
+    difficulty: 'easy',
+    category: 'Super Bowl XLVIII',
+  },
+  {
+    id: 'demo-2',
+    question_text: 'Who was named MVP of Super Bowl XLVIII?',
+    image_url: null,
+    option_a: 'Russell Wilson',
+    option_b: 'Marshawn Lynch',
+    option_c: 'Malcolm Smith',
+    option_d: 'Richard Sherman',
+    hint_text: 'He had a pick-six',
+    time_limit_seconds: 15,
+    points: 100,
+    difficulty: 'easy',
+    category: 'Super Bowl XLVIII',
+  },
+  {
+    id: 'demo-3',
+    question_text: 'What was the final score of Super Bowl XLVIII?',
+    image_url: null,
+    option_a: '43-8',
+    option_b: '34-7',
+    option_c: '38-10',
+    option_d: '41-14',
+    hint_text: 'It was the largest margin in Super Bowl history at the time',
+    time_limit_seconds: 15,
+    points: 100,
+    difficulty: 'medium',
+    category: 'Super Bowl XLVIII',
+  },
+  {
+    id: 'demo-4',
+    question_text: 'Which team did the Seahawks defeat in Super Bowl XLVIII?',
+    image_url: null,
+    option_a: 'New England Patriots',
+    option_b: 'San Francisco 49ers',
+    option_c: 'Denver Broncos',
+    option_d: 'Green Bay Packers',
+    hint_text: 'They had the #1 offense that year',
+    time_limit_seconds: 15,
+    points: 100,
+    difficulty: 'easy',
+    category: 'Super Bowl XLVIII',
+  },
+  {
+    id: 'demo-5',
+    question_text: 'What was the nickname of the Seahawks legendary defense?',
+    image_url: null,
+    option_a: 'Steel Curtain',
+    option_b: 'Legion of Boom',
+    option_c: 'Purple People Eaters',
+    option_d: 'Monsters of the Midway',
+    hint_text: 'It references their big hits',
+    time_limit_seconds: 15,
+    points: 100,
+    difficulty: 'easy',
+    category: 'Seahawks History',
+  },
+]
+
+function stripCorrectAnswer(question: {
   id: string
   question_text: string
   image_url: string | null
-  options: string[]
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
   hint_text: string | null
   time_limit_seconds: number
   points: number
   difficulty: 'easy' | 'medium' | 'hard'
   category: string | null
-}): QuestionWithoutAnswer {
+}): TriviaQuestionPublic {
   return {
     id: question.id,
     question_text: question.question_text,
     image_url: question.image_url,
-    options: question.options,
+    option_a: question.option_a,
+    option_b: question.option_b,
+    option_c: question.option_c,
+    option_d: question.option_d,
     hint_text: question.hint_text,
     time_limit_seconds: question.time_limit_seconds,
     points: question.points,
     difficulty: question.difficulty,
-    category: question.category
+    category: question.category,
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // Get team ID from header or query param
-    const teamId = request.headers.get('x-team-id') ||
-                   request.nextUrl.searchParams.get('team_id')
+    // Get username from header or query param
+    const username = request.headers.get('x-username') ||
+                     request.nextUrl.searchParams.get('username')
 
-    const dayIdentifier = getCurrentDayIdentifier()
+    const supabase = getSupabase()
 
-    // Demo mode - return sample questions
-    if (isDemoMode()) {
-      // Check if team has completed today (from localStorage on client side)
-      const demoQuestions = sampleQuestions.slice(0, 5).map(q => ({
-        id: q.id,
-        question_text: q.question,
-        image_url: q.imageUrl,
-        options: q.options,
-        hint_text: q.explanation || null,
-        time_limit_seconds: 15,
-        points: 100,
-        difficulty: q.difficulty,
-        category: q.category
-      }))
-
+    // Demo mode
+    if (!supabase) {
       const response: DailyTriviaResponse = {
-        day_identifier: dayIdentifier,
-        display_date: new Date().toISOString().split('T')[0],
-        questions: demoQuestions.map(stripAnswers),
-        already_completed: false
+        day_identifier: 'demo',
+        questions: DEMO_QUESTIONS,
+        already_answered_ids: [],
+        settings: {
+          questions_per_day: 5,
+          timer_duration: 15,
+        },
       }
-
       return NextResponse.json(response)
     }
 
-    const supabase = createSupabaseServerClient()
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    // Check if team has already completed today
-    if (teamId) {
-      const { data: progress } = await supabase
-        .from('team_daily_progress')
-        .select('*')
-        .eq('team_id', teamId)
-        .eq('day_identifier', dayIdentifier)
-        .single()
-
-      if (progress?.completed) {
-        return NextResponse.json({
-          day_identifier: dayIdentifier,
-          display_date: new Date().toISOString().split('T')[0],
-          questions: [],
-          already_completed: true,
-          team_progress: {
-            total_points: progress.total_points,
-            completed_at: progress.completed_at
-          }
-        })
-      }
-    }
-
-    // Get today's trivia set
-    const { data: dailySet, error: setError } = await supabase
-      .from('daily_trivia_sets')
+    // Get game settings
+    const { data: settings } = await supabase
+      .from('game_settings')
       .select('*')
-      .eq('day_identifier', dayIdentifier)
-      .eq('is_active', true)
+      .eq('id', 1)
       .single()
 
-    if (setError || !dailySet) {
-      // No set configured for today, return sample questions in demo mode
-      console.warn('No active trivia set for', dayIdentifier)
-
-      // Return sample questions as fallback
-      const fallbackQuestions = sampleQuestions.slice(0, 5).map(q => ({
-        id: q.id,
-        question_text: q.question,
-        image_url: q.imageUrl,
-        options: q.options,
-        hint_text: q.explanation || null,
-        time_limit_seconds: 15,
-        points: 100,
-        difficulty: q.difficulty,
-        category: q.category
-      }))
-
-      return NextResponse.json({
-        day_identifier: dayIdentifier,
-        display_date: new Date().toISOString().split('T')[0],
-        questions: fallbackQuestions.map(stripAnswers),
-        already_completed: false
-      })
+    const gameSettings: GameSettings = settings || {
+      id: 1,
+      game_day_mode: false,
+      questions_per_day: 5,
+      timer_duration: 15,
+      scores_locked: false,
+      current_day: 'day_minus_4',
+      live_question_index: 0,
+      is_paused: false,
+      updated_at: new Date().toISOString(),
     }
 
-    // Fetch questions by IDs
-    const { data: questions, error: questionsError } = await supabase
+    // Get questions user has already answered today
+    let alreadyAnsweredIds: string[] = []
+    if (username) {
+      const today = new Date().toISOString().split('T')[0]
+      const { data: answers } = await supabase
+        .from('daily_answers')
+        .select('question_id')
+        .eq('username', username)
+        .gte('answered_at', `${today}T00:00:00`)
+        .lt('answered_at', `${today}T23:59:59`)
+
+      alreadyAnsweredIds = answers?.map(a => a.question_id) || []
+    }
+
+    // Get active questions (limit to questions_per_day)
+    const { data: questions, error } = await supabase
       .from('trivia_questions')
       .select('*')
-      .in('id', dailySet.question_ids)
+      .eq('is_active', true)
+      .limit(gameSettings.questions_per_day)
 
-    if (questionsError || !questions) {
+    if (error) {
+      console.error('Error fetching questions:', error)
       return NextResponse.json(
         { error: 'Failed to load questions' },
         { status: 500 }
       )
     }
 
-    // Sort questions by the order in question_ids
-    const sortedQuestions = dailySet.question_ids
-      .map(id => questions.find(q => q.id === id))
-      .filter(Boolean) as typeof questions
+    // If no questions in DB, return demo questions
+    if (!questions || questions.length === 0) {
+      const response: DailyTriviaResponse = {
+        day_identifier: gameSettings.current_day,
+        questions: DEMO_QUESTIONS.slice(0, gameSettings.questions_per_day),
+        already_answered_ids: [],
+        settings: {
+          questions_per_day: gameSettings.questions_per_day,
+          timer_duration: gameSettings.timer_duration,
+        },
+      }
+      return NextResponse.json(response)
+    }
 
     const response: DailyTriviaResponse = {
-      day_identifier: dailySet.day_identifier,
-      display_date: dailySet.display_date,
-      questions: sortedQuestions.map(stripAnswers),
-      already_completed: false
+      day_identifier: gameSettings.current_day,
+      questions: questions.map(stripCorrectAnswer),
+      already_answered_ids: alreadyAnsweredIds,
+      settings: {
+        questions_per_day: gameSettings.questions_per_day,
+        timer_duration: gameSettings.timer_duration,
+      },
     }
 
     return NextResponse.json(response)

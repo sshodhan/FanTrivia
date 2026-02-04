@@ -41,6 +41,11 @@ export interface Player {
   number: number;
   position: string;
   imageUrl: string;
+  stats: Record<string, string | number>;  // Flexible key-value stats
+  trivia?: string[];                        // Array of trivia facts
+  bio?: string;
+  superBowlHighlight?: string;
+  isActive: boolean;
   stats: {
     label: string;
     value: string;
