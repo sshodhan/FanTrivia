@@ -1,0 +1,300 @@
+-- HawkTrivia Schema Update: Username-based Auth
+-- Run this to migrate from teams-based to username-based auth
+-- This is a TARGETED update - run AFTER the original schema
+
+-- ============================================
+-- STEP 1: Drop old tables that will be replaced
+-- ============================================
+DROP TABLE IF EXISTS photo_likes CASCADE;
+DROP TABLE IF EXISTS photo_uploads CASCADE;
+DROP TABLE IF EXISTS team_daily_progress CASCADE;
+DROP TABLE IF EXISTS scores CASCADE;
+DROP TABLE IF EXISTS teams CASCADE;
+DROP TABLE IF EXISTS game_state CASCADE;
+DROP TABLE IF EXISTS seahawks_players CASCADE;
+
+-- ============================================
+-- STEP 2: Create new USERS table
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+  username TEXT PRIMARY KEY,
+  avatar TEXT NOT NULL DEFAULT 'hawk',
+  is_preset_image BOOLEAN DEFAULT true,
+  image_url TEXT,
+  total_points INTEGER DEFAULT 0,
+  current_streak INTEGER DEFAULT 0,
+  days_played INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_played_at TIMESTAMPTZ,
+  CONSTRAINT valid_avatar CHECK (
+    avatar IN ('hawk', 'blitz', '12', 'superfan', '12th_man', 'girls_rule', 'hero', 'champion', 'trophy', 'queen', 'sparkle', 'fire')
+  ),
+  CONSTRAINT username_length CHECK (char_length(username) >= 2 AND char_length(username) <= 30)
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_total_points ON users(total_points DESC);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
+
+-- ============================================
+-- STEP 3: Update TRIVIA_QUESTIONS table
+-- ============================================
+-- Drop and recreate with new column structure
+DROP TABLE IF EXISTS trivia_questions CASCADE;
+
+CREATE TABLE trivia_questions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  question_text TEXT NOT NULL,
+  image_url TEXT,
+  image_source TEXT CHECK (image_source IN ('web', 'generated', 'uploaded')),
+  option_a TEXT NOT NULL,
+  option_b TEXT NOT NULL,
+  option_c TEXT NOT NULL,
+  option_d TEXT NOT NULL,
+  correct_answer TEXT NOT NULL CHECK (correct_answer IN ('a', 'b', 'c', 'd')),
+  hint_text TEXT,
+  time_limit_seconds INTEGER DEFAULT 15,
+  points INTEGER DEFAULT 100,
+  difficulty TEXT DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
+  category TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_questions_category ON trivia_questions(category);
+CREATE INDEX IF NOT EXISTS idx_questions_difficulty ON trivia_questions(difficulty);
+CREATE INDEX IF NOT EXISTS idx_questions_active ON trivia_questions(is_active);
+
+-- ============================================
+-- STEP 4: Create DAILY_ANSWERS table (replaces scores)
+-- ============================================
+CREATE TABLE IF NOT EXISTS daily_answers (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  question_id UUID NOT NULL REFERENCES trivia_questions(id) ON DELETE CASCADE,
+  day_identifier TEXT,
+  selected_answer TEXT NOT NULL CHECK (selected_answer IN ('a', 'b', 'c', 'd')),
+  is_correct BOOLEAN NOT NULL,
+  points_earned INTEGER DEFAULT 0,
+  streak_bonus INTEGER DEFAULT 0,
+  time_taken_ms INTEGER,
+  answered_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(username, question_id, (answered_at::DATE))
+);
+
+CREATE INDEX IF NOT EXISTS idx_answers_username ON daily_answers(username);
+CREATE INDEX IF NOT EXISTS idx_answers_day ON daily_answers(day_identifier);
+CREATE INDEX IF NOT EXISTS idx_answers_date ON daily_answers((answered_at::DATE));
+
+-- ============================================
+-- STEP 5: Create new PHOTO_UPLOADS table
+-- ============================================
+CREATE TABLE photo_uploads (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  caption TEXT,
+  like_count INTEGER DEFAULT 0,
+  is_approved BOOLEAN DEFAULT false,
+  is_hidden BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_photos_username ON photo_uploads(username);
+CREATE INDEX IF NOT EXISTS idx_photos_approved ON photo_uploads(is_approved, is_hidden, created_at DESC);
+
+-- ============================================
+-- STEP 6: Create new PHOTO_LIKES table
+-- ============================================
+CREATE TABLE photo_likes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  photo_id UUID NOT NULL REFERENCES photo_uploads(id) ON DELETE CASCADE,
+  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(photo_id, username)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photo_likes_photo ON photo_likes(photo_id);
+
+-- ============================================
+-- STEP 7: Create PLAYERS table (replaces seahawks_players)
+-- ============================================
+CREATE TABLE players (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  jersey_number INTEGER NOT NULL,
+  position TEXT NOT NULL,
+  image_url TEXT,
+  stats JSONB,
+  bio TEXT,
+  super_bowl_highlight TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS idx_players_active ON players(is_active, display_order);
+
+-- ============================================
+-- STEP 8: Create GAME_SETTINGS table (replaces game_state)
+-- ============================================
+CREATE TABLE game_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  game_day_mode BOOLEAN DEFAULT false,
+  questions_per_day INTEGER DEFAULT 5,
+  timer_duration INTEGER DEFAULT 15,
+  scores_locked BOOLEAN DEFAULT false,
+  current_day TEXT DEFAULT 'day_minus_4',
+  live_question_index INTEGER DEFAULT 0,
+  is_paused BOOLEAN DEFAULT false,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO game_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- STEP 9: Enable Row Level Security
+-- ============================================
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trivia_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE photo_uploads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE photo_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_settings ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users are viewable by everyone" ON users;
+DROP POLICY IF EXISTS "Users can register" ON users;
+DROP POLICY IF EXISTS "Users can update their own record" ON users;
+DROP POLICY IF EXISTS "Questions are viewable" ON trivia_questions;
+DROP POLICY IF EXISTS "Answers are viewable" ON daily_answers;
+DROP POLICY IF EXISTS "Users can submit answers" ON daily_answers;
+DROP POLICY IF EXISTS "Approved photos are viewable" ON photo_uploads;
+DROP POLICY IF EXISTS "Users can upload photos" ON photo_uploads;
+DROP POLICY IF EXISTS "Likes are viewable" ON photo_likes;
+DROP POLICY IF EXISTS "Users can like photos" ON photo_likes;
+DROP POLICY IF EXISTS "Users can unlike photos" ON photo_likes;
+DROP POLICY IF EXISTS "Players are viewable" ON players;
+DROP POLICY IF EXISTS "Settings are viewable" ON game_settings;
+
+-- Create new policies
+CREATE POLICY "Users are viewable by everyone" ON users FOR SELECT USING (true);
+CREATE POLICY "Users can register" ON users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update their own record" ON users FOR UPDATE USING (true);
+
+CREATE POLICY "Questions are viewable" ON trivia_questions FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Answers are viewable" ON daily_answers FOR SELECT USING (true);
+CREATE POLICY "Users can submit answers" ON daily_answers FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Approved photos are viewable" ON photo_uploads FOR SELECT USING (is_approved = true AND is_hidden = false);
+CREATE POLICY "Users can upload photos" ON photo_uploads FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Likes are viewable" ON photo_likes FOR SELECT USING (true);
+CREATE POLICY "Users can like photos" ON photo_likes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can unlike photos" ON photo_likes FOR DELETE USING (true);
+
+CREATE POLICY "Players are viewable" ON players FOR SELECT USING (is_active = true);
+
+CREATE POLICY "Settings are viewable" ON game_settings FOR SELECT USING (true);
+
+-- ============================================
+-- STEP 10: Create/Update Functions
+-- ============================================
+
+-- Function to update photo like count
+CREATE OR REPLACE FUNCTION update_photo_like_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE photo_uploads SET like_count = like_count + 1 WHERE id = NEW.photo_id;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE photo_uploads SET like_count = GREATEST(like_count - 1, 0) WHERE id = OLD.photo_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_photo_likes ON photo_likes;
+CREATE TRIGGER trigger_update_photo_likes
+  AFTER INSERT OR DELETE ON photo_likes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_photo_like_count();
+
+-- Function to update user stats after answering
+CREATE OR REPLACE FUNCTION update_user_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE users
+  SET
+    total_points = total_points + NEW.points_earned + NEW.streak_bonus,
+    last_played_at = NOW()
+  WHERE username = NEW.username;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_update_user_stats ON daily_answers;
+CREATE TRIGGER trigger_update_user_stats
+  AFTER INSERT ON daily_answers
+  FOR EACH ROW
+  EXECUTE FUNCTION update_user_stats();
+
+-- Function to get leaderboard
+CREATE OR REPLACE FUNCTION get_leaderboard(p_limit INTEGER DEFAULT 50)
+RETURNS TABLE (
+  rank BIGINT,
+  username TEXT,
+  avatar TEXT,
+  total_points INTEGER,
+  current_streak INTEGER,
+  days_played INTEGER
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    ROW_NUMBER() OVER (ORDER BY u.total_points DESC) as rank,
+    u.username,
+    u.avatar,
+    u.total_points,
+    u.current_streak,
+    u.days_played
+  FROM users u
+  WHERE u.total_points > 0
+  ORDER BY u.total_points DESC
+  LIMIT p_limit;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- ============================================
+-- STEP 11: Seed Data - Super Bowl Heroes
+-- ============================================
+INSERT INTO players (name, jersey_number, position, display_order, super_bowl_highlight) VALUES
+('Russell Wilson', 3, 'Quarterback', 1, 'Led the Seahawks to a 43-8 victory in Super Bowl XLVIII'),
+('Marshawn Lynch', 24, 'Running Back', 2, 'Beast Mode touchdown run in Super Bowl XLVIII'),
+('Richard Sherman', 25, 'Cornerback', 3, 'Key interception sealing NFC Championship'),
+('Malcolm Smith', 53, 'Linebacker', 4, 'Super Bowl XLVIII MVP with pick-six'),
+('Earl Thomas', 29, 'Safety', 5, 'Legion of Boom leader, 2 interceptions in playoffs'),
+('Kam Chancellor', 31, 'Safety', 6, 'Devastating hits and forced fumbles')
+ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- STEP 12: Seed Data - Sample Trivia Questions
+-- ============================================
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+('What year did the Seattle Seahawks win their first Super Bowl?', '2012', '2013', '2014', '2015', 'b', 'easy', 'Super Bowl XLVIII'),
+('Who was named MVP of Super Bowl XLVIII?', 'Russell Wilson', 'Marshawn Lynch', 'Malcolm Smith', 'Richard Sherman', 'c', 'easy', 'Super Bowl XLVIII'),
+('What was the final score of Super Bowl XLVIII?', '43-8', '34-7', '38-10', '41-14', 'a', 'medium', 'Super Bowl XLVIII'),
+('Which team did the Seahawks defeat in Super Bowl XLVIII?', 'New England Patriots', 'San Francisco 49ers', 'Denver Broncos', 'Green Bay Packers', 'c', 'easy', 'Super Bowl XLVIII'),
+('Who returned an interception for a touchdown in Super Bowl XLVIII?', 'Richard Sherman', 'Earl Thomas', 'Malcolm Smith', 'Kam Chancellor', 'c', 'medium', 'Super Bowl XLVIII'),
+('What was the nickname of the Seahawks legendary defense?', 'Steel Curtain', 'Legion of Boom', 'Purple People Eaters', 'Monsters of the Midway', 'b', 'easy', 'Seahawks History'),
+('How many seconds into Super Bowl XLVIII did the Seahawks score their first points?', '8 seconds', '12 seconds', '15 seconds', '20 seconds', 'b', 'hard', 'Super Bowl XLVIII'),
+('Who caught the first touchdown pass in Super Bowl XLVIII?', 'Golden Tate', 'Doug Baldwin', 'Percy Harvin', 'Jermaine Kearse', 'd', 'hard', 'Super Bowl XLVIII'),
+('What jersey number did Beast Mode Marshawn Lynch wear?', '20', '22', '24', '28', 'c', 'easy', 'Seahawks History'),
+('Which Seahawk had the famous "tip" play in the NFC Championship?', 'Earl Thomas', 'Richard Sherman', 'Kam Chancellor', 'Byron Maxwell', 'b', 'medium', 'Seahawks History')
+ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- DONE! Your database is now updated.
+-- ============================================
