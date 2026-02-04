@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTeam } from '@/lib/team-context';
+import { useTeam } from '@/lib/user-context';
 import { sampleQuestions } from '@/lib/mock-data';
 import type { TriviaQuestion, GameState } from '@/lib/types';
 import { cn } from '@/lib/utils';

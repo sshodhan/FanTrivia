@@ -1,7 +1,7 @@
 'use client';
 
-import { useTeam } from '@/lib/team-context';
-import { teamAvatars } from '@/lib/mock-data';
+import { useUser } from '@/lib/user-context';
+import { AVATARS } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -12,18 +12,17 @@ interface HomeScreenProps {
   onViewPhotos: () => void;
 }
 
-export function HomeScreen({ 
-  onStartTrivia, 
-  onViewScoreboard, 
-  onViewPlayers, 
-  onViewPhotos 
+export function HomeScreen({
+  onStartTrivia,
+  onViewScoreboard,
+  onViewPlayers,
+  onViewPhotos
 }: HomeScreenProps) {
-  const { team, todayPlayed } = useTeam();
+  const { user, todayPlayed } = useUser();
 
-  const getAvatarEmoji = (imageUrl: string | null) => {
-    if (!imageUrl) return '🦅';
-    const avatar = teamAvatars.find(a => a.id === imageUrl);
-    return avatar?.emoji || '🦅';
+  const getAvatarEmoji = () => {
+    if (!user?.avatar) return '🦅';
+    return AVATARS[user.avatar]?.emoji || '🦅';
   };
 
   return (
@@ -37,19 +36,25 @@ export function HomeScreen({
         <p className="text-secondary text-sm mt-1">Super Bowl Edition</p>
       </header>
 
-      {/* Team Info */}
-      {team && (
+      {/* User Info */}
+      {user && (
         <div className="px-6 mb-6">
           <div className="bg-card rounded-xl p-4 flex items-center gap-4">
             <div className="w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center">
-              <span className="text-3xl">{getAvatarEmoji(team.imageUrl)}</span>
+              <span className="text-3xl">{getAvatarEmoji()}</span>
             </div>
             <div className="flex-1">
-              <div className="font-bold text-foreground text-lg">{team.name}</div>
+              <div className="font-bold text-foreground text-lg">{user.username}</div>
               <div className="text-sm text-muted-foreground">
                 {todayPlayed ? "Today's trivia complete!" : 'Ready to play'}
               </div>
             </div>
+            {user.current_streak > 0 && (
+              <div className="text-right">
+                <div className="text-xl font-bold text-primary">{user.current_streak}</div>
+                <div className="text-xs text-muted-foreground">Streak</div>
+              </div>
+            )}
           </div>
         </div>
       )}

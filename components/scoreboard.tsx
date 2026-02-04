@@ -1,7 +1,7 @@
 'use client';
 
 import useSWR from 'swr';
-import { useTeam } from '@/lib/team-context';
+import { useUser } from '@/lib/user-context';
 import { AVATARS, type LeaderboardEntry, type AvatarId } from '@/lib/database.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ interface LeaderboardResponse {
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
-  const { team } = useTeam();
+  const { user } = useUser();
 
   const { data, error, isLoading } = useSWR<LeaderboardResponse>(
     '/api/scoreboard?limit=50',
@@ -29,7 +29,7 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
   );
 
   const leaderboard = data?.leaderboard || [];
-  const userRank = team ? leaderboard.find(entry => entry.team_id === team.id)?.rank : null;
+  const userRank = user ? leaderboard.find(entry => entry.username === user.username)?.rank : null;
 
   const getAvatarEmoji = (avatar: AvatarId | string) => {
     return AVATARS[avatar as AvatarId]?.emoji || '🦅';
@@ -116,20 +116,20 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
       </header>
 
       {/* User's Rank Banner */}
-      {userRank && team && (
+      {userRank && user && (
         <div className="p-4 bg-primary/10 border-b border-primary/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{getAvatarEmoji(team.imageUrl || 'hawk')}</span>
+              <span className="text-2xl">{getAvatarEmoji(user.avatar)}</span>
               <div>
-                <div className="font-bold text-foreground">{team.name}</div>
+                <div className="font-bold text-foreground">{user.username}</div>
                 <div className="text-sm text-muted-foreground">Your rank</div>
               </div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-primary">#{userRank}</div>
               <div className="text-sm text-muted-foreground">
-                {leaderboard.find(entry => entry.team_id === team.id)?.total_points || 0} pts
+                {leaderboard.find(entry => entry.username === user.username)?.total_points || 0} pts
               </div>
             </div>
           </div>
@@ -140,11 +140,11 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-3">
           {leaderboard.map((entry) => {
-            const isCurrentUser = team && entry.team_id === team.id;
+            const isCurrentUser = user && entry.username === user.username;
 
             return (
               <div
-                key={entry.team_id}
+                key={entry.username}
                 className={cn(
                   'flex items-center gap-4 p-4 rounded-xl transition-all',
                   isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-card'
@@ -159,21 +159,21 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                 </div>
 
                 {/* Avatar */}
-                <span className="text-2xl">{getAvatarEmoji(entry.team_image)}</span>
+                <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
 
-                {/* Team Info */}
+                {/* User Info */}
                 <div className="flex-1 min-w-0">
                   <div className={cn(
                     'font-bold truncate',
                     isCurrentUser ? 'text-primary' : 'text-foreground'
                   )}>
-                    {entry.team_name}
+                    {entry.username}
                     {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
-                    {entry.best_streak > 1 && (
-                      <span className="ml-2 text-primary">🔥 {entry.best_streak}</span>
+                    {entry.current_streak > 1 && (
+                      <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
                     )}
                   </div>
                 </div>

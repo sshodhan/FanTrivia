@@ -1,6 +1,6 @@
 'use client';
 
-import { useTeam } from '@/lib/team-context';
+import { useUser } from '@/lib/user-context';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -12,14 +12,14 @@ interface ResultsScreenProps {
   onGoHome: () => void;
 }
 
-export function ResultsScreen({ 
-  score, 
-  correctAnswers, 
+export function ResultsScreen({
+  score,
+  correctAnswers,
   totalQuestions,
   onViewScoreboard,
-  onGoHome 
+  onGoHome
 }: ResultsScreenProps) {
-  const { team } = useTeam();
+  const { user } = useUser();
   const percentage = Math.round((correctAnswers / totalQuestions) * 100);
   
   const getMessage = () => {
@@ -40,9 +40,9 @@ export function ResultsScreen({
         <h1 className="font-[var(--font-heading)] text-4xl md:text-5xl font-bold text-primary tracking-tight">
           {message.text}
         </h1>
-        {team && (
+        {user && (
           <p className="text-secondary mt-2 text-lg">
-            {team.name}
+            {user.username}
           </p>
         )}
       </div>

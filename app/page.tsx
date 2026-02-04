@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TeamProvider, useTeam } from '@/lib/team-context';
+import { UserProvider, useUser } from '@/lib/user-context';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
 import { TriviaGame } from '@/components/trivia-game';
@@ -20,19 +20,19 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { team, todayPlayed, clearTeam } = useTeam();
+  const { user, todayPlayed, clearUser } = useUser();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
 
-  // Determine initial screen based on team registration
+  // Determine initial screen based on user registration
   useEffect(() => {
-    if (team) {
+    if (user) {
       setCurrentScreen('home');
     } else {
       setCurrentScreen('entry');
     }
-  }, [team]);
+  }, [user]);
 
   // Hide nav on certain screens
   useEffect(() => {
@@ -55,7 +55,7 @@ function AppContent() {
   };
 
   const handleResetFlow = () => {
-    clearTeam();
+    clearUser();
     setCurrentScreen('entry');
   };
 
@@ -132,8 +132,8 @@ function AppContent() {
 
 export default function Home() {
   return (
-    <TeamProvider>
+    <UserProvider>
       <AppContent />
-    </TeamProvider>
+    </UserProvider>
   );
 }
