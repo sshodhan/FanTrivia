@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/adminAccess'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
-import type { GameState, GameMode } from '@/lib/database.types'
+import type { GameSettings, GameMode } from '@/lib/database.types'
 
-// Demo mode game state
-let demoGameState: GameState = {
+// Demo mode game settings
+let demoGameSettings: GameSettings = {
   id: 1,
   current_mode: 'daily',
+  questions_per_day: 5,
+  timer_duration: 15,
+  scores_locked: false,
   current_day: 'day_minus_4',
   live_question_index: 0,
   is_paused: false,
-  leaderboard_locked: false,
   updated_at: new Date().toISOString()
 }
 
-// GET - Get current game state
+// GET - Get current game settings
 export async function GET(request: NextRequest) {
   try {
     const auth = requireAdmin(request)
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (isDemoMode()) {
-      return NextResponse.json({ game_state: demoGameState })
+      return NextResponse.json({ game_settings: demoGameSettings })
     }
 
     const supabase = createSupabaseAdminClient()
@@ -34,24 +36,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .select('*')
       .eq('id', 1)
       .single()
 
     if (error) {
-      console.error('Game state fetch error:', error)
+      console.error('Game settings fetch error:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch game state' },
+        { error: 'Failed to fetch game settings' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ game_state: gameState })
+    return NextResponse.json({ game_settings: gameSettings })
 
   } catch (error) {
-    console.error('Game state error:', error)
+    console.error('Game settings error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH - Update game state
+// PATCH - Update game settings
 export async function PATCH(request: NextRequest) {
   try {
     const auth = requireAdmin(request)
@@ -68,18 +70,20 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { current_mode, current_day, live_question_index, is_paused, leaderboard_locked } = body
+    const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration } = body
 
     if (isDemoMode()) {
-      // Update demo state
-      if (current_mode !== undefined) demoGameState.current_mode = current_mode as GameMode
-      if (current_day !== undefined) demoGameState.current_day = current_day
-      if (live_question_index !== undefined) demoGameState.live_question_index = live_question_index
-      if (is_paused !== undefined) demoGameState.is_paused = is_paused
-      if (leaderboard_locked !== undefined) demoGameState.leaderboard_locked = leaderboard_locked
-      demoGameState.updated_at = new Date().toISOString()
+      // Update demo settings
+      if (current_mode !== undefined) demoGameSettings.current_mode = current_mode as GameMode
+      if (current_day !== undefined) demoGameSettings.current_day = current_day
+      if (live_question_index !== undefined) demoGameSettings.live_question_index = live_question_index
+      if (is_paused !== undefined) demoGameSettings.is_paused = is_paused
+      if (scores_locked !== undefined) demoGameSettings.scores_locked = scores_locked
+      if (questions_per_day !== undefined) demoGameSettings.questions_per_day = questions_per_day
+      if (timer_duration !== undefined) demoGameSettings.timer_duration = timer_duration
+      demoGameSettings.updated_at = new Date().toISOString()
 
-      return NextResponse.json({ game_state: demoGameState })
+      return NextResponse.json({ game_settings: demoGameSettings })
     }
 
     const supabase = createSupabaseAdminClient()
@@ -99,19 +103,21 @@ export async function PATCH(request: NextRequest) {
     if (current_day !== undefined) updates.current_day = current_day
     if (live_question_index !== undefined) updates.live_question_index = live_question_index
     if (is_paused !== undefined) updates.is_paused = is_paused
-    if (leaderboard_locked !== undefined) updates.leaderboard_locked = leaderboard_locked
+    if (scores_locked !== undefined) updates.scores_locked = scores_locked
+    if (questions_per_day !== undefined) updates.questions_per_day = questions_per_day
+    if (timer_duration !== undefined) updates.timer_duration = timer_duration
 
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .update(updates)
       .eq('id', 1)
       .select()
       .single()
 
     if (error) {
-      console.error('Game state update error:', error)
+      console.error('Game settings update error:', error)
       return NextResponse.json(
-        { error: 'Failed to update game state' },
+        { error: 'Failed to update game settings' },
         { status: 500 }
       )
     }
@@ -120,16 +126,16 @@ export async function PATCH(request: NextRequest) {
     await supabase
       .from('admin_action_logs')
       .insert({
-        action_type: 'game_state_update',
-        target_type: 'game_state',
+        action_type: 'game_settings_update',
+        target_type: 'game_settings',
         target_id: null,
         details: updates
       })
 
-    return NextResponse.json({ game_state: gameState })
+    return NextResponse.json({ game_settings: gameSettings })
 
   } catch (error) {
-    console.error('Game state update error:', error)
+    console.error('Game settings update error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

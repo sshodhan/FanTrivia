@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Demo mode - game started',
-        game_state: {
+        game_settings: {
           current_mode: 'live',
           live_question_index: 0,
           is_paused: false
@@ -29,9 +29,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update game state to live
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    // Update game settings to live mode
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .update({
         current_mode: 'live',
         live_question_index: 0,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       .from('admin_action_logs')
       .insert({
         action_type: 'game_start',
-        target_type: 'game_state',
+        target_type: 'game_settings',
         details: { started_at: new Date().toISOString() }
       })
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      game_state: gameState
+      game_settings: gameSettings
     })
 
   } catch (error) {

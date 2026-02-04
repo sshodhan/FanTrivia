@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Demo mode - game ended',
-        game_state: {
+        game_settings: {
           current_mode: 'ended',
-          leaderboard_locked: true
+          scores_locked: true
         }
       })
     }
@@ -28,13 +28,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update game state to ended and lock leaderboard
-    const { data: gameState, error } = await supabase
-      .from('game_state')
+    // Update game settings to ended and lock scores
+    const { data: gameSettings, error } = await supabase
+      .from('game_settings')
       .update({
         current_mode: 'ended',
         is_paused: false,
-        leaderboard_locked: true,
+        scores_locked: true,
         updated_at: new Date().toISOString()
       })
       .eq('id', 1)
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       .from('admin_action_logs')
       .insert({
         action_type: 'game_end',
-        target_type: 'game_state',
+        target_type: 'game_settings',
         details: { ended_at: new Date().toISOString() }
       })
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      game_state: gameState
+      game_settings: gameSettings
     })
 
   } catch (error) {
