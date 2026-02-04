@@ -387,6 +387,81 @@ export const samplePlayers = [
     is_active: true,
   },
   // ============================================
+  // 2025 SEAHAWKS DEFENSE
+  // ============================================
+  {
+    id: '2025-devon-witherspoon',
+    name: 'Devon Witherspoon',
+    jersey_number: 21,
+    position: 'Cornerback',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/4429013.png',
+    stats: { 'Solo Tackles': '54', 'Interceptions': '1', 'Pass Breakups': '4', 'Pressures': '10' },
+    trivia: [
+      '2025 Pro Bowl selection - consecutive Pro Bowls to start career',
+      'Led all cornerbacks with 10 total pressures in 2025',
+      'Played all 17 games - achieved full availability goal',
+      'Fifth Seahawk to begin career with back-to-back Pro Bowls',
+    ],
+    bio: 'Seahawks CB - 2025 Pro Bowl',
+    super_bowl_highlight: 'Shutdown corner for league-leading defense',
+    display_order: 4,
+    is_active: true,
+  },
+  {
+    id: '2025-boye-mafe',
+    name: 'Boye Mafe',
+    jersey_number: 53,
+    position: 'Outside Linebacker',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/4240754.png',
+    stats: { 'Sacks': '6.0', 'Tackles': '30', 'TFL': '8', 'QB Hits': '12', 'Forced Fumbles': '1' },
+    trivia: [
+      '6.0 sacks in 2025 regular season',
+      'Career total of 20.0 sacks through 2025',
+      'Pro Bowl alternate in 2025',
+      'Key pass rusher with sack, INT, and blocked kick in playoffs',
+    ],
+    bio: 'Seahawks OLB - Pass Rush Specialist',
+    super_bowl_highlight: 'Playoff performer with big plays',
+    display_order: 5,
+    is_active: true,
+  },
+  {
+    id: '2025-leonard-williams',
+    name: 'Leonard Williams',
+    jersey_number: 99,
+    position: 'Defensive Lineman',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/2971622.png',
+    stats: { 'Sacks': '7.0', 'Total Tackles': '62', 'QB Pressures': '40', 'TFL': '10' },
+    trivia: [
+      'NFC Defensive Player of the Month (Dec/Jan 2025)',
+      'Top 10 among DTs in sacks, pressures, and pass rush win rate',
+      '6 sacks in final month of regular season',
+      'Sacked Brock Purdy in NFC Divisional Round',
+    ],
+    bio: 'Seahawks DL - NFC Defensive Player of Month',
+    super_bowl_highlight: 'Dominant interior presence',
+    display_order: 6,
+    is_active: true,
+  },
+  {
+    id: '2025-julian-love',
+    name: 'Julian Love',
+    jersey_number: 26,
+    position: 'Safety',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/3916148.png',
+    stats: { 'Solo Tackles': '35', 'Forced Fumbles': '2', 'Pass Breakups': '4', 'Missed Tackle %': '7.8%' },
+    trivia: [
+      'Pro Bowl alternate - playing at All-Pro level in 2025',
+      '4th among safeties in solo tackles (35)',
+      'Versatile - plays safety, slot, and linebacker roles',
+      'Key blitzer with sack on Brock Purdy in Week 1',
+    ],
+    bio: 'Seahawks S - Versatile Playmaker',
+    super_bowl_highlight: 'Defensive QB of the secondary',
+    display_order: 7,
+    is_active: true,
+  },
+  // ============================================
   // SUPER BOWL XLVIII HEROES (2014)
   // ============================================
   {

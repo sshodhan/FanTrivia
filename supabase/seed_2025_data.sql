@@ -483,13 +483,211 @@ INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, optio
 ON CONFLICT DO NOTHING;
 
 -- ============================================
+-- CATEGORY 1B: 2025 Seahawks Defense
+-- ============================================
+INSERT INTO players (name, jersey_number, position, display_order, image_url, bio, stats, trivia, is_active) VALUES
+(
+  'Devon Witherspoon', 21, 'Cornerback', 6,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/4429013.png',
+  'Seahawks CB - 2025 Pro Bowl',
+  '{"Solo Tackles": "54", "Interceptions": "1", "Pass Breakups": "4", "Pressures": "10", "Games": "17"}'::jsonb,
+  '["2025 Pro Bowl selection - consecutive Pro Bowls to start career", "Led all cornerbacks with 10 total pressures in 2025", "Played all 17 games - achieved full availability goal", "Fifth Seahawk to begin career with back-to-back Pro Bowls"]'::jsonb,
+  true
+),
+(
+  'Boye Mafe', 53, 'Outside Linebacker', 7,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/4240754.png',
+  'Seahawks OLB - Pass Rush Specialist',
+  '{"Sacks": "6.0", "Tackles": "30", "TFL": "8", "QB Hits": "12", "Forced Fumbles": "1"}'::jsonb,
+  '["6.0 sacks in 2025 regular season", "Career total of 20.0 sacks through 2025", "Pro Bowl alternate in 2025", "Key pass rusher with sack, INT, and blocked kick in playoffs"]'::jsonb,
+  true
+),
+(
+  'Leonard Williams', 99, 'Defensive Lineman', 8,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/2971622.png',
+  'Seahawks DL - NFC Defensive Player of Month',
+  '{"Sacks": "7.0", "Total Tackles": "62", "Solo Tackles": "33", "QB Pressures": "40", "TFL": "10"}'::jsonb,
+  '["NFC Defensive Player of the Month (Dec/Jan 2025)", "Top 10 among DTs in sacks, pressures, and pass rush win rate", "6 sacks in final month of regular season", "Sacked Brock Purdy in NFC Divisional Round"]'::jsonb,
+  true
+),
+(
+  'Julian Love', 26, 'Safety', 9,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/3916148.png',
+  'Seahawks S - Versatile Playmaker',
+  '{"Solo Tackles": "35", "Forced Fumbles": "2", "Pass Breakups": "4", "Missed Tackle Rate": "7.8%"}'::jsonb,
+  '["Pro Bowl alternate - playing at All-Pro level in 2025", "4th among safeties in solo tackles (35)", "Versatile - plays safety, slot, and linebacker roles", "Key blitzer with sack on Brock Purdy in Week 1"]'::jsonb,
+  true
+);
+
+-- ============================================
+-- CATEGORY: 2025 Comparison QBs
+-- ============================================
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+(
+  'Which 2025 QB had the BEST passer rating: Darnold (SEA), Maye (NE), or Stafford (LAR)?',
+  'Sam Darnold - 99.1',
+  'Drake Maye - 113.5',
+  'Matthew Stafford - 102.3',
+  'All within 2 points',
+  'b',
+  'medium',
+  '2025 Comparison QBs'
+),
+(
+  'Which 2025 QB threw the FEWEST interceptions?',
+  'Sam Darnold - 14 INT',
+  'Drake Maye - 8 INT',
+  'Matthew Stafford - 8 INT',
+  'Both Maye and Stafford tied with 8',
+  'd',
+  'medium',
+  '2025 Comparison QBs'
+),
+(
+  'Drake Maye set a Patriots franchise record for completion percentage in a single game. What was it?',
+  '85.7%',
+  '88.5%',
+  '91.3%',
+  '93.2%',
+  'c',
+  'hard',
+  '2025 Comparison QBs'
+),
+(
+  'Sam Darnold played for which team in 2024 before signing with Seattle?',
+  'New York Jets',
+  'Carolina Panthers',
+  'San Francisco 49ers',
+  'Minnesota Vikings',
+  'd',
+  'easy',
+  '2025 Comparison QBs'
+),
+(
+  'How many passing TDs did Drake Maye throw in Week 17 vs the Jets - a career high?',
+  '3',
+  '4',
+  '5',
+  '6',
+  'c',
+  'hard',
+  '2025 Comparison QBs'
+),
+(
+  'Which QB led his team to their first playoff berth since 2021?',
+  'Sam Darnold (Seahawks)',
+  'Drake Maye (Patriots)',
+  'Matthew Stafford (Rams)',
+  'None - all made playoffs in 2024',
+  'b',
+  'medium',
+  '2025 Comparison QBs'
+)
+ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- CATEGORY: 2025 Comparison Defense
+-- ============================================
+INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
+(
+  'The Seahawks had the league-leading scoring defense in 2025. Who was their Pro Bowl cornerback?',
+  'Tariq Woolen',
+  'Devon Witherspoon',
+  'Riq Woolen',
+  'Tre Brown',
+  'b',
+  'easy',
+  '2025 Comparison Defense'
+),
+(
+  'Which Seahawks defender was named NFC Defensive Player of the Month for December/January 2025?',
+  'Boye Mafe',
+  'Devon Witherspoon',
+  'Leonard Williams',
+  'Julian Love',
+  'c',
+  'medium',
+  '2025 Comparison Defense'
+),
+(
+  'How many sacks did Leonard Williams record in 2025?',
+  '5.0',
+  '7.0',
+  '9.0',
+  '11.0',
+  'b',
+  'medium',
+  '2025 Comparison Defense'
+),
+(
+  'Which Seahawks safety recorded a sack on Brock Purdy in Week 1 vs the 49ers?',
+  'Jamal Adams',
+  'Quandre Diggs',
+  'Julian Love',
+  'Rayshawn Jenkins',
+  'c',
+  'hard',
+  '2025 Comparison Defense'
+),
+(
+  'Devon Witherspoon made consecutive Pro Bowls to start his career. How many Seahawks have done this before him?',
+  '2',
+  '3',
+  '4',
+  '5',
+  'c',
+  'hard',
+  '2025 Comparison Defense'
+),
+(
+  'How many total sacks did Boye Mafe have in the 2025 regular season?',
+  '4.0',
+  '6.0',
+  '8.0',
+  '10.0',
+  'b',
+  'easy',
+  '2025 Comparison Defense'
+),
+(
+  'What jersey number does Leonard Williams wear?',
+  '#91',
+  '#95',
+  '#97',
+  '#99',
+  'd',
+  'easy',
+  '2025 Comparison Defense'
+),
+(
+  'Which Seahawks defender led all cornerbacks in total pressures (10) in 2025?',
+  'Tariq Woolen',
+  'Devon Witherspoon',
+  'Tre Brown',
+  'Michael Jackson',
+  'b',
+  'medium',
+  '2025 Comparison Defense'
+)
+ON CONFLICT DO NOTHING;
+
+-- ============================================
 -- DONE! Data seeded successfully.
 --
 -- Summary:
--- - 13 Players (6 current 2025, 2 comparison QBs, 5 SB heroes)
--- - 26 Trivia Questions across 5 categories:
+-- - 17 Players:
+--   * 2025 Seahawks Offense (5): Darnold, JSN, Walker, Myers, Dickson
+--   * 2025 Seahawks Defense (4): Witherspoon, Mafe, Williams, Love
+--   * 2025 Seahawks Coach (1): Macdonald
+--   * 2025 Comparison QBs (2): Maye, Stafford
+--   * Super Bowl XLVIII Heroes (6): Wilson, Lynch, Sherman, Smith, Thomas, Chancellor
+--   * Super Bowl XLIX Context (1): Brady
+--   * Hall of Fame Legends (4): Largent, Jones, Kennedy, Easley
+-- - 40 Trivia Questions across 7 categories:
 --   * 2025 Season Stats (8)
 --   * 2025 Seahawks Stars (6)
+--   * 2025 Comparison QBs (6) - NEW
+--   * 2025 Comparison Defense (8) - NEW
 --   * Seahawks Hall of Fame (6)
 --   * Super Bowl Connections (6)
 -- ============================================
