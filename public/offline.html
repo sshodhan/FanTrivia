@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#001f3f">
+  <title>Offline - Hawktrivia</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: #001f3f;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 32px;
+      color: #69BE28;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    p {
+      color: #a5acaf;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .retry-btn {
+      display: inline-block;
+      background-color: #69BE28;
+      color: #001f3f;
+      font-size: 16px;
+      font-weight: bold;
+      padding: 16px 32px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: transform 0.2s, opacity 0.2s;
+    }
+
+    .retry-btn:hover {
+      opacity: 0.9;
+    }
+
+    .retry-btn:active {
+      transform: scale(0.98);
+    }
+
+    .status {
+      margin-top: 24px;
+      font-size: 14px;
+      color: #a5acaf;
+    }
+
+    .status.online {
+      color: #69BE28;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .checking {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📶</div>
+    <h1>You're Offline</h1>
+    <p>
+      It looks like you've lost your internet connection.
+      Don't worry - your progress is saved and will sync when you're back online.
+    </p>
+    <button class="retry-btn" onclick="checkConnection()">
+      Try Again
+    </button>
+    <div class="status" id="status">
+      Waiting for connection...
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+
+    function checkConnection() {
+      statusEl.textContent = 'Checking connection...';
+      statusEl.className = 'status checking';
+
+      fetch('/', { method: 'HEAD', cache: 'no-store' })
+        .then(() => {
+          statusEl.textContent = 'Connection restored!';
+          statusEl.className = 'status online';
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        })
+        .catch(() => {
+          statusEl.textContent = 'Still offline. Try again in a moment.';
+          statusEl.className = 'status';
+        });
+    }
+
+    // Check for connection automatically
+    window.addEventListener('online', () => {
+      statusEl.textContent = 'Connection detected! Reloading...';
+      statusEl.className = 'status online';
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    });
+
+    // Periodically check connection
+    setInterval(() => {
+      if (navigator.onLine) {
+        checkConnection();
+      }
+    }, 10000);
+  </script>
+</body>
+</html>
