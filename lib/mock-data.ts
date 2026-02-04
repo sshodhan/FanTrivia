@@ -326,7 +326,7 @@ export const sampleQuestions = [
 export const getQuestionsByCategory = (category: string) =>
   sampleQuestions.filter(q => q.category === category)
 
-// Demo players
+// Demo players with full baseball card data
 export const samplePlayers = [
   {
     id: 'demo-1',
@@ -334,9 +334,17 @@ export const samplePlayers = [
     jersey_number: 3,
     position: 'Quarterback',
     image_url: null,
-    stats: { passing_yards: 206, touchdowns: 2, passer_rating: 123.1 },
+    stats: { 'Passing Yards': '206', 'Touchdowns': '2', 'Completion %': '72.4%', 'QBR': '123.1' },
+    trivia: [
+      'Became the 2nd Black QB to win a Super Bowl',
+      'Led game-opening 80-yard TD drive in 12 plays',
+      'Threw TD passes to Jermaine Kearse and Doug Baldwin',
+      'At 25, one of the youngest QBs to win a championship',
+    ],
+    bio: 'Super Bowl XLVIII Champion QB',
     super_bowl_highlight: 'Led the Seahawks to a 43-8 victory in Super Bowl XLVIII',
     display_order: 1,
+    is_active: true,
   },
   {
     id: 'demo-2',
@@ -344,9 +352,17 @@ export const samplePlayers = [
     jersey_number: 24,
     position: 'Running Back',
     image_url: null,
-    stats: { rushing_yards: 39, touchdowns: 1, carries: 15 },
+    stats: { 'Rushing Yards': '39', 'Touchdowns': '1', 'Receptions': '2', 'Total Yards': '52' },
+    trivia: [
+      'Scored on a powerful 1-yard TD run in the 3rd quarter',
+      'Known as Beast Mode for his punishing running style',
+      'Had the iconic Beast Quake run in 2011 playoffs',
+      'Fan favorite who loved Skittles',
+    ],
+    bio: 'Beast Mode - Super Bowl Champion',
     super_bowl_highlight: 'Beast Mode touchdown run in Super Bowl XLVIII',
     display_order: 2,
+    is_active: true,
   },
   {
     id: 'demo-3',
@@ -354,9 +370,17 @@ export const samplePlayers = [
     jersey_number: 25,
     position: 'Cornerback',
     image_url: null,
-    stats: { interceptions: 8, passes_defended: 16 },
+    stats: { 'Tackles': '3', 'Pass Deflections': '2', 'Interceptions': '0', 'QB Rating Allowed': '52.1' },
+    trivia: [
+      'Made the famous tip play to seal 2013 NFC Championship',
+      '3-time First-Team All-Pro cornerback',
+      'Stanford graduate with degree in Communications',
+      'Led the Legion of Boom secondary',
+    ],
+    bio: 'Legion of Boom - All-Pro Corner',
     super_bowl_highlight: 'Key interception sealing NFC Championship',
     display_order: 3,
+    is_active: true,
   },
   {
     id: 'demo-4',
@@ -364,9 +388,17 @@ export const samplePlayers = [
     jersey_number: 53,
     position: 'Linebacker',
     image_url: null,
-    stats: { tackles: 10, interceptions: 1, forced_fumbles: 1 },
+    stats: { 'Tackles': '10', 'Interceptions': '1', 'INT Return Yards': '69', 'Fumble Recovery': '1' },
+    trivia: [
+      'Named Super Bowl XLVIII MVP',
+      'Returned an interception 69 yards for a touchdown',
+      'Also recovered a fumble in the game',
+      'Unsung hero who rose to the biggest moment',
+    ],
+    bio: 'Super Bowl XLVIII MVP',
     super_bowl_highlight: 'Super Bowl XLVIII MVP with pick-six',
     display_order: 4,
+    is_active: true,
   },
   {
     id: 'demo-5',
@@ -374,9 +406,17 @@ export const samplePlayers = [
     jersey_number: 29,
     position: 'Safety',
     image_url: null,
-    stats: { interceptions: 5, tackles: 105 },
+    stats: { 'Tackles': '5', 'Interceptions': '0', 'Pass Deflections': '2', 'QB Hits': '1' },
+    trivia: [
+      '3-time First-Team All-Pro safety',
+      'Fastest safety in the Legion of Boom',
+      '5 Pro Bowl selections with Seattle',
+      'Elite ball hawk and center fielder',
+    ],
+    bio: 'Legion of Boom - Elite Free Safety',
     super_bowl_highlight: 'Legion of Boom leader, 2 interceptions in playoffs',
     display_order: 5,
+    is_active: true,
   },
   {
     id: 'demo-6',
@@ -384,9 +424,17 @@ export const samplePlayers = [
     jersey_number: 31,
     position: 'Safety',
     image_url: null,
-    stats: { tackles: 99, forced_fumbles: 3 },
+    stats: { 'Tackles': '7', 'Forced Fumbles': '1', 'Pass Deflections': '1', 'TFL': '1' },
+    trivia: [
+      'Known as Bam Bam Kam for devastating hits',
+      '4-time Pro Bowl selection',
+      'Key enforcer of the Legion of Boom',
+      'Forced crucial fumble in Super Bowl',
+    ],
+    bio: 'Legion of Boom - The Enforcer',
     super_bowl_highlight: 'Devastating hits and forced fumbles',
     display_order: 6,
+    is_active: true,
   },
 ]
 

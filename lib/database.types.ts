@@ -226,7 +226,8 @@ export interface Player {
   jersey_number: number
   position: string
   image_url: string | null
-  stats: Json | null
+  stats: Record<string, string | number> | null  // Flexible key-value stats
+  trivia: string[] | null                        // Array of trivia facts
   bio: string | null
   super_bowl_highlight: string | null
   display_order: number

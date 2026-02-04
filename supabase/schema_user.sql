@@ -124,7 +124,8 @@ CREATE TABLE players (
   jersey_number INTEGER NOT NULL,
   position TEXT NOT NULL,
   image_url TEXT,
-  stats JSONB,
+  stats JSONB,                    -- Flexible key-value stats: {"Passing Yards": "206", "Touchdowns": "2"}
+  trivia JSONB,                   -- Array of trivia facts: ["Fact 1", "Fact 2", "Fact 3"]
   bio TEXT,
   super_bowl_highlight TEXT,
   display_order INTEGER DEFAULT 0,
@@ -270,13 +271,49 @@ $$ LANGUAGE plpgsql STABLE;
 -- ============================================
 -- STEP 11: Seed Data - Super Bowl Heroes
 -- ============================================
-INSERT INTO players (name, jersey_number, position, display_order, super_bowl_highlight) VALUES
-('Russell Wilson', 3, 'Quarterback', 1, 'Led the Seahawks to a 43-8 victory in Super Bowl XLVIII'),
-('Marshawn Lynch', 24, 'Running Back', 2, 'Beast Mode touchdown run in Super Bowl XLVIII'),
-('Richard Sherman', 25, 'Cornerback', 3, 'Key interception sealing NFC Championship'),
-('Malcolm Smith', 53, 'Linebacker', 4, 'Super Bowl XLVIII MVP with pick-six'),
-('Earl Thomas', 29, 'Safety', 5, 'Legion of Boom leader, 2 interceptions in playoffs'),
-('Kam Chancellor', 31, 'Safety', 6, 'Devastating hits and forced fumbles')
+INSERT INTO players (name, jersey_number, position, display_order, super_bowl_highlight, bio, stats, trivia) VALUES
+(
+  'Russell Wilson', 3, 'Quarterback', 1,
+  'Led the Seahawks to a 43-8 victory in Super Bowl XLVIII',
+  'Super Bowl XLVIII Champion QB',
+  '{"Passing Yards": "206", "Touchdowns": "2", "Completion %": "72.4%", "QBR": "123.1"}'::jsonb,
+  '["Became the 2nd Black QB to win a Super Bowl", "Led game-opening 80-yard TD drive in 12 plays", "Threw TD passes to Jermaine Kearse and Doug Baldwin", "At 25, one of the youngest QBs to win a championship"]'::jsonb
+),
+(
+  'Marshawn Lynch', 24, 'Running Back', 2,
+  'Beast Mode touchdown run in Super Bowl XLVIII',
+  'Beast Mode - Super Bowl Champion',
+  '{"Rushing Yards": "39", "Touchdowns": "1", "Receptions": "2", "Total Yards": "52"}'::jsonb,
+  '["Scored on a powerful 1-yard TD run in the 3rd quarter", "Known as Beast Mode for his punishing running style", "Had the iconic Beast Quake run in 2011 playoffs", "Fan favorite who loved Skittles"]'::jsonb
+),
+(
+  'Richard Sherman', 25, 'Cornerback', 3,
+  'Key interception sealing NFC Championship',
+  'Legion of Boom - All-Pro Corner',
+  '{"Tackles": "3", "Pass Deflections": "2", "Interceptions": "0", "QB Rating Allowed": "52.1"}'::jsonb,
+  '["Made the famous tip play to seal 2013 NFC Championship", "3-time First-Team All-Pro cornerback", "Stanford graduate with degree in Communications", "Led the Legion of Boom secondary"]'::jsonb
+),
+(
+  'Malcolm Smith', 53, 'Linebacker', 4,
+  'Super Bowl XLVIII MVP with pick-six',
+  'Super Bowl XLVIII MVP',
+  '{"Tackles": "10", "Interceptions": "1", "INT Return Yards": "69", "Fumble Recovery": "1"}'::jsonb,
+  '["Named Super Bowl XLVIII MVP", "Returned an interception 69 yards for a touchdown", "Also recovered a fumble in the game", "Unsung hero who rose to the biggest moment"]'::jsonb
+),
+(
+  'Earl Thomas', 29, 'Safety', 5,
+  'Legion of Boom leader, 2 interceptions in playoffs',
+  'Legion of Boom - Elite Free Safety',
+  '{"Tackles": "5", "Interceptions": "0", "Pass Deflections": "2", "QB Hits": "1"}'::jsonb,
+  '["3-time First-Team All-Pro safety", "Fastest safety in the Legion of Boom", "5 Pro Bowl selections with Seattle", "Elite ball hawk and center fielder"]'::jsonb
+),
+(
+  'Kam Chancellor', 31, 'Safety', 6,
+  'Devastating hits and forced fumbles',
+  'Legion of Boom - The Enforcer',
+  '{"Tackles": "7", "Forced Fumbles": "1", "Pass Deflections": "1", "TFL": "1"}'::jsonb,
+  '["Known as Bam Bam Kam for devastating hits", "4-time Pro Bowl selection", "Key enforcer of the Legion of Boom", "Forced crucial fumble in Super Bowl"]'::jsonb
+)
 ON CONFLICT DO NOTHING;
 
 -- ============================================

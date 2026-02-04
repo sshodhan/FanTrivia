@@ -155,7 +155,8 @@ CREATE TABLE players (
   jersey_number INTEGER NOT NULL,
   position TEXT NOT NULL,
   image_url TEXT,
-  stats JSONB,
+  stats JSONB,                    -- Flexible key-value stats: {"Passing Yards": "206", "Touchdowns": "2"}
+  trivia JSONB,                   -- Array of trivia facts: ["Fact 1", "Fact 2", "Fact 3"]
   bio TEXT,
   super_bowl_highlight TEXT,
   display_order INTEGER DEFAULT 0,
