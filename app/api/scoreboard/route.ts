@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     // Build query for aggregated scores
     let query = supabase
       .from('scores')
-      .select('team_id, points_earned, streak_bonus, day_identifier')
+      .select('team_id, points_earned, streak_bonus, day_identifier, is_correct, answered_at')
 
     if (dayFilter) {
       query = query.eq('day_identifier', dayFilter)
@@ -108,21 +108,46 @@ export async function GET(request: NextRequest) {
       totalPoints: number
       daysPlayed: Set<string>
       bestStreak: number
+      allScores: typeof scores
     }>()
 
     for (const score of scores || []) {
       const existing = teamScores.get(score.team_id) || {
         totalPoints: 0,
         daysPlayed: new Set<string>(),
-        bestStreak: 0
+        bestStreak: 0,
+        allScores: []
       }
 
       existing.totalPoints += score.points_earned + score.streak_bonus
       if (score.day_identifier) {
         existing.daysPlayed.add(score.day_identifier)
       }
+      existing.allScores.push(score)
 
       teamScores.set(score.team_id, existing)
+    }
+
+    // Calculate best streak for each team
+    for (const stats of teamScores.values()) {
+      let bestStreak = 0
+      let currentStreak = 0
+
+      // Sort scores by answered_at chronologically
+      const sortedScores = [...stats.allScores].sort(
+        (a, b) => new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
+      )
+
+      for (const score of sortedScores) {
+        if (score.is_correct) {
+          currentStreak++
+          bestStreak = Math.max(bestStreak, currentStreak)
+        } else {
+          currentStreak = 0
+        }
+      }
+
+      stats.bestStreak = bestStreak
     }
 
     // Build leaderboard
