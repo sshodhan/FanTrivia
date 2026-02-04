@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { samplePhotos } from '@/lib/mock-data';
-import { useTeam } from '@/lib/team-context';
+import { useUser } from '@/lib/user-context';
 import type { Photo } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,7 +12,7 @@ interface PhotoWallProps {
 }
 
 export function PhotoWall({ onBack }: PhotoWallProps) {
-  const { team } = useTeam();
+  const { user } = useUser();
   const [photos, setPhotos] = useState<Photo[]>(samplePhotos);
   const [showUpload, setShowUpload] = useState(false);
   const [caption, setCaption] = useState('');
@@ -24,18 +24,18 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   };
 
   const handleUpload = () => {
-    if (!team || !caption.trim()) return;
-    
+    if (!user || !caption.trim()) return;
+
     const newPhoto: Photo = {
       id: `photo_${Date.now()}`,
-      teamId: team.id,
-      teamName: team.name,
+      teamId: user.username,
+      teamName: user.username,
       imageUrl: '/photos/placeholder.jpg',
       caption: caption.trim(),
       likes: 0,
       createdAt: new Date().toISOString(),
     };
-    
+
     setPhotos([newPhoto, ...photos]);
     setCaption('');
     setShowUpload(false);
@@ -69,7 +69,7 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
             Photo Wall
           </h1>
         </div>
-        {team && (
+        {user && (
           <Button
             onClick={() => setShowUpload(true)}
             size="sm"

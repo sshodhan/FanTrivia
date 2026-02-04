@@ -3,21 +3,22 @@
 import React from "react"
 
 import { useState, useRef } from 'react';
-import { useTeam } from '@/lib/team-context';
+import { useUser } from '@/lib/user-context';
 import { teamAvatars, suggestedTeamNames } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
+import type { AvatarId } from '@/lib/database.types';
 
 interface EntryScreenProps {
   onStartTrivia: () => void;
 }
 
 export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
-  const { team, setTeam } = useTeam();
-  const [teamName, setTeamName] = useState(team?.name || '');
-  const [selectedAvatar, setSelectedAvatar] = useState(team?.imageUrl || teamAvatars[0].id);
+  const { user, registerUser, isLoading } = useUser();
+  const [username, setUsername] = useState(user?.username || '');
+  const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(user?.avatar || teamAvatars[0].id);
   const [error, setError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -55,32 +56,38 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
     scrollRef.current.scrollLeft += e.deltaY;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!teamName.trim()) {
-      setError('Please enter a team name');
-      return;
-    }
-    
-    if (teamName.trim().length < 2) {
-      setError('Team name must be at least 2 characters');
+
+    const trimmedUsername = username.trim();
+
+    if (!trimmedUsername) {
+      setError('Please enter a username');
       return;
     }
 
-    const newTeam = {
-      id: team?.id || `team_${Date.now()}`,
-      name: teamName.trim(),
-      imageUrl: selectedAvatar,
-      createdAt: team?.createdAt || new Date().toISOString(),
-    };
-    
-    setTeam(newTeam);
-    onStartTrivia();
+    if (trimmedUsername.length < 2) {
+      setError('Username must be at least 2 characters');
+      return;
+    }
+
+    if (trimmedUsername.length > 30) {
+      setError('Username must be 30 characters or less');
+      return;
+    }
+
+    // Call the API to register
+    const result = await registerUser(trimmedUsername, selectedAvatar);
+
+    if (result.success) {
+      onStartTrivia();
+    } else {
+      setError(result.error || 'Registration failed');
+    }
   };
 
   const handleSuggestionClick = (name: string) => {
-    setTeamName(name);
+    setUsername(name);
     setError('');
   };
 
@@ -103,14 +110,14 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
 
       {/* Registration Form */}
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-        {/* Team Name Section */}
+        {/* Username Section */}
         <div className="space-y-2">
-          <label htmlFor="teamName" className="block text-sm font-semibold text-foreground">
-            Team Name
+          <label htmlFor="username" className="block text-sm font-semibold text-foreground">
+            Username
           </label>
-          
+
           {/* Suggested Names - Horizontal Scroll */}
-          <div 
+          <div
             ref={scrollRef}
             className={cn(
               "flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1",
@@ -129,7 +136,7 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
                 onClick={() => handleSuggestionClick(name)}
                 className={cn(
                   'flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
-                  teamName === name
+                  username === name
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-foreground border-border hover:border-primary/50'
                 )}
@@ -138,19 +145,20 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
               </button>
             ))}
           </div>
-          
+
           <p className="text-xs text-muted-foreground">Or enter your own:</p>
           <Input
-            id="teamName"
+            id="username"
             type="text"
-            placeholder="Enter your team name..."
-            value={teamName}
+            placeholder="Enter your username..."
+            value={username}
             onChange={(e) => {
-              setTeamName(e.target.value);
+              setUsername(e.target.value);
               setError('');
             }}
             className="bg-card border-border text-foreground placeholder:text-muted-foreground h-12 text-base"
             maxLength={30}
+            disabled={isLoading}
           />
           {error && (
             <p className="text-destructive text-sm">{error}</p>
@@ -191,9 +199,17 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
         {/* Start Button */}
         <Button
           type="submit"
-          className="w-full h-12 text-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-xl"
+          disabled={isLoading}
+          className="w-full h-12 text-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-xl disabled:opacity-50"
         >
-          START TRIVIA
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              REGISTERING...
+            </>
+          ) : (
+            'START TRIVIA'
+          )}
         </Button>
       </form>
 
