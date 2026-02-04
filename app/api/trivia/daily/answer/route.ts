@@ -182,10 +182,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update user's current streak
+    // Update user's current streak and total points
+    const pointsToAdd = points + streakBonus
     await supabase
       .from('users')
-      .update({ current_streak: newStreak })
+      .update({ 
+        current_streak: newStreak,
+        total_points: user.total_points + pointsToAdd
+      })
       .eq('username', username)
 
     // Get updated total points
