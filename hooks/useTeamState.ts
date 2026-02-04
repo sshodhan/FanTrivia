@@ -6,48 +6,48 @@ import type { Team } from '@/lib/database.types'
 
 const STORAGE_KEYS = {
   team: 'hawktrivia_team',
-  session: 'hawktrivia_session',
+  token: 'hawktrivia_token',
   todayPlayed: 'hawktrivia_today_played',
   playedDate: 'hawktrivia_played_date'
 }
 
-interface TeamSessionState {
+interface TeamStateData {
   team: Team | null
-  sessionToken: string | null
+  teamToken: string | null
   isLoading: boolean
   error: string | null
   todayPlayed: boolean
   deviceFingerprint: string | null
 }
 
-interface TeamSessionActions {
+interface TeamStateActions {
   registerTeam: (name: string, imageUrl?: string, isPresetImage?: boolean) => Promise<{ success: boolean; error?: string }>
   updateTeam: (updates: { name?: string; image_url?: string; is_preset_image?: boolean }) => Promise<{ success: boolean; error?: string }>
-  clearSession: () => void
+  clearTeamState: () => void
   markTodayPlayed: () => void
-  refreshSession: () => Promise<void>
+  refreshTeamState: () => Promise<void>
 }
 
-export function useTeamSession(): TeamSessionState & TeamSessionActions {
-  const [state, setState] = useState<TeamSessionState>({
+export function useTeamState(): TeamStateData & TeamStateActions {
+  const [state, setState] = useState<TeamStateData>({
     team: null,
-    sessionToken: null,
+    teamToken: null,
     isLoading: true,
     error: null,
     todayPlayed: false,
     deviceFingerprint: null
   })
 
-  // Initialize session from localStorage
+  // Initialize from localStorage
   useEffect(() => {
-    async function initSession() {
+    async function initTeamState() {
       try {
         // Get device fingerprint
         const fingerprint = await getDeviceFingerprint()
 
         // Load stored data
         const storedTeam = localStorage.getItem(STORAGE_KEYS.team)
-        const storedSession = localStorage.getItem(STORAGE_KEYS.session)
+        const storedToken = localStorage.getItem(STORAGE_KEYS.token)
         const storedTodayPlayed = localStorage.getItem(STORAGE_KEYS.todayPlayed)
         const storedPlayedDate = localStorage.getItem(STORAGE_KEYS.playedDate)
 
@@ -64,14 +64,14 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
           localStorage.removeItem(STORAGE_KEYS.playedDate)
         }
 
-        if (storedTeam && storedSession) {
+        if (storedTeam && storedToken) {
           team = JSON.parse(storedTeam) as Team
 
-          // Validate session with server (optional, for sync)
+          // Validate with server (optional, for sync)
           try {
-            const response = await fetch('/api/teams/session', {
+            const response = await fetch('/api/teams/state', {
               headers: {
-                'Authorization': `Bearer ${storedSession}`
+                'Authorization': `Bearer ${storedToken}`
               }
             })
 
@@ -82,36 +82,36 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
                 localStorage.setItem(STORAGE_KEYS.team, JSON.stringify(team))
               }
             } else if (response.status === 401) {
-              // Invalid session, clear local data
+              // Invalid token, clear local data
               localStorage.removeItem(STORAGE_KEYS.team)
-              localStorage.removeItem(STORAGE_KEYS.session)
+              localStorage.removeItem(STORAGE_KEYS.token)
               team = null
             }
           } catch {
             // Network error, use local data
-            console.warn('Could not validate session with server')
+            console.warn('Could not validate with server')
           }
         }
 
         setState({
           team,
-          sessionToken: storedSession,
+          teamToken: storedToken,
           isLoading: false,
           error: null,
           todayPlayed,
           deviceFingerprint: fingerprint
         })
       } catch (error) {
-        console.error('Session init error:', error)
+        console.error('Team state init error:', error)
         setState(prev => ({
           ...prev,
           isLoading: false,
-          error: 'Failed to initialize session'
+          error: 'Failed to initialize'
         }))
       }
     }
 
-    initSession()
+    initTeamState()
   }, [])
 
   // Register new team
@@ -149,14 +149,14 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
         return { success: false, error: data.error }
       }
 
-      // Store team and session
+      // Store team and token
       localStorage.setItem(STORAGE_KEYS.team, JSON.stringify(data.team))
-      localStorage.setItem(STORAGE_KEYS.session, data.session_token)
+      localStorage.setItem(STORAGE_KEYS.token, data.session_token)
 
       setState(prev => ({
         ...prev,
         team: data.team,
-        sessionToken: data.session_token,
+        teamToken: data.session_token,
         isLoading: false,
         error: null,
         deviceFingerprint: fingerprint
@@ -178,18 +178,18 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
   const updateTeam = useCallback(async (
     updates: { name?: string; image_url?: string; is_preset_image?: boolean }
   ): Promise<{ success: boolean; error?: string }> => {
-    if (!state.sessionToken) {
+    if (!state.teamToken) {
       return { success: false, error: 'Not logged in' }
     }
 
     try {
       setState(prev => ({ ...prev, isLoading: true }))
 
-      const response = await fetch('/api/teams/session', {
+      const response = await fetch('/api/teams/state', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.sessionToken}`
+          'Authorization': `Bearer ${state.teamToken}`
         },
         body: JSON.stringify(updates)
       })
@@ -227,19 +227,19 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
       setState(prev => ({ ...prev, isLoading: false }))
       return { success: false, error: 'Update failed' }
     }
-  }, [state.sessionToken])
+  }, [state.teamToken])
 
-  // Clear session
-  const clearSession = useCallback(() => {
+  // Clear state
+  const clearTeamState = useCallback(() => {
     localStorage.removeItem(STORAGE_KEYS.team)
-    localStorage.removeItem(STORAGE_KEYS.session)
+    localStorage.removeItem(STORAGE_KEYS.token)
     localStorage.removeItem(STORAGE_KEYS.todayPlayed)
     localStorage.removeItem(STORAGE_KEYS.playedDate)
 
     setState(prev => ({
       ...prev,
       team: null,
-      sessionToken: null,
+      teamToken: null,
       todayPlayed: false
     }))
   }, [])
@@ -253,14 +253,14 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
     setState(prev => ({ ...prev, todayPlayed: true }))
   }, [])
 
-  // Refresh session (re-validate with server)
-  const refreshSession = useCallback(async () => {
-    if (!state.sessionToken) return
+  // Refresh (re-validate with server)
+  const refreshTeamState = useCallback(async () => {
+    if (!state.teamToken) return
 
     try {
-      const response = await fetch('/api/teams/session', {
+      const response = await fetch('/api/teams/state', {
         headers: {
-          'Authorization': `Bearer ${state.sessionToken}`
+          'Authorization': `Bearer ${state.teamToken}`
         }
       })
 
@@ -272,16 +272,19 @@ export function useTeamSession(): TeamSessionState & TeamSessionActions {
         }
       }
     } catch (error) {
-      console.warn('Failed to refresh session:', error)
+      console.warn('Failed to refresh:', error)
     }
-  }, [state.sessionToken])
+  }, [state.teamToken])
 
   return {
     ...state,
     registerTeam,
     updateTeam,
-    clearSession,
+    clearTeamState,
     markTodayPlayed,
-    refreshSession
+    refreshTeamState
   }
 }
+
+// Legacy export for backward compatibility
+export { useTeamState as useTeamSession }

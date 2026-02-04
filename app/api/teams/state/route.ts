@@ -3,11 +3,11 @@ import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '')
+    const teamToken = request.headers.get('authorization')?.replace('Bearer ', '')
 
-    if (!sessionToken) {
+    if (!teamToken) {
       return NextResponse.json(
-        { error: 'No session token provided' },
+        { error: 'No token provided' },
         { status: 401 }
       )
     }
@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
     // Demo mode
     if (isDemoMode()) {
       // In demo mode, return a mock validation
-      if (sessionToken.startsWith('demo_ses_')) {
+      if (teamToken.startsWith('demo_ses_')) {
         return NextResponse.json({
           valid: true,
           team: null, // Client should use local storage in demo mode
-          message: 'Demo mode - session accepted'
+          message: 'Demo mode - accepted'
         })
       }
       return NextResponse.json(
-        { valid: false, error: 'Invalid session' },
+        { valid: false, error: 'Invalid token' },
         { status: 401 }
       )
     }
@@ -36,16 +36,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Validate session token
+    // Validate token
     const { data: team, error } = await supabase
       .from('teams')
       .select('*')
-      .eq('session_token', sessionToken)
+      .eq('session_token', teamToken)
       .single()
 
     if (error || !team) {
       return NextResponse.json(
-        { valid: false, error: 'Invalid or expired session' },
+        { valid: false, error: 'Invalid or expired token' },
         { status: 401 }
       )
     }
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Session validation error:', error)
+    console.error('Team state validation error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -73,11 +73,11 @@ export async function GET(request: NextRequest) {
 // Update team info (name, image)
 export async function PATCH(request: NextRequest) {
   try {
-    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '')
+    const teamToken = request.headers.get('authorization')?.replace('Bearer ', '')
 
-    if (!sessionToken) {
+    if (!teamToken) {
       return NextResponse.json(
-        { error: 'No session token provided' },
+        { error: 'No token provided' },
         { status: 401 }
       )
     }
@@ -101,16 +101,16 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    // Get team by session token
+    // Get team by token
     const { data: team, error: fetchError } = await supabase
       .from('teams')
       .select('id')
-      .eq('session_token', sessionToken)
+      .eq('session_token', teamToken)
       .single()
 
     if (fetchError || !team) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'Invalid token' },
         { status: 401 }
       )
     }
@@ -160,7 +160,7 @@ export async function PATCH(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Session update error:', error)
+    console.error('Team state update error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminSecret, createAdminSession } from '@/lib/adminAccess'
+import { validateAdminSecret, createAdminToken } from '@/lib/adminAccess'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,16 +20,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create session
-    const sessionToken = createAdminSession()
+    // Create token
+    const token = createAdminToken()
 
     return NextResponse.json({
       success: true,
-      token: sessionToken
+      token
     })
 
   } catch (error) {
-    console.error('Admin login error:', error)
+    console.error('Admin verify error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

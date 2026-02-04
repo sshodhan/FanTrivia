@@ -85,7 +85,7 @@ export function requireAdmin(request: NextRequest): {
   const token = header.replace('Bearer ', '')
 
   // Validate against registered tokens only
-  // This ensures TTL enforcement - admins must use /api/admin/login
+  // This ensures TTL enforcement - admins must use /api/admin/verify
   if (validateAdminToken(token)) {
     return { authenticated: true }
   }
