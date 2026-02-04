@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminSecret, createAdminSession } from '@/lib/adminAuth'
+import { validateAdminSecret, createAdminSession } from '@/lib/adminAccess'
 
 export async function POST(request: NextRequest) {
   try {

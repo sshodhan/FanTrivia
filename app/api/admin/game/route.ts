@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdmin } from '@/lib/adminAccess'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
 import type { GameState, GameMode } from '@/lib/database.types'
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAuth'
+import { requireAdmin } from '@/lib/adminAccess'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
