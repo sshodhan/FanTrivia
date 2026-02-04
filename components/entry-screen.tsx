@@ -20,6 +20,40 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
   const [selectedAvatar, setSelectedAvatar] = useState(team?.imageUrl || teamAvatars[0].id);
   const [error, setError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  // Mouse drag handlers for horizontal scroll
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  // Convert vertical wheel to horizontal scroll
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!scrollRef.current) return;
+    e.preventDefault();
+    scrollRef.current.scrollLeft += e.deltaY;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +112,15 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
           {/* Suggested Names - Horizontal Scroll */}
           <div 
             ref={scrollRef}
-            className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1"
+            className={cn(
+              "flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1",
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            )}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onWheel={handleWheel}
           >
             {suggestedTeamNames.map((name) => (
               <button
