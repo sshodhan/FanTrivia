@@ -67,42 +67,51 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
       {/* Player Detail Modal */}
       {selectedPlayer && (
         <div 
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-3"
           onClick={() => setSelectedPlayer(null)}
         >
           <div 
-            className="bg-background w-full max-w-md max-h-[90vh] rounded-2xl overflow-hidden border-2 border-primary animate-in zoom-in-95 duration-200"
+            className="bg-background w-full max-w-md max-h-[95vh] rounded-2xl overflow-hidden border-2 border-primary animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Scrollable Content */}
-            <div className="overflow-y-auto max-h-[90vh]">
-              {/* Player Image Header */}
-              <div className="relative aspect-[4/3] bg-gradient-to-b from-muted to-card">
-                {/* Placeholder image with field background */}
-                <div className="absolute inset-0 bg-[url('/field-bg.jpg')] bg-cover bg-center opacity-50" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            <div className="overflow-y-auto max-h-[95vh]">
+              {/* Player Image Header - Taller full-bleed design */}
+              <div className="relative h-[55vh] min-h-[380px] bg-card">
+                {/* Full-bleed player image */}
+                <img 
+                  src={selectedPlayer.imageUrl}
+                  alt={selectedPlayer.name}
+                  className="absolute inset-0 w-full h-full object-cover object-top grayscale"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                 
                 {/* Jersey Number Badge */}
-                <div className="absolute top-4 right-4 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-primary-foreground font-bold text-lg">#{selectedPlayer.number}</span>
+                <div className="absolute top-4 right-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
+                  <span className="text-primary-foreground font-bold text-xl">#{selectedPlayer.number}</span>
                 </div>
                 
                 {/* Close Button */}
                 <button
                   onClick={() => setSelectedPlayer(null)}
-                  className="absolute top-4 right-20 w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                  className="absolute top-4 right-24 w-11 h-11 bg-muted-foreground/60 rounded-full flex items-center justify-center text-white hover:bg-muted-foreground/80 transition-colors z-10"
                   aria-label="Close"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
                   </svg>
                 </button>
                 
-                {/* Player Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-primary text-sm font-semibold uppercase tracking-wider">Super Bowl XLVIII</p>
-                  <h2 className="text-3xl font-bold text-foreground">{selectedPlayer.name}</h2>
-                  <p className="text-muted-foreground">{selectedPlayer.position}</p>
+                {/* Player Info Overlay - positioned at bottom of image */}
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-1">Super Bowl XLVIII</p>
+                  <h2 className="text-4xl font-bold text-foreground leading-tight">{selectedPlayer.name}</h2>
+                  <p className="text-muted-foreground text-lg">{selectedPlayer.position}</p>
                 </div>
               </div>
 
