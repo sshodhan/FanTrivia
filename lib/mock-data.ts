@@ -109,7 +109,7 @@ export const samplePlayers: Player[] = [
     name: 'Russell Wilson',
     number: 3,
     position: 'Quarterback',
-    imageUrl: '/players/wilson.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1761258772149-c0ba7e8db954?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbWVyaWNhbiUyMGZvb3RiYWxsJTIwcXVhcnRlcmJhY2slMjBhY3Rpb258ZW58MXx8fHwxNzcwMTk4MTUyfDA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Passing Yards', value: '206' },
       { label: 'Touchdowns', value: '2' },
@@ -129,7 +129,7 @@ export const samplePlayers: Player[] = [
     name: 'Marshawn Lynch',
     number: 24,
     position: 'Running Back',
-    imageUrl: '/players/lynch.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1593051531088-fd52df065aa2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHJ1bm5pbmclMjBiYWNrJTIwYXRobGV0ZXxlbnwxfHx8fDE3NzAxOTgxNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Rush Yards', value: '39' },
       { label: 'Touchdowns', value: '1' },
@@ -149,7 +149,7 @@ export const samplePlayers: Player[] = [
     name: 'Richard Sherman',
     number: 25,
     position: 'Cornerback',
-    imageUrl: '/players/sherman.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-7f5625e65404?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMGNvcm5lcmJhY2slMjBkZWZlbnNpdmUlMjBwbGF5ZXJ8ZW58MXx8fHwxNzcwMTk4MTUzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Tackles', value: '3' },
       { label: 'Pass Def', value: '2' },
@@ -169,7 +169,7 @@ export const samplePlayers: Player[] = [
     name: 'Malcolm Smith',
     number: 53,
     position: 'Linebacker',
-    imageUrl: '/players/smith.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-1ee84f192799?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMGxpbmViYWNrZXIlMjBhY3Rpb258ZW58MXx8fHwxNzcwMTk4MTUzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Tackles', value: '9' },
       { label: 'Interceptions', value: '1' },
@@ -189,7 +189,7 @@ export const samplePlayers: Player[] = [
     name: 'Earl Thomas',
     number: 29,
     position: 'Free Safety',
-    imageUrl: '/players/thomas.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1761258772151-355fcec6d882?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHBsYXllciUyMGRlZmVuc2UlMjBhdGhsZXRlfGVufDF8fHx8MTc3MDE5ODE1N3ww&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Tackles', value: '5' },
       { label: 'Pass Def', value: '1' },
@@ -209,7 +209,7 @@ export const samplePlayers: Player[] = [
     name: 'Kam Chancellor',
     number: 31,
     position: 'Strong Safety',
-    imageUrl: '/players/chancellor.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-1ee84f192799?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHN0cm9uZyUyMHNhZmV0eSUyMHRhY2tsZXxlbnwxfHx8fDE3NzAxOTgxNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Tackles', value: '7' },
       { label: 'Pass Def', value: '1' },
@@ -229,7 +229,7 @@ export const samplePlayers: Player[] = [
     name: 'Percy Harvin',
     number: 11,
     position: 'Wide Receiver',
-    imageUrl: '/players/harvin.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHdpZGUlMjByZWNlaXZlciUyMHNwcmludHxlbnwxfHx8fDE3NzAxOTgxNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'KR Yards', value: '87' },
       { label: 'KR TD', value: '1' },
@@ -249,7 +249,7 @@ export const samplePlayers: Player[] = [
     name: 'Doug Baldwin',
     number: 89,
     position: 'Wide Receiver',
-    imageUrl: '/players/baldwin.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHdpZGUlMjByZWNlaXZlciUyMGNhdGNofGVufDF8fHx8MTc3MDE5ODE1NHww&ixlib=rb-4.1.0&q=80&w=1080',
     stats: [
       { label: 'Receptions', value: '5' },
       { label: 'Yards', value: '66' },
