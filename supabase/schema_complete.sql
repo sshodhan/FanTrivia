@@ -106,21 +106,20 @@ CREATE TABLE daily_answers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES trivia_questions(id) ON DELETE CASCADE,
-  day_identifier TEXT,
+  day_identifier TEXT NOT NULL,
   selected_answer TEXT NOT NULL CHECK (selected_answer IN ('a', 'b', 'c', 'd')),
   is_correct BOOLEAN NOT NULL,
   points_earned INTEGER DEFAULT 0,
   streak_bonus INTEGER DEFAULT 0,
   time_taken_ms INTEGER,
-  answered_at TIMESTAMPTZ DEFAULT NOW()
+  answered_at TIMESTAMPTZ DEFAULT NOW(),
+  -- One answer per user per question per day
+  UNIQUE(username, question_id, day_identifier)
 );
-
--- Unique constraint: one answer per user per question per day
-CREATE UNIQUE INDEX idx_answers_unique_daily ON daily_answers(username, question_id, (answered_at::DATE));
 
 CREATE INDEX idx_answers_username ON daily_answers(username);
 CREATE INDEX idx_answers_day ON daily_answers(day_identifier);
-CREATE INDEX idx_answers_date ON daily_answers((answered_at::DATE));
+CREATE INDEX idx_answers_date ON daily_answers(answered_at);
 
 -- ============================================
 -- 6. PHOTO UPLOADS TABLE
