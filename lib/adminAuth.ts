@@ -84,12 +84,8 @@ export function requireAdmin(request: NextRequest): {
 
   const token = authHeader.replace('Bearer ', '')
 
-  // Check if it's the admin secret directly (for simple auth)
-  if (token === ADMIN_SECRET) {
-    return { authenticated: true }
-  }
-
-  // Check if it's a valid session token
+  // Validate against registered session tokens only
+  // This ensures TTL enforcement - admins must authenticate via /api/admin/login
   if (validateAdminSession(token)) {
     return { authenticated: true }
   }
