@@ -18,21 +18,22 @@ This document provides comprehensive documentation for the HawkTrivia database s
 
 ### Setting Up the Database
 
-1. **Create a Supabase Project** at [supabase.com](https://supabase.com)
-
-2. **Run the Complete Schema**:
+1. **Run the Complete Schema** (if not already done):
    - Go to **SQL Editor** in your Supabase dashboard
    - Copy and run `supabase/schema_complete.sql`
    - This creates all 10 tables with 51 trivia questions and 6 Super Bowl heroes
 
+2. **Validate Schema Setup**:
+   - Run `supabase/test_schema.sql` to verify all tables, functions, and triggers
+
 3. **Optional: Add 2025 Season Data**:
    - Run `supabase/seed_2025_data.sql` for additional players and 40 more trivia questions
 
-4. **Configure Environment Variables**:
+4. **Verify Environment Variables** in `.env.local`:
    ```bash
-   NEXT_PUBLIC_SUPABASE_URL=your-project-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # For admin operations
+   NEXT_PUBLIC_SUPABASE_URL=<your-project-url>
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
+   SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
    ```
 
 ---
@@ -185,7 +186,7 @@ Tracks individual user responses to trivia questions.
 | `id` | UUID (PK) | Answer ID |
 | `username` | TEXT (FK) | User who answered |
 | `question_id` | UUID (FK) | Question answered |
-| `day_identifier` | TEXT | Day context |
+| `day_identifier` | TEXT (NOT NULL) | Day context (e.g., 'day_minus_4') |
 | `selected_answer` | TEXT | User's choice (`a`, `b`, `c`, `d`) |
 | `is_correct` | BOOLEAN | Whether answer was correct |
 | `points_earned` | INTEGER | Base points earned |
@@ -193,7 +194,7 @@ Tracks individual user responses to trivia questions.
 | `time_taken_ms` | INTEGER | Response time in milliseconds |
 | `answered_at` | TIMESTAMPTZ | Answer timestamp |
 
-**Unique Constraint**: One answer per user per question per day (enforced via unique index).
+**Unique Constraint**: `UNIQUE(username, question_id, day_identifier)` - One answer per user per question per day.
 
 ---
 
@@ -307,23 +308,22 @@ Tracks which users liked which photos.
 ### User Registration Flow
 
 ```
-1. User enters username → Frontend calls POST /api/users
+1. User enters username → Frontend calls POST /api/register
 2. API inserts into `users` table (username, avatar, is_preset_image)
 3. API returns user data with initial stats (0 points, 0 streak)
-4. Frontend stores username in session
+4. Frontend stores username in localStorage
 ```
 
 ### Daily Trivia Flow
 
 ```
-1. Frontend calls GET /api/trivia/daily
+1. Frontend calls GET /api/trivia/daily (with x-username header)
 2. API reads `game_settings.current_day` to get day_identifier
-3. API fetches `daily_trivia_sets` where day_identifier matches
-4. API fetches questions from `trivia_questions` using question_ids
-5. API strips `correct_answer` before returning to frontend
-6. User answers → Frontend calls POST /api/trivia/submit
-7. API inserts into `daily_answers` with is_correct, points_earned
-8. Trigger auto-updates `users.total_points`
+3. API fetches questions from `trivia_questions` (is_active = true)
+4. API strips `correct_answer` before returning to frontend
+5. User answers → Frontend calls POST /api/trivia/daily/answer
+6. API inserts into `daily_answers` with is_correct, points_earned
+7. Trigger auto-updates `users.total_points`
 ```
 
 ### Live Game Flow (Admin Controlled)
@@ -343,7 +343,7 @@ Tracks which users liked which photos.
 ### Leaderboard Flow
 
 ```
-1. Frontend calls GET /api/leaderboard
+1. Frontend calls GET /api/scoreboard
 2. API calls get_leaderboard() function
 3. Function returns users ordered by total_points DESC
 4. Frontend displays with ranks, avatars, and scores
@@ -357,15 +357,15 @@ Tracks which users liked which photos.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/users` | POST | Register new user |
-| `/api/users/[username]` | GET | Get user profile |
+| `/api/register` | POST | Register new user |
+| `/api/register?username=X` | GET | Check if username exists |
 | `/api/trivia/daily` | GET | Get today's questions |
-| `/api/trivia/submit` | POST | Submit answer |
+| `/api/trivia/daily/answer` | POST | Submit answer |
 | `/api/trivia/live` | GET | Get live game state |
-| `/api/leaderboard` | GET | Get scoreboard |
+| `/api/scoreboard` | GET | Get leaderboard |
 | `/api/players` | GET | Get player profiles |
 | `/api/photos` | GET/POST | Photo gallery |
-| `/api/photos/[id]/like` | POST/DELETE | Like/unlike photo |
+| `/api/photos/[photoId]/like` | POST/DELETE | Like/unlike photo |
 
 ### Admin Endpoints (require auth header)
 
@@ -511,8 +511,10 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 |------|---------|
 | `supabase/schema_complete.sql` | Complete schema + 51 questions (run this first) |
 | `supabase/seed_2025_data.sql` | Extended 2025 data + 40 more questions (optional) |
+| `supabase/test_schema.sql` | Validation queries to verify schema setup |
 | `lib/database.types.ts` | TypeScript type definitions |
 | `lib/supabase.ts` | Supabase client initialization |
+| `FRONTEND_GUIDE.md` | Frontend integration guide with code examples |
 
 ---
 
