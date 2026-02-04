@@ -9,6 +9,17 @@ const teamStreaks = new Map<string, number>()
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authentication from headers
+    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '')
+    const teamId = request.headers.get('x-team-id')
+
+    if (!sessionToken || !teamId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json() as AnswerSubmissionRequest
     const { team_id, question_id, answer_index, time_taken_ms } = body
 
@@ -17,6 +28,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      )
+    }
+
+    // Verify that the team_id in body matches the authenticated team
+    if (team_id !== teamId) {
+      return NextResponse.json(
+        { error: 'Team ID mismatch' },
+        { status: 403 }
       )
     }
 
@@ -29,6 +48,14 @@ export async function POST(request: NextRequest) {
 
     // Demo mode
     if (isDemoMode()) {
+      // In demo mode, accept demo session tokens
+      if (!sessionToken.startsWith('demo_ses_')) {
+        return NextResponse.json(
+          { error: 'Invalid session token' },
+          { status: 401 }
+        )
+      }
+
       // Find question in sample data
       const question = sampleQuestions.find(q => q.id === question_id)
 
@@ -68,6 +95,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Database not available' },
         { status: 503 }
+      )
+    }
+
+    // Verify session token matches the team
+    const { data: team, error: sessionError } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('id', teamId)
+      .eq('session_token', sessionToken)
+      .single()
+
+    if (sessionError || !team) {
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
       )
     }
 
