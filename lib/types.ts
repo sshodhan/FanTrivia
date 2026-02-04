@@ -46,6 +46,12 @@ export interface Player {
   bio?: string;
   superBowlHighlight?: string;
   isActive: boolean;
+  stats: {
+    label: string;
+    value: string;
+  }[];
+  superBowlHighlight: string;
+  trivia: string[];
 }
 
 export interface Photo {

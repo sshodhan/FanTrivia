@@ -2,6 +2,7 @@ import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import "@/lib/error-tracking/client-logger"
 
 export const metadata: Metadata = {
   title: 'Hawktrivia - Seahawks Super Bowl Trivia',

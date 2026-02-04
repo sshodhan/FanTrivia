@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 interface AdminConsoleProps {
   onBack: () => void;
+  onResetFlow?: () => void;
 }
 
 type AdminTab = 'questions' | 'scores' | 'photos' | 'settings';
@@ -26,6 +27,7 @@ interface Question {
 }
 
 export function AdminConsole({ onBack }: AdminConsoleProps) {
+export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('questions');
   const [questions, setQuestions] = useState<Question[]>(sampleQuestions as Question[]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -220,7 +222,7 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
         )}
 
         {activeTab === 'settings' && (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-24">
             {/* Game Day Mode */}
             <div className="bg-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
@@ -268,6 +270,21 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
             <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
               Save Settings
             </Button>
+
+            {/* Reset User Flow */}
+            <div className="bg-card rounded-xl p-4 mt-6 border border-destructive/30">
+              <h3 className="font-bold text-foreground mb-2">Reset User Flow</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Clear your registration and return to the first screen. This will reset your team name and avatar selection.
+              </p>
+              <Button 
+                variant="outline"
+                onClick={onResetFlow}
+                className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                Reset to Registration Screen
+              </Button>
+            </div>
           </div>
         )}
       </div>

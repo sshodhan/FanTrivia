@@ -1,5 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
 // Environment variables
@@ -18,7 +17,7 @@ export const createSupabaseBrowserClient = () => {
     console.warn('Supabase is not configured. Using mock data.')
     return null
   }
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+  return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
 // Server client for API routes (using anon key)
@@ -26,12 +25,7 @@ export const createSupabaseServerClient = () => {
   if (!isSupabaseConfigured()) {
     return null
   }
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
+  return createClient<Database>(supabaseUrl, supabaseAnonKey)
 }
 
 // Admin client with service role for privileged operations
@@ -40,20 +34,15 @@ export const createSupabaseAdminClient = () => {
     console.warn('Supabase admin client not configured')
     return null
   }
-  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
+  return createClient<Database>(supabaseUrl, supabaseServiceKey)
 }
 
 // Singleton instances for browser use
-let browserClient: ReturnType<typeof createBrowserClient<Database>> | null = null
+let browserClient: SupabaseClient<Database> | null = null
 
 export const getSupabaseBrowserClient = () => {
   if (!browserClient && isSupabaseConfigured()) {
-    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+    browserClient = createClient<Database>(supabaseUrl, supabaseAnonKey)
   }
   return browserClient
 }

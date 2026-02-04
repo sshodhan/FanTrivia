@@ -349,6 +349,20 @@ export const samplePlayers = [
     super_bowl_highlight: 'Leading Seahawks to Super Bowl LX appearance',
     display_order: 1,
     is_active: true,
+    imageUrl: 'https://images.unsplash.com/photo-1761258772149-c0ba7e8db954?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbWVyaWNhbiUyMGZvb3RiYWxsJTIwcXVhcnRlcmJhY2slMjBhY3Rpb258ZW58MXx8fHwxNzcwMTk4MTUyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Passing Yards', value: '206' },
+      { label: 'Touchdowns', value: '2' },
+      { label: 'Completion %', value: '72.4%' },
+      { label: 'QBR', value: '123.1' },
+    ],
+    superBowlHighlight: 'Led the offense with precision passing and two touchdown throws.',
+    trivia: [
+      'Became the 2nd Black QB to win a Super Bowl',
+      'Led game-opening 80-yard TD drive in 12 plays',
+      'Threw TD passes to Jermaine Kearse and Doug Baldwin',
+      'At 25, one of the youngest QBs to win a championship',
+    ],
   },
   {
     id: '2025-jaxon-smith-njigba',
@@ -385,6 +399,20 @@ export const samplePlayers = [
     super_bowl_highlight: '4 rushing TDs in final two playoff games',
     display_order: 3,
     is_active: true,
+    imageUrl: 'https://images.unsplash.com/photo-1593051531088-fd52df065aa2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHJ1bm5pbmclMjBiYWNrJTIwYXRobGV0ZXxlbnwxfHx8fDE3NzAxOTgxNTJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Rush Yards', value: '39' },
+      { label: 'Touchdowns', value: '1' },
+      { label: 'Carries', value: '15' },
+      { label: 'Avg Yards', value: '2.6' },
+    ],
+    superBowlHighlight: 'Beast Mode powered through for a crucial touchdown run.',
+    trivia: [
+      'Scored on a 1-yard TD run in the 3rd quarter',
+      'Beast Mode nickname became iconic during playoff run',
+      'Had 5 receptions for 18 yards receiving',
+      'Key part of balanced offensive attack',
+    ],
   },
   // ============================================
   // 2025 SEAHAWKS DEFENSE
@@ -481,6 +509,20 @@ export const samplePlayers = [
     super_bowl_highlight: 'Led the Seahawks to a 43-8 victory in Super Bowl XLVIII',
     display_order: 10,
     is_active: false,
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-7f5625e65404?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMGNvcm5lcmJhY2slMjBkZWZlbnNpdmUlMjBwbGF5ZXJ8ZW58MXx8fHwxNzcwMTk4MTUzfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Tackles', value: '3' },
+      { label: 'Pass Def', value: '2' },
+      { label: 'INTs', value: '0' },
+      { label: 'QB Hits', value: '0' },
+    ],
+    superBowlHighlight: 'Locked down receivers as part of the Legion of Boom.',
+    trivia: [
+      'Helped hold Peyton Manning to just 1 passing TD',
+      'Part of secondary that forced 4 turnovers',
+      'Legion of Boom dominated Denver receivers',
+      'Stanford grad known for elite coverage skills',
+    ],
   },
   {
     id: 'sbxlviii-marshawn-lynch',
@@ -517,6 +559,20 @@ export const samplePlayers = [
     super_bowl_highlight: 'Super Bowl XLVIII MVP with pick-six',
     display_order: 12,
     is_active: false,
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-1ee84f192799?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMGxpbmViYWNrZXIlMjBhY3Rpb258ZW58MXx8fHwxNzcwMTk4MTUzfDA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Tackles', value: '9' },
+      { label: 'Interceptions', value: '1' },
+      { label: 'Touchdowns', value: '1' },
+      { label: 'Fumble Rec', value: '1' },
+    ],
+    superBowlHighlight: 'Super Bowl MVP with a pick-six and fumble recovery.',
+    trivia: [
+      'Won Super Bowl MVP as a little-known linebacker',
+      'Returned interception 69 yards for a TD',
+      'Recovered a Demaryius Thomas fumble',
+      'First linebacker to win SB MVP since 2003',
+    ],
   },
   {
     id: 'sbxlviii-richard-sherman',
@@ -553,6 +609,22 @@ export const samplePlayers = [
     super_bowl_highlight: 'Legion of Boom leader, 2 interceptions in playoffs',
     display_order: 14,
     is_active: false,
+    number: 29,
+    position: 'Free Safety',
+    imageUrl: 'https://images.unsplash.com/photo-1761258772151-355fcec6d882?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHBsYXllciUyMGRlZmVuc2UlMjBhdGhsZXRlfGVufDF8fHx8MTc3MDE5ODE1N3ww&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Tackles', value: '5' },
+      { label: 'Pass Def', value: '1' },
+      { label: 'INTs', value: '0' },
+      { label: 'Solo Tackles', value: '4' },
+    ],
+    superBowlHighlight: 'Patrolled the deep middle and disrupted Denver\'s passing game.',
+    trivia: [
+      'Centerfielder of the Legion of Boom defense',
+      'Elite range disrupted Manning\'s deep passing',
+      'First-team All-Pro selection that season',
+      'Texas native drafted in 2010 first round',
+    ],
   },
   {
     id: 'sbxlviii-kam-chancellor',
@@ -571,6 +643,22 @@ export const samplePlayers = [
     super_bowl_highlight: 'Devastating hits and forced fumbles',
     display_order: 15,
     is_active: false,
+    number: 31,
+    position: 'Strong Safety',
+    imageUrl: 'https://images.unsplash.com/photo-1547992454-1ee84f192799?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHN0cm9uZyUyMHNhZmV0eSUyMHRhY2tsZXxlbnwxfHx8fDE3NzAxOTgxNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Tackles', value: '7' },
+      { label: 'Pass Def', value: '1' },
+      { label: 'INTs', value: '0' },
+      { label: 'Solo Tackles', value: '5' },
+    ],
+    superBowlHighlight: 'Delivered bone-crushing hits that intimidated Denver receivers.',
+    trivia: [
+      'Known as "Bam Bam" for his physical play',
+      'Intimidated receivers across the middle',
+      'Key enforcer in Legion of Boom secondary',
+      'Virginia Tech product drafted in 2010',
+    ],
   },
   // ============================================
   // HALL OF FAME LEGENDS
@@ -628,6 +716,40 @@ export const samplePlayers = [
     super_bowl_highlight: 'Franchise defensive star',
     display_order: 22,
     is_active: false,
+    imageUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHdpZGUlMjByZWNlaXZlciUyMHNwcmludHxlbnwxfHx8fDE3NzAxOTgxNTR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'KR Yards', value: '87' },
+      { label: 'KR TD', value: '1' },
+      { label: 'Rec Yards', value: '45' },
+      { label: 'Receptions', value: '1' },
+    ],
+    superBowlHighlight: 'Explosive 87-yard kickoff return TD to open the second half.',
+    trivia: [
+      'Returned second-half kickoff 87 yards for TD',
+      'Fastest score to open a half in SB history',
+      'Had battled injuries throughout the season',
+      'Former Florida Gator and Vikings star',
+    ],
+  },
+  {
+    id: '8',
+    name: 'Doug Baldwin',
+    number: 89,
+    position: 'Wide Receiver',
+    imageUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb290YmFsbCUyMHdpZGUlMjByZWNlaXZlciUyMGNhdGNofGVufDF8fHx8MTc3MDE5ODE1NHww&ixlib=rb-4.1.0&q=80&w=1080',
+    stats: [
+      { label: 'Receptions', value: '5' },
+      { label: 'Yards', value: '66' },
+      { label: 'Avg Yards', value: '13.2' },
+      { label: 'Touchdowns', value: '0' },
+    ],
+    superBowlHighlight: 'Reliable target for Wilson throughout the game.',
+    trivia: [
+      'Undrafted free agent who became star WR',
+      'Led team in receiving yards in the game',
+      'Stanford connection with Richard Sherman',
+      'Known as "Angry Doug" for competitive fire',
+    ],
   },
   {
     id: 'hof-kenny-easley',
@@ -693,3 +815,27 @@ export const samplePhotos = [
     created_at: '2024-01-31T18:45:00Z',
   },
 ]
+];
+
+export const teamAvatars = [
+  { id: 'hawk', name: 'Hawk', emoji: '🦅' },
+  { id: 'blitz', name: 'Blitz', emoji: '🦅💚' },
+  { id: '12', name: '#12', emoji: '1️⃣2️⃣' },
+  { id: 'superfan', name: 'Superfan', emoji: '🙋🏽‍♀️' },
+  { id: '12thman', name: '12th Man', emoji: '🙋🏻‍♂️' },
+  { id: 'girlsrule', name: 'Girls Rule', emoji: '👸' },
+  { id: 'hero', name: 'Hero', emoji: '🧝‍♂️' },
+  { id: 'champion', name: 'Champion', emoji: '👨🏾‍🦲' },
+  { id: 'trophy', name: 'Trophy', emoji: '🏆' },
+  { id: 'queen', name: 'Queen', emoji: '👑' },
+  { id: 'sparkle', name: 'Sparkle', emoji: '✨' },
+  { id: 'fire', name: 'Fire', emoji: '🔥' },
+];
+
+export const suggestedTeamNames = [
+  'Legion of Boom',
+  '12th Man Legends',
+  'Sea Hawks Rising',
+  'Blue Thunder',
+  'Beast Mode',
+];

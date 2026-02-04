@@ -6,11 +6,25 @@ import { useTeam } from '@/lib/team-context';
 import { AVATARS, type LeaderboardEntry, type AvatarId } from '@/lib/database.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import useSWR from 'swr';
+import { useTeam } from '@/lib/team-context';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { teamAvatars } from '@/lib/mock-data';
+import type { LeaderboardEntry } from '@/lib/database.types';
 
 interface ScoreboardProps {
   onBack: () => void;
   userScore?: { score: number; correctAnswers: number };
 }
+
+interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  total_count: number;
+  has_more: boolean;
+}
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
   const { team } = useTeam();
@@ -44,6 +58,15 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
         setIsLoading(false);
       }
     }
+  
+  const { data, error, isLoading } = useSWR<LeaderboardResponse>(
+    '/api/scoreboard?limit=50',
+    fetcher,
+    { refreshInterval: 30000 } // Refresh every 30 seconds
+  );
+
+  const leaderboard = data?.leaderboard || [];
+  const userRank = team ? leaderboard.find(entry => entry.team_id === team.id)?.rank : null;
 
     fetchLeaderboard();
   }, [team]);
@@ -51,6 +74,54 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
   const getAvatarEmoji = (avatar: AvatarId | string) => {
     return AVATARS[avatar as AvatarId]?.emoji || '🦅';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="p-4 flex items-center gap-4 border-b border-border">
+          <button
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
+            Leaderboard
+          </h1>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading leaderboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="p-4 flex items-center gap-4 border-b border-border">
+          <button
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
+            Leaderboard
+          </h1>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">Failed to load leaderboard</div>
+        </div>
+      </div>
+    );
+  }
 
   const getRankStyle = (rank: number) => {
     if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
@@ -107,6 +178,7 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
               <div className="text-2xl font-bold text-primary">#{userRank}</div>
               <div className="text-sm text-muted-foreground">
                 {leaderboard.find(e => e.username === team.name)?.total_points || 0} pts
+                {leaderboard.find(entry => entry.team_id === team.id)?.total_points || 0} pts
               </div>
             </div>
           </div>
@@ -122,6 +194,11 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
             return (
               <div
                 key={entry.username}
+            const isCurrentUser = team && entry.team_id === team.id;
+            
+            return (
+              <div
+                key={entry.team_id}
                 className={cn(
                   'flex items-center gap-4 p-4 rounded-xl transition-all',
                   isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-card'
@@ -137,6 +214,7 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
 
                 {/* Avatar */}
                 <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
+                <span className="text-2xl">{getAvatarEmoji(entry.team_image)}</span>
 
                 {/* Team Info */}
                 <div className="flex-1 min-w-0">
@@ -151,6 +229,13 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                     {entry.days_played} days played
                     {entry.current_streak > 1 && (
                       <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
+                    {entry.team_name}
+                    {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
+                    {entry.best_streak > 1 && (
+                      <span className="ml-2 text-primary">🔥 {entry.best_streak}</span>
                     )}
                   </div>
                 </div>
