@@ -1,196 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
-import { sampleScores } from '@/lib/mock-data'
-import type { LeaderboardEntry } from '@/lib/database.types'
+import { createClient } from '@supabase/supabase-js'
+import type { LeaderboardEntry, AvatarId } from '@/lib/database.types'
 
-// Cache for leaderboard (30 second TTL)
-let leaderboardCache: {
-  data: LeaderboardEntry[]
-  timestamp: number
-} | null = null
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-const CACHE_TTL = 30 * 1000 // 30 seconds
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
+
+// Demo leaderboard data
+const DEMO_LEADERBOARD: LeaderboardEntry[] = [
+  { rank: 1, username: 'Legion of Boom', avatar: 'hawk', total_points: 2450, current_streak: 5, days_played: 4 },
+  { rank: 2, username: '12th Man Army', avatar: '12th_man', total_points: 2100, current_streak: 3, days_played: 4 },
+  { rank: 3, username: 'Beast Mode', avatar: 'champion', total_points: 1850, current_streak: 2, days_played: 3 },
+  { rank: 4, username: 'Sea Hawks Rising', avatar: 'fire', total_points: 1600, current_streak: 4, days_played: 3 },
+  { rank: 5, username: 'Blue Thunder', avatar: 'sparkle', total_points: 1400, current_streak: 1, days_played: 2 },
+]
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
-    const offset = parseInt(searchParams.get('offset') || '0')
-    const dayFilter = searchParams.get('day') // Optional: filter by specific day
+    const { searchParams } = new URL(request.url)
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
-    // Demo mode - return sample scores
-    if (isDemoMode()) {
-      const leaderboard: LeaderboardEntry[] = sampleScores
-        .sort((a, b) => b.points - a.points)
-        .map((score, index) => ({
-          rank: index + 1,
-          team_id: score.teamId,
-          team_name: score.teamName,
-          team_image: score.teamImage,
-          total_points: score.points,
-          days_played: 4,
-          best_streak: score.streak
-        }))
-        .slice(offset, offset + limit)
+    const supabase = getSupabase()
 
-      return NextResponse.json({
-        leaderboard,
-        total_count: sampleScores.length,
-        has_more: offset + limit < sampleScores.length
-      })
-    }
-
-    const supabase = createSupabaseServerClient()
+    // Demo mode
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    // Check cache (only for full leaderboard without filters)
-    const now = Date.now()
-    if (!dayFilter && offset === 0 && leaderboardCache && now - leaderboardCache.timestamp < CACHE_TTL) {
       return NextResponse.json({
-        leaderboard: leaderboardCache.data.slice(0, limit),
-        total_count: leaderboardCache.data.length,
-        has_more: limit < leaderboardCache.data.length,
-        cached: true
+        leaderboard: DEMO_LEADERBOARD,
+        total: DEMO_LEADERBOARD.length,
       })
     }
 
-    // Build query for aggregated scores
-    let query = supabase
-      .from('scores')
-      .select('team_id, points_earned, streak_bonus, day_identifier, is_correct, answered_at')
+    // Try to use the get_leaderboard function first
+    const { data: leaderboard, error } = await supabase
+      .rpc('get_leaderboard', { p_limit: limit })
 
-    if (dayFilter) {
-      query = query.eq('day_identifier', dayFilter)
-    }
+    if (error) {
+      console.error('Leaderboard RPC error:', error)
 
-    const { data: scores, error: scoresError } = await query
+      // Fallback to direct query if function doesn't exist
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('username, avatar, total_points, current_streak, days_played')
+        .gt('total_points', 0)
+        .order('total_points', { ascending: false })
+        .limit(limit)
 
-    if (scoresError) {
-      console.error('Scores fetch error:', scoresError)
-      return NextResponse.json(
-        { error: 'Failed to fetch scores' },
-        { status: 500 }
-      )
-    }
+      if (usersError) {
+        console.error('Users query error:', usersError)
+        return NextResponse.json(
+          { error: 'Failed to fetch leaderboard' },
+          { status: 500 }
+        )
+      }
 
-    // Get all teams that have scores
-    const teamIds = [...new Set(scores?.map(s => s.team_id) || [])]
+      const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
+        rank: index + 1,
+        username: user.username,
+        avatar: user.avatar as AvatarId,
+        total_points: user.total_points,
+        current_streak: user.current_streak,
+        days_played: user.days_played,
+      }))
 
-    if (teamIds.length === 0) {
       return NextResponse.json({
-        leaderboard: [],
-        total_count: 0,
-        has_more: false
+        leaderboard: entries,
+        total: entries.length,
       })
     }
 
-    // Fetch team info
-    const { data: teams, error: teamsError } = await supabase
-      .from('teams')
-      .select('id, name, image_url')
-      .in('id', teamIds)
-
-    if (teamsError) {
-      console.error('Teams fetch error:', teamsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch teams' },
-        { status: 500 }
-      )
-    }
-
-    // Aggregate scores by team
-    const teamScores = new Map<string, {
-      totalPoints: number
-      daysPlayed: Set<string>
-      bestStreak: number
-      allScores: typeof scores
-    }>()
-
-    for (const score of scores || []) {
-      const existing = teamScores.get(score.team_id) || {
-        totalPoints: 0,
-        daysPlayed: new Set<string>(),
-        bestStreak: 0,
-        allScores: []
-      }
-
-      existing.totalPoints += score.points_earned + score.streak_bonus
-      if (score.day_identifier) {
-        existing.daysPlayed.add(score.day_identifier)
-      }
-      existing.allScores.push(score)
-
-      teamScores.set(score.team_id, existing)
-    }
-
-    // Calculate best streak for each team
-    for (const stats of teamScores.values()) {
-      let bestStreak = 0
-      let currentStreak = 0
-
-      // Sort scores by answered_at chronologically
-      const sortedScores = [...stats.allScores].sort(
-        (a, b) => new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
-      )
-
-      for (const score of sortedScores) {
-        if (score.is_correct) {
-          currentStreak++
-          bestStreak = Math.max(bestStreak, currentStreak)
-        } else {
-          currentStreak = 0
-        }
-      }
-
-      stats.bestStreak = bestStreak
-    }
-
-    // Build leaderboard
-    const leaderboard: LeaderboardEntry[] = []
-
-    for (const team of teams || []) {
-      const stats = teamScores.get(team.id)
-      if (!stats) continue
-
-      leaderboard.push({
-        rank: 0, // Will be set after sorting
-        team_id: team.id,
-        team_name: team.name,
-        team_image: team.image_url,
-        total_points: stats.totalPoints,
-        days_played: stats.daysPlayed.size,
-        best_streak: stats.bestStreak
-      })
-    }
-
-    // Sort by total points descending
-    leaderboard.sort((a, b) => b.total_points - a.total_points)
-
-    // Assign ranks
-    leaderboard.forEach((entry, index) => {
-      entry.rank = index + 1
-    })
-
-    // Update cache (for full leaderboard)
-    if (!dayFilter && offset === 0) {
-      leaderboardCache = {
-        data: leaderboard,
-        timestamp: now
-      }
-    }
-
-    // Apply pagination
-    const paginatedLeaderboard = leaderboard.slice(offset, offset + limit)
+    // Format the RPC results
+    const entries: LeaderboardEntry[] = (leaderboard || []).map((entry: {
+      rank: number | bigint
+      username: string
+      avatar: string
+      total_points: number
+      current_streak: number
+      days_played: number
+    }) => ({
+      rank: Number(entry.rank),
+      username: entry.username,
+      avatar: entry.avatar as AvatarId,
+      total_points: entry.total_points,
+      current_streak: entry.current_streak,
+      days_played: entry.days_played,
+    }))
 
     return NextResponse.json({
-      leaderboard: paginatedLeaderboard,
-      total_count: leaderboard.length,
-      has_more: offset + limit < leaderboard.length
+      leaderboard: entries,
+      total: entries.length,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      },
     })
 
   } catch (error) {

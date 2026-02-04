@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { sampleQuestions, sampleScores } from '@/lib/mock-data';
-import type { TriviaQuestion } from '@/lib/types';
+import { sampleQuestions, sampleLeaderboard } from '@/lib/mock-data';
+import { AVATARS, type AvatarId } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -13,10 +13,22 @@ interface AdminConsoleProps {
 
 type AdminTab = 'questions' | 'scores' | 'photos' | 'settings';
 
+interface Question {
+  id: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: 'a' | 'b' | 'c' | 'd';
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: string;
+}
+
 export function AdminConsole({ onBack }: AdminConsoleProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('questions');
-  const [questions, setQuestions] = useState<TriviaQuestion[]>(sampleQuestions);
-  const [editingQuestion, setEditingQuestion] = useState<TriviaQuestion | null>(null);
+  const [questions, setQuestions] = useState<Question[]>(sampleQuestions as Question[]);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [showAddQuestion, setShowAddQuestion] = useState(false);
 
   const tabs: { id: AdminTab; label: string }[] = [
@@ -29,6 +41,13 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
   const handleDeleteQuestion = (id: string) => {
     setQuestions(questions.filter(q => q.id !== id));
   };
+
+  const getAvatarEmoji = (avatar: AvatarId | string) => {
+    return AVATARS[avatar as AvatarId]?.emoji || '🦅';
+  };
+
+  const getOptions = (q: Question) => [q.option_a, q.option_b, q.option_c, q.option_d];
+  const getCorrectIndex = (q: Question) => ['a', 'b', 'c', 'd'].indexOf(q.correct_answer);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -119,14 +138,14 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
                     </button>
                   </div>
                 </div>
-                <p className="text-foreground font-medium mb-3">{question.question}</p>
+                <p className="text-foreground font-medium mb-3">{question.question_text}</p>
                 <div className="grid grid-cols-2 gap-2">
-                  {question.options.map((option, optIndex) => (
+                  {getOptions(question).map((option, optIndex) => (
                     <div
                       key={optIndex}
                       className={cn(
                         'text-xs px-3 py-2 rounded-lg',
-                        optIndex === question.correctAnswer
+                        optIndex === getCorrectIndex(question)
                           ? 'bg-primary/20 text-primary border border-primary/30'
                           : 'bg-muted text-muted-foreground'
                       )}
@@ -159,19 +178,20 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
             </div>
 
             {/* Scores List */}
-            {sampleScores.map((score, index) => (
-              <div key={score.id} className="bg-card rounded-xl p-4 flex items-center justify-between">
+            {sampleLeaderboard.map((entry, index) => (
+              <div key={entry.username} className="bg-card rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-muted-foreground">#{index + 1}</span>
+                  <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
                   <div>
-                    <div className="font-bold text-foreground">{score.teamName}</div>
+                    <div className="font-bold text-foreground">{entry.username}</div>
                     <div className="text-sm text-muted-foreground">
-                      {score.correctAnswers}/{score.totalAnswers} correct
+                      {entry.days_played} days • {entry.current_streak} streak
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-primary">{score.points}</div>
+                  <div className="text-xl font-bold text-primary">{entry.total_points}</div>
                   <button className="text-xs text-muted-foreground hover:text-foreground">
                     Adjust
                   </button>
@@ -189,12 +209,12 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
                 Review and moderate user-submitted photos. Remove inappropriate content as needed.
               </p>
             </div>
-            
+
             <div className="text-center py-12 text-muted-foreground">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 opacity-50">
                 <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
               </svg>
-              <p>Photo moderation requires database connection</p>
+              <p>No photos pending approval</p>
             </div>
           </div>
         )}
@@ -254,14 +274,14 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
 
       {/* Add/Edit Question Modal */}
       {(showAddQuestion || editingQuestion) && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 flex items-end justify-center z-50"
           onClick={() => {
             setShowAddQuestion(false);
             setEditingQuestion(null);
           }}
         >
-          <div 
+          <div
             className="bg-card w-full max-w-lg rounded-t-3xl p-6 max-h-[90vh] overflow-auto animate-in slide-in-from-bottom duration-300"
             onClick={(e) => e.stopPropagation()}
           >
@@ -289,7 +309,7 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
                 <textarea
                   className="w-full bg-muted border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground min-h-[100px] focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Enter your question..."
-                  defaultValue={editingQuestion?.question}
+                  defaultValue={editingQuestion?.question_text}
                 />
               </div>
 
@@ -302,7 +322,7 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
                     <Input
                       placeholder={`Option ${letter}`}
                       className="bg-muted border-border text-foreground"
-                      defaultValue={editingQuestion?.options[index]}
+                      defaultValue={editingQuestion ? getOptions(editingQuestion)[index] : ''}
                     />
                   </div>
                 ))}
@@ -311,10 +331,10 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Correct Answer</label>
                 <select className="w-full bg-muted border border-border rounded-lg px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
-                  <option value="0">A</option>
-                  <option value="1">B</option>
-                  <option value="2">C</option>
-                  <option value="3">D</option>
+                  <option value="a">A</option>
+                  <option value="b">B</option>
+                  <option value="c">C</option>
+                  <option value="d">D</option>
                 </select>
               </div>
 
@@ -332,18 +352,9 @@ export function AdminConsole({ onBack }: AdminConsoleProps) {
                   <Input
                     placeholder="Category"
                     className="bg-muted border-border text-foreground"
-                    defaultValue={editingQuestion?.category || 'History'}
+                    defaultValue={editingQuestion?.category || 'Seahawks History'}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Explanation (optional)</label>
-                <textarea
-                  className="w-full bg-muted border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Explain the correct answer..."
-                  defaultValue={editingQuestion?.explanation}
-                />
               </div>
 
               <Button

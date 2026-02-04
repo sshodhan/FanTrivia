@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { sampleScores } from '@/lib/mock-data';
+import { sampleLeaderboard, teamAvatars } from '@/lib/mock-data';
 import { useTeam } from '@/lib/team-context';
-import type { Score } from '@/lib/types';
+import { AVATARS, type LeaderboardEntry, type AvatarId } from '@/lib/database.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { teamAvatars } from '@/lib/mock-data';
 
 interface ScoreboardProps {
   onBack: () => void;
@@ -15,52 +14,42 @@ interface ScoreboardProps {
 
 export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
   const { team } = useTeam();
-  const [scores, setScores] = useState<Score[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading scores and adding user's score
-    let allScores = [...sampleScores];
-    
-    if (team && userScore) {
-      const userScoreEntry: Score = {
-        id: team.id,
-        teamId: team.id,
-        teamName: team.name,
-        teamImage: team.imageUrl,
-        points: userScore.score,
-        correctAnswers: userScore.correctAnswers,
-        totalAnswers: 5,
-        streak: 1,
-        lastPlayedDate: new Date().toISOString().split('T')[0],
-      };
-      
-      // Check if user already exists
-      const existingIndex = allScores.findIndex(s => s.teamId === team.id);
-      if (existingIndex >= 0) {
-        allScores[existingIndex].points += userScore.score;
-        allScores[existingIndex].correctAnswers += userScore.correctAnswers;
-        allScores[existingIndex].totalAnswers += 5;
-      } else {
-        allScores.push(userScoreEntry);
+    async function fetchLeaderboard() {
+      try {
+        const response = await fetch('/api/scoreboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeaderboard(data.leaderboard || []);
+
+          // Find user's rank
+          if (team) {
+            const rank = data.leaderboard?.findIndex((entry: LeaderboardEntry) =>
+              entry.username === team.name
+            );
+            if (rank >= 0) setUserRank(rank + 1);
+          }
+        } else {
+          // Fallback to sample data
+          setLeaderboard(sampleLeaderboard);
+        }
+      } catch {
+        // Fallback to sample data
+        setLeaderboard(sampleLeaderboard);
+      } finally {
+        setIsLoading(false);
       }
     }
-    
-    // Sort by points descending
-    allScores.sort((a, b) => b.points - a.points);
-    setScores(allScores);
-    
-    // Find user's rank
-    if (team) {
-      const rank = allScores.findIndex(s => s.teamId === team.id);
-      if (rank >= 0) setUserRank(rank + 1);
-    }
-  }, [team, userScore]);
 
-  const getAvatarEmoji = (imageUrl: string | null) => {
-    if (!imageUrl) return '🦅';
-    const avatar = teamAvatars.find(a => a.id === imageUrl);
-    return avatar?.emoji || '🦅';
+    fetchLeaderboard();
+  }, [team]);
+
+  const getAvatarEmoji = (avatar: AvatarId | string) => {
+    return AVATARS[avatar as AvatarId]?.emoji || '🦅';
   };
 
   const getRankStyle = (rank: number) => {
@@ -76,6 +65,14 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
     if (rank === 3) return '🥉';
     return `#${rank}`;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground">Loading leaderboard...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -100,7 +97,7 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
         <div className="p-4 bg-primary/10 border-b border-primary/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{getAvatarEmoji(team.imageUrl)}</span>
+              <span className="text-2xl">{getAvatarEmoji(team.imageUrl || 'hawk')}</span>
               <div>
                 <div className="font-bold text-foreground">{team.name}</div>
                 <div className="text-sm text-muted-foreground">Your rank</div>
@@ -109,7 +106,7 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
             <div className="text-right">
               <div className="text-2xl font-bold text-primary">#{userRank}</div>
               <div className="text-sm text-muted-foreground">
-                {scores.find(s => s.teamId === team.id)?.points || 0} pts
+                {leaderboard.find(e => e.username === team.name)?.total_points || 0} pts
               </div>
             </div>
           </div>
@@ -119,13 +116,12 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
       {/* Leaderboard List */}
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-3">
-          {scores.map((score, index) => {
-            const rank = index + 1;
-            const isCurrentUser = team && score.teamId === team.id;
-            
+          {leaderboard.map((entry) => {
+            const isCurrentUser = team && entry.username === team.name;
+
             return (
               <div
-                key={score.id}
+                key={entry.username}
                 className={cn(
                   'flex items-center gap-4 p-4 rounded-xl transition-all',
                   isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-card'
@@ -134,13 +130,13 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                 {/* Rank */}
                 <div className={cn(
                   'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold',
-                  getRankStyle(rank)
+                  getRankStyle(entry.rank)
                 )}>
-                  {rank <= 3 ? getRankIcon(rank) : rank}
+                  {entry.rank <= 3 ? getRankIcon(entry.rank) : entry.rank}
                 </div>
 
                 {/* Avatar */}
-                <span className="text-2xl">{getAvatarEmoji(score.teamImage)}</span>
+                <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
 
                 {/* Team Info */}
                 <div className="flex-1 min-w-0">
@@ -148,13 +144,13 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                     'font-bold truncate',
                     isCurrentUser ? 'text-primary' : 'text-foreground'
                   )}>
-                    {score.teamName}
+                    {entry.username}
                     {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {score.correctAnswers}/{score.totalAnswers} correct
-                    {score.streak > 1 && (
-                      <span className="ml-2 text-primary">🔥 {score.streak}</span>
+                    {entry.days_played} days played
+                    {entry.current_streak > 1 && (
+                      <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
                     )}
                   </div>
                 </div>
@@ -165,13 +161,19 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                     'text-xl font-bold',
                     isCurrentUser ? 'text-primary' : 'text-foreground'
                   )}>
-                    {score.points}
+                    {entry.total_points}
                   </div>
                   <div className="text-xs text-muted-foreground">pts</div>
                 </div>
               </div>
             );
           })}
+
+          {leaderboard.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No scores yet. Be the first to play!</p>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,129 +1,114 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
-import { calculateScore } from '@/lib/scoring'
-import { sampleQuestions } from '@/lib/mock-data'
-import type { AnswerSubmissionRequest, AnswerSubmissionResponse, ScoreInsert } from '@/lib/database.types'
+import { createClient } from '@supabase/supabase-js'
+import { calculatePoints, type AnswerOption, type AnswerResult } from '@/lib/database.types'
 
-// Track current streak per team (in memory for demo, use DB in production)
-const teamStreaks = new Map<string, number>()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function getSupabase() {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
+
+// Demo mode correct answers
+const DEMO_ANSWERS: Record<string, AnswerOption> = {
+  'demo-1': 'b', // 2013
+  'demo-2': 'c', // Malcolm Smith
+  'demo-3': 'a', // 43-8
+  'demo-4': 'c', // Denver Broncos
+  'demo-5': 'b', // Legion of Boom
+}
+
+// In-memory streak tracking for demo mode
+const demoStreaks = new Map<string, number>()
+
+interface AnswerRequest {
+  username: string
+  question_id: string
+  selected_answer: AnswerOption
+  time_taken_ms: number
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authentication from headers
-    const sessionToken = request.headers.get('authorization')?.replace('Bearer ', '')
-    const teamId = request.headers.get('x-team-id')
-
-    if (!sessionToken || !teamId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    const body = await request.json() as AnswerSubmissionRequest
-    const { team_id, question_id, answer_index, time_taken_ms } = body
+    const body = await request.json() as AnswerRequest
+    const { username, question_id, selected_answer, time_taken_ms } = body
 
     // Validate input
-    if (!team_id || !question_id || answer_index === undefined || time_taken_ms === undefined) {
+    if (!username || !question_id || !selected_answer || time_taken_ms === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: username, question_id, selected_answer, time_taken_ms' },
         { status: 400 }
       )
     }
 
-    // Verify that the team_id in body matches the authenticated team
-    if (team_id !== teamId) {
+    if (!['a', 'b', 'c', 'd'].includes(selected_answer)) {
       return NextResponse.json(
-        { error: 'Team ID mismatch' },
-        { status: 403 }
-      )
-    }
-
-    if (answer_index < 0 || answer_index > 3) {
-      return NextResponse.json(
-        { error: 'Invalid answer index' },
+        { error: 'Invalid answer. Must be a, b, c, or d' },
         { status: 400 }
       )
     }
+
+    const supabase = getSupabase()
 
     // Demo mode
-    if (isDemoMode()) {
-      // In demo mode, accept demo session tokens
-      if (!sessionToken.startsWith('demo_ses_')) {
-        return NextResponse.json(
-          { error: 'Invalid session token' },
-          { status: 401 }
-        )
-      }
-
-      // Find question in sample data
-      const question = sampleQuestions.find(q => q.id === question_id)
-
-      if (!question) {
+    if (!supabase) {
+      const correctAnswer = DEMO_ANSWERS[question_id]
+      if (!correctAnswer) {
         return NextResponse.json(
           { error: 'Question not found' },
           { status: 404 }
         )
       }
 
-      const isCorrect = answer_index === question.correctAnswer
-      const currentStreak = teamStreaks.get(team_id) || 0
+      const isCorrect = selected_answer === correctAnswer
+      const currentStreak = demoStreaks.get(username) || 0
+      const { points, streakBonus, newStreak } = calculatePoints(isCorrect, time_taken_ms, currentStreak)
 
-      const scoring = calculateScore(isCorrect, time_taken_ms, currentStreak)
+      // Update demo streak
+      demoStreaks.set(username, newStreak)
 
-      // Update streak
-      if (isCorrect) {
-        teamStreaks.set(team_id, currentStreak + 1)
-      } else {
-        teamStreaks.set(team_id, 0)
-      }
-
-      const response: AnswerSubmissionResponse = {
+      const result: AnswerResult = {
         is_correct: isCorrect,
-        correct_answer_index: question.correctAnswer,
-        points_earned: scoring.totalPoints,
-        streak_bonus: scoring.streakBonus,
-        current_streak: scoring.newStreak,
-        explanation: question.explanation
+        correct_answer: correctAnswer,
+        points_earned: points,
+        streak_bonus: streakBonus,
+        current_streak: newStreak,
+        total_points: points + streakBonus, // Demo doesn't track total
       }
 
-      return NextResponse.json(response)
+      return NextResponse.json(result)
     }
 
-    const supabase = createSupabaseServerClient()
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    // Verify session token matches the team
-    const { data: team, error: sessionError } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('id', teamId)
-      .eq('session_token', sessionToken)
+    // Verify user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('username, current_streak, total_points')
+      .eq('username', username)
       .single()
 
-    if (sessionError || !team) {
+    if (userError || !user) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'User not found. Please register first.' },
         { status: 401 }
       )
     }
 
-    // Check if answer already submitted
-    const { data: existingScore } = await supabase
-      .from('scores')
+    // Check if already answered this question today
+    const today = new Date().toISOString().split('T')[0]
+    const { data: existingAnswer } = await supabase
+      .from('daily_answers')
       .select('id')
-      .eq('team_id', team_id)
+      .eq('username', username)
       .eq('question_id', question_id)
+      .gte('answered_at', `${today}T00:00:00`)
       .single()
 
-    if (existingScore) {
+    if (existingAnswer) {
       return NextResponse.json(
-        { error: 'Answer already submitted for this question' },
+        { error: 'You have already answered this question today' },
         { status: 409 }
       )
     }
@@ -131,7 +116,7 @@ export async function POST(request: NextRequest) {
     // Get the question to check answer
     const { data: question, error: questionError } = await supabase
       .from('trivia_questions')
-      .select('*')
+      .select('correct_answer, hint_text')
       .eq('id', question_id)
       .single()
 
@@ -142,21 +127,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if answer is correct
-    const isCorrect = answer_index === question.correct_answer_index
+    const isCorrect = selected_answer === question.correct_answer
 
-    // Get current streak from recent scores
-    const { data: recentScores } = await supabase
-      .from('scores')
+    // Get current streak from recent answers
+    const { data: recentAnswers } = await supabase
+      .from('daily_answers')
       .select('is_correct')
-      .eq('team_id', team_id)
+      .eq('username', username)
       .order('answered_at', { ascending: false })
       .limit(10)
 
     let currentStreak = 0
-    if (recentScores) {
-      for (const score of recentScores) {
-        if (score.is_correct) {
+    if (recentAnswers) {
+      for (const answer of recentAnswers) {
+        if (answer.is_correct) {
           currentStreak++
         } else {
           break
@@ -165,83 +149,62 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate score
-    const scoring = calculateScore(
-      isCorrect,
-      time_taken_ms,
-      currentStreak,
-      question.time_limit_seconds
-    )
+    const { points, streakBonus, newStreak } = calculatePoints(isCorrect, time_taken_ms, currentStreak)
 
-    // Get current day identifier
-    const dayIdentifier = 'day_minus_4' // TODO: Calculate dynamically
+    // Get current day from settings
+    const { data: settings } = await supabase
+      .from('game_settings')
+      .select('current_day')
+      .eq('id', 1)
+      .single()
 
-    // Save score
-    const scoreRecord: ScoreInsert = {
-      team_id,
-      question_id,
-      day_identifier: dayIdentifier,
-      is_correct: isCorrect,
-      points_earned: scoring.totalPoints,
-      streak_bonus: scoring.streakBonus,
-      time_taken_ms
-    }
+    const dayIdentifier = settings?.current_day || 'day_1'
 
+    // Save answer
     const { error: insertError } = await supabase
-      .from('scores')
-      .insert(scoreRecord)
+      .from('daily_answers')
+      .insert({
+        username,
+        question_id,
+        day_identifier: dayIdentifier,
+        selected_answer,
+        is_correct: isCorrect,
+        points_earned: points,
+        streak_bonus: streakBonus,
+        time_taken_ms,
+      })
 
     if (insertError) {
-      console.error('Score insert error:', insertError)
+      console.error('Answer insert error:', insertError)
       return NextResponse.json(
-        { error: 'Failed to save score' },
+        { error: 'Failed to save answer' },
         { status: 500 }
       )
     }
 
-    // Check if all questions for today are answered
-    const { data: dailySet } = await supabase
-      .from('daily_trivia_sets')
-      .select('question_ids')
-      .eq('day_identifier', dayIdentifier)
-      .eq('is_active', true)
+    // Update user's current streak
+    await supabase
+      .from('users')
+      .update({ current_streak: newStreak })
+      .eq('username', username)
+
+    // Get updated total points
+    const { data: updatedUser } = await supabase
+      .from('users')
+      .select('total_points')
+      .eq('username', username)
       .single()
 
-    if (dailySet) {
-      const { data: answeredScores } = await supabase
-        .from('scores')
-        .select('question_id, points_earned, streak_bonus')
-        .eq('team_id', team_id)
-        .in('question_id', dailySet.question_ids)
-
-      if (answeredScores && answeredScores.length === dailySet.question_ids.length) {
-        // All questions answered, update daily progress
-        const totalPoints = answeredScores.reduce(
-          (sum, s) => sum + s.points_earned + s.streak_bonus,
-          0
-        )
-
-        await supabase
-          .from('team_daily_progress')
-          .upsert({
-            team_id,
-            day_identifier: dayIdentifier,
-            completed: true,
-            total_points: totalPoints,
-            completed_at: new Date().toISOString()
-          })
-      }
-    }
-
-    const response: AnswerSubmissionResponse = {
+    const result: AnswerResult = {
       is_correct: isCorrect,
-      correct_answer_index: question.correct_answer_index,
-      points_earned: scoring.totalPoints,
-      streak_bonus: scoring.streakBonus,
-      current_streak: scoring.newStreak,
-      explanation: question.hint_text || undefined
+      correct_answer: question.correct_answer,
+      points_earned: points,
+      streak_bonus: streakBonus,
+      current_streak: newStreak,
+      total_points: updatedUser?.total_points || 0,
     }
 
-    return NextResponse.json(response)
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('Answer submission error:', error)
