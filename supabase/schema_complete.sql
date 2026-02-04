@@ -112,9 +112,11 @@ CREATE TABLE daily_answers (
   points_earned INTEGER DEFAULT 0,
   streak_bonus INTEGER DEFAULT 0,
   time_taken_ms INTEGER,
-  answered_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(username, question_id, (answered_at::DATE))
+  answered_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Unique constraint: one answer per user per question per day
+CREATE UNIQUE INDEX idx_answers_unique_daily ON daily_answers(username, question_id, (answered_at::DATE));
 
 CREATE INDEX idx_answers_username ON daily_answers(username);
 CREATE INDEX idx_answers_day ON daily_answers(day_identifier);
