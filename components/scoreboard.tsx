@@ -1,17 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { sampleLeaderboard, teamAvatars } from '@/lib/mock-data';
+import useSWR from 'swr';
 import { useTeam } from '@/lib/team-context';
 import { AVATARS, type LeaderboardEntry, type AvatarId } from '@/lib/database.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import useSWR from 'swr';
-import { useTeam } from '@/lib/team-context';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { teamAvatars } from '@/lib/mock-data';
-import type { LeaderboardEntry } from '@/lib/database.types';
 
 interface ScoreboardProps {
   onBack: () => void;
@@ -28,51 +21,32 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
   const { team } = useTeam();
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [userRank, setUserRank] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchLeaderboard() {
-      try {
-        const response = await fetch('/api/scoreboard');
-        if (response.ok) {
-          const data = await response.json();
-          setLeaderboard(data.leaderboard || []);
-
-          // Find user's rank
-          if (team) {
-            const rank = data.leaderboard?.findIndex((entry: LeaderboardEntry) =>
-              entry.username === team.name
-            );
-            if (rank >= 0) setUserRank(rank + 1);
-          }
-        } else {
-          // Fallback to sample data
-          setLeaderboard(sampleLeaderboard);
-        }
-      } catch {
-        // Fallback to sample data
-        setLeaderboard(sampleLeaderboard);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  
   const { data, error, isLoading } = useSWR<LeaderboardResponse>(
     '/api/scoreboard?limit=50',
     fetcher,
-    { refreshInterval: 30000 } // Refresh every 30 seconds
+    { refreshInterval: 30000 }
   );
 
   const leaderboard = data?.leaderboard || [];
   const userRank = team ? leaderboard.find(entry => entry.team_id === team.id)?.rank : null;
 
-    fetchLeaderboard();
-  }, [team]);
-
   const getAvatarEmoji = (avatar: AvatarId | string) => {
     return AVATARS[avatar as AvatarId]?.emoji || '🦅';
+  };
+
+  const getRankStyle = (rank: number) => {
+    if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
+    if (rank === 2) return 'bg-gray-300/20 text-gray-300';
+    if (rank === 3) return 'bg-amber-600/20 text-amber-600';
+    return 'bg-muted text-muted-foreground';
+  };
+
+  const getRankIcon = (rank: number) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
   };
 
   if (isLoading) {
@@ -123,28 +97,6 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
     );
   }
 
-  const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
-    if (rank === 2) return 'bg-gray-300/20 text-gray-300';
-    if (rank === 3) return 'bg-amber-600/20 text-amber-600';
-    return 'bg-muted text-muted-foreground';
-  };
-
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return `#${rank}`;
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading leaderboard...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
@@ -177,7 +129,6 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
             <div className="text-right">
               <div className="text-2xl font-bold text-primary">#{userRank}</div>
               <div className="text-sm text-muted-foreground">
-                {leaderboard.find(e => e.username === team.name)?.total_points || 0} pts
                 {leaderboard.find(entry => entry.team_id === team.id)?.total_points || 0} pts
               </div>
             </div>
@@ -189,13 +140,8 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-3">
           {leaderboard.map((entry) => {
-            const isCurrentUser = team && entry.username === team.name;
-
-            return (
-              <div
-                key={entry.username}
             const isCurrentUser = team && entry.team_id === team.id;
-            
+
             return (
               <div
                 key={entry.team_id}
@@ -213,7 +159,6 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                 </div>
 
                 {/* Avatar */}
-                <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
                 <span className="text-2xl">{getAvatarEmoji(entry.team_image)}</span>
 
                 {/* Team Info */}
@@ -222,13 +167,6 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
                     'font-bold truncate',
                     isCurrentUser ? 'text-primary' : 'text-foreground'
                   )}>
-                    {entry.username}
-                    {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {entry.days_played} days played
-                    {entry.current_streak > 1 && (
-                      <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
                     {entry.team_name}
                     {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
                   </div>

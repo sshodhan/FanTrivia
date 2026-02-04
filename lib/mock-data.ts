@@ -814,28 +814,4 @@ export const samplePhotos = [
     like_count: 31,
     created_at: '2024-01-31T18:45:00Z',
   },
-]
-];
-
-export const teamAvatars = [
-  { id: 'hawk', name: 'Hawk', emoji: '🦅' },
-  { id: 'blitz', name: 'Blitz', emoji: '🦅💚' },
-  { id: '12', name: '#12', emoji: '1️⃣2️⃣' },
-  { id: 'superfan', name: 'Superfan', emoji: '🙋🏽‍♀️' },
-  { id: '12thman', name: '12th Man', emoji: '🙋🏻‍♂️' },
-  { id: 'girlsrule', name: 'Girls Rule', emoji: '👸' },
-  { id: 'hero', name: 'Hero', emoji: '🧝‍♂️' },
-  { id: 'champion', name: 'Champion', emoji: '👨🏾‍🦲' },
-  { id: 'trophy', name: 'Trophy', emoji: '🏆' },
-  { id: 'queen', name: 'Queen', emoji: '👑' },
-  { id: 'sparkle', name: 'Sparkle', emoji: '✨' },
-  { id: 'fire', name: 'Fire', emoji: '🔥' },
-];
-
-export const suggestedTeamNames = [
-  'Legion of Boom',
-  '12th Man Legends',
-  'Sea Hawks Rising',
-  'Blue Thunder',
-  'Beast Mode',
 ];

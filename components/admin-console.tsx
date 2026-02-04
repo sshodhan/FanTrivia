@@ -26,7 +26,6 @@ interface Question {
   category: string;
 }
 
-export function AdminConsole({ onBack }: AdminConsoleProps) {
 export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('questions');
   const [questions, setQuestions] = useState<Question[]>(sampleQuestions as Question[]);
