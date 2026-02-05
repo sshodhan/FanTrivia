@@ -511,6 +511,192 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   '{"Tackles": "81", "TFL": "5", "Sacks": "1.0", "FF": "0"}'::jsonb,
   '["Minnesota product", "Reliable tackler with 81 stops", "Key special teams contributor", "Undrafted gem"]'::jsonb,
   true
+),
+-- Additional Offense
+(
+  'Tommy DeVito', 3, 'Quarterback', 141,
+  NULL, false,
+  'Patriots QB3 - 2025 Season',
+  '{"Pass Yds": "0", "Pass TD": "0", "INT": "0"}'::jsonb,
+  '["Illinois product", "Former Giants starter", "Experienced backup quarterback", "Fan favorite"]'::jsonb,
+  true
+),
+(
+  'Joshua Dobbs', 5, 'Quarterback', 142,
+  NULL, false,
+  'Patriots QB2 - 2025 Season',
+  '{"Pass Yds": "0", "Pass TD": "0", "INT": "0"}'::jsonb,
+  '["Tennessee product", "Aerospace engineer", "Veteran backup with starting experience", "Passtronaut"]'::jsonb,
+  true
+),
+(
+  'Efton Chism III', 88, 'Wide Receiver', 144,
+  NULL, false,
+  'Patriots WR - 2025 Season',
+  '{"Receptions": "12", "Rec Yds": "145", "Rec TD": "1"}'::jsonb,
+  '["Arkansas product", "2025 draft pick", "Rookie receiver with upside", "Physical receiver"]'::jsonb,
+  true
+),
+(
+  'Kyle Williams', 18, 'Wide Receiver', 145,
+  NULL, false,
+  'Patriots WR - 2025 Season',
+  '{"Receptions": "8", "Rec Yds": "95", "Rec TD": "0"}'::jsonb,
+  '["Arizona State product", "Key special teams player", "Depth receiver", "Return specialist"]'::jsonb,
+  true
+),
+(
+  'Jack Westover', 47, 'Fullback', 146,
+  NULL, false,
+  'Patriots FB - 2025 Season',
+  '{"Receptions": "5", "Rec Yds": "42", "Rush TD": "1"}'::jsonb,
+  '["BYU product", "Key special teams contributor", "Lead blocker in short yardage", "Physical blocker"]'::jsonb,
+  true
+),
+(
+  'CJ Dippre', 86, 'Tight End', 147,
+  NULL, false,
+  'Patriots TE - 2025 Season',
+  '{"Receptions": "15", "Rec Yds": "168", "Rec TD": "2"}'::jsonb,
+  '["Alabama product", "2025 draft pick", "Blocking tight end with receiving upside", "Athletic TE"]'::jsonb,
+  true
+),
+(
+  'Morgan Moses', 78, 'Offensive Tackle', 148,
+  NULL, false,
+  'Patriots T - 2025 Season',
+  '{"Sacks Allowed": "4", "Pressures": "22", "PFF Grade": "74.5"}'::jsonb,
+  '["Virginia product", "10+ year NFL veteran", "Veteran tackle depth", "Reliable starter"]'::jsonb,
+  true
+),
+(
+  'Jared Wilson', 62, 'Center', 149,
+  NULL, false,
+  'Patriots C - 2025 Season',
+  '{"Sacks Allowed": "1", "Pressures": "8", "PFF Grade": "72.1"}'::jsonb,
+  '["Georgia product", "Key depth piece", "Reliable interior lineman", "Power blocker"]'::jsonb,
+  true
+),
+(
+  'Ben Brown', 60, 'Center', 150,
+  NULL, false,
+  'Patriots C - 2025 Season',
+  '{"Sacks Allowed": "0", "Pressures": "5", "PFF Grade": "68.4"}'::jsonb,
+  '["Ole Miss product", "Versatile backup", "Interior line depth", "Smart lineman"]'::jsonb,
+  true
+),
+(
+  'Garrett Bradbury', 56, 'Center', 151,
+  NULL, false,
+  'Patriots C - 2025 Season',
+  '{"Sacks Allowed": "2", "Pressures": "12", "PFF Grade": "71.8"}'::jsonb,
+  '["NC State product", "Former Vikings starter", "Veteran center depth", "Former first-round pick"]'::jsonb,
+  true
+),
+(
+  'Thayer Munford Jr.', 77, 'Offensive Tackle', 152,
+  NULL, false,
+  'Patriots T - 2025 Season',
+  '{"Sacks Allowed": "3", "Pressures": "18", "PFF Grade": "70.2"}'::jsonb,
+  '["Ohio State product", "Versatile lineman", "Swing tackle", "Can play guard"]'::jsonb,
+  true
+),
+(
+  'Marcus Bryant', 65, 'Offensive Tackle', 153,
+  NULL, false,
+  'Patriots T - 2025 Season',
+  '{"Sacks Allowed": "2", "Pressures": "14", "PFF Grade": "68.5"}'::jsonb,
+  '["Wisconsin product", "Practice squad call-up", "Developmental tackle", "Young talent"]'::jsonb,
+  true
+),
+-- Additional Defense
+(
+  'K''Lavon Chaisson', 53, 'Linebacker', 154,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "32", "Sacks": "4.5", "TFL": "6"}'::jsonb,
+  '["LSU product", "Former first-round pick", "Edge rusher off the bench", "Elite athleticism"]'::jsonb,
+  true
+),
+(
+  'Khyiris Tonga', 95, 'Defensive Lineman', 155,
+  NULL, false,
+  'Patriots DL - 2025 Season',
+  '{"Tackles": "28", "Sacks": "2.0", "TFL": "4"}'::jsonb,
+  '["BYU product", "Interior depth", "Run-stuffing nose tackle", "Space eater"]'::jsonb,
+  true
+),
+(
+  'Cory Durden', 97, 'Defensive Tackle', 156,
+  NULL, false,
+  'Patriots DT - 2025 Season',
+  '{"Tackles": "22", "Sacks": "1.5", "TFL": "3"}'::jsonb,
+  '["NC State product", "Key depth piece", "Interior rotation player", "Run stuffer"]'::jsonb,
+  true
+),
+(
+  'Bradyn Swinson', 50, 'Linebacker', 157,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "18", "Sacks": "2.0", "TFL": "3"}'::jsonb,
+  '["LSU product", "2025 draft pick", "Rookie edge defender", "Pass rush specialist"]'::jsonb,
+  true
+),
+(
+  'Elijah Ponder', 54, 'Linebacker', 158,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "15", "Sacks": "0.5", "TFL": "2"}'::jsonb,
+  '["Florida State product", "Undrafted free agent", "Special teams contributor", "High motor"]'::jsonb,
+  true
+),
+(
+  'Chad Muma', 45, 'Linebacker', 159,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "35", "INT": "1", "TFL": "4"}'::jsonb,
+  '["Wyoming product", "Former Jaguars starter", "Off-ball linebacker depth", "Sure tackler"]'::jsonb,
+  true
+),
+(
+  'Anfernee Jennings', 59, 'Linebacker', 160,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "28", "Sacks": "1.0", "TFL": "3"}'::jsonb,
+  '["Alabama product", "2020 third-round pick", "Veteran edge depth", "Run defender"]'::jsonb,
+  true
+),
+(
+  'Alex Austin', 27, 'Cornerback', 161,
+  NULL, false,
+  'Patriots CB - 2025 Season',
+  '{"Tackles": "25", "INT": "1", "Pass Def": "5"}'::jsonb,
+  '["Oregon State product", "Special teams ace", "Depth cornerback", "Physical cover man"]'::jsonb,
+  true
+),
+(
+  'Charles Woods', 36, 'Cornerback', 162,
+  NULL, false,
+  'Patriots CB - 2025 Season',
+  '{"Tackles": "18", "INT": "0", "Pass Def": "3"}'::jsonb,
+  '["Notre Dame product", "Key special teams player", "Nickel corner depth", "Smart defender"]'::jsonb,
+  true
+),
+(
+  'Brenden Schooler', 40, 'Safety', 163,
+  NULL, false,
+  'Patriots S - 2025 Season',
+  '{"Tackles": "22", "INT": "0", "Pass Def": "2"}'::jsonb,
+  '["Texas product", "Core special teamer", "Special teams captain", "Gunner specialist"]'::jsonb,
+  true
+),
+(
+  'Kobee Minor', 39, 'Defensive Back', 164,
+  NULL, false,
+  'Patriots DB - 2025 Season',
+  '{"Tackles": "12", "INT": "0", "Pass Def": "2"}'::jsonb,
+  '["Georgia product", "Rookie contributor", "Versatile defensive back", "Ball skills"]'::jsonb,
+  true
 );
 
 -- SPECIAL TEAMS (2 players)
