@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTeam } from '@/lib/user-context';
 import { sampleQuestions } from '@/lib/mock-data';
-import type { TriviaQuestion, GameState } from '@/lib/types';
+import type { TriviaQuestion } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -18,10 +18,30 @@ const QUESTIONS_PER_DAY = 5;
 const POINTS_PER_CORRECT = 10;
 const STREAK_BONUS = 5;
 
+// Map letter answers to index
+const answerToIndex: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 };
+
+// Transform mock data to TriviaQuestion format
+function transformQuestion(q: typeof sampleQuestions[number]): TriviaQuestion {
+  return {
+    id: q.id,
+    question: q.question_text,
+    imageUrl: null,
+    options: [q.option_a, q.option_b, q.option_c, q.option_d],
+    correctAnswer: answerToIndex[q.correct_answer] ?? 0,
+    difficulty: q.difficulty,
+    category: q.category,
+    explanation: q.hint_text,
+  };
+}
+
 export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
-  const { team, setTodayPlayed } = useTeam();
+  const { setTodayPlayed } = useTeam();
   const [questions] = useState<TriviaQuestion[]>(() => 
-    [...sampleQuestions].sort(() => Math.random() - 0.5).slice(0, QUESTIONS_PER_DAY)
+    [...sampleQuestions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, QUESTIONS_PER_DAY)
+      .map(transformQuestion)
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
