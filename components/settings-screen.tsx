@@ -27,7 +27,8 @@ interface DebugLog {
 }
 
 export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
-  const { user } = useUser();
+  const { user, refreshUser, isLoading } = useUser();
+  const [refreshStatus, setRefreshStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   
   // Logs state
@@ -45,6 +46,18 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
   const getAvatarEmoji = () => {
     if (!user?.avatar) return '🦅';
     return AVATARS[user.avatar]?.emoji || '🦅';
+  };
+
+  const handleRefreshProfile = async () => {
+    setRefreshStatus(null);
+    const result = await refreshUser();
+    if (result.success) {
+      setRefreshStatus('Profile updated successfully!');
+    } else {
+      setRefreshStatus(result.error || 'Failed to refresh');
+    }
+    // Clear status after 3 seconds
+    setTimeout(() => setRefreshStatus(null), 3000);
   };
 
   // Initialize states from localStorage
@@ -130,8 +143,6 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
   );
 
   // Build tabs - Admin only shows for admin users
-  console.log('[v0] SettingsScreen user:', { username: user?.username, is_admin: user?.is_admin });
-  
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
     { id: 'preferences', label: 'Preferences' },
@@ -222,6 +233,30 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
                   <div className="text-xs text-muted-foreground">Days</div>
                 </div>
               </div>
+            </div>
+
+            {/* Refresh Profile */}
+            <div className="bg-card rounded-xl p-4">
+              <h3 className="font-bold text-foreground mb-2">Sync Profile</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Refresh your profile to get the latest data from the server.
+              </p>
+              {refreshStatus && (
+                <p className={cn(
+                  'text-sm mb-3',
+                  refreshStatus.includes('success') ? 'text-primary' : 'text-destructive'
+                )}>
+                  {refreshStatus}
+                </p>
+              )}
+              <Button
+                variant="outline"
+                onClick={handleRefreshProfile}
+                disabled={isLoading}
+                className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                {isLoading ? 'Refreshing...' : 'Refresh Profile'}
+              </Button>
             </div>
 
             {/* Account Actions */}

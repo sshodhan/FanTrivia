@@ -14,6 +14,8 @@ interface UserContextType {
   isLoading: boolean;
   // Registration helper - calls API and sets user
   registerUser: (username: string, avatar: AvatarId) => Promise<{ success: boolean; error?: string }>;
+  // Refresh user data from server
+  refreshUser: () => Promise<{ success: boolean; error?: string }>;
   // Game state (kept for compatibility)
   gameState: GameState | null;
   setGameState: (state: GameState | null) => void;
@@ -136,6 +138,33 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refreshUser = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.username) {
+      return { success: false, error: 'No user logged in' };
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/user?username=${encodeURIComponent(user.username)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Failed to refresh user data' };
+      }
+
+      if (data.user) {
+        setUser(data.user);
+        return { success: true };
+      }
+
+      return { success: false, error: 'User not found' };
+    } catch (error) {
+      return { success: false, error: 'Network error. Please try again.' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.username, setUser]);
+
   // Don't render until loaded to prevent hydration mismatch
   if (!isLoaded) {
     return null;
@@ -148,6 +177,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       clearUser,
       isLoading,
       registerUser,
+      refreshUser,
       gameState,
       setGameState,
       todayPlayed,
