@@ -213,6 +213,11 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     await savePlayer({ id: player.id, is_active: !player.is_active });
   };
 
+  // Toggle player image validation
+  const toggleImageValidated = async (player: Player) => {
+    await savePlayer({ id: player.id, image_validated: !player.image_validated });
+  };
+
   // Filter logs
   const filteredLogs = logs.filter(log =>
     !logsFilter ||
@@ -576,18 +581,35 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
                 {players.map((player) => (
                   <div key={player.id} className="bg-card rounded-xl p-4">
                     <div className="flex items-start gap-3">
-                      {/* Player Image */}
-                      <div className="w-14 h-14 rounded-lg bg-muted flex-shrink-0 overflow-hidden">
-                        {player.image_url ? (
-                          <img
-                            src={player.image_url}
-                            alt={player.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl text-muted-foreground">
-                            {player.jersey_number}
-                          </div>
+                      {/* Player Image with validation indicator */}
+                      <div className="relative flex-shrink-0">
+                        <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden">
+                          {player.image_url ? (
+                            <img
+                              src={player.image_url}
+                              alt={player.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-2xl text-muted-foreground">
+                              {player.jersey_number}
+                            </div>
+                          )}
+                        </div>
+                        {/* Image validation badge */}
+                        {player.image_url && (
+                          <button
+                            onClick={() => toggleImageValidated(player)}
+                            className={cn(
+                              'absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-card transition-colors',
+                              player.image_validated
+                                ? 'bg-green-500 text-white'
+                                : 'bg-orange-500 text-white'
+                            )}
+                            title={player.image_validated ? 'Image validated - click to unvalidate' : 'Image not validated - click to validate'}
+                          >
+                            {player.image_validated ? '✓' : '!'}
+                          </button>
                         )}
                       </div>
 
@@ -607,6 +629,17 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
                             </span>
                           )}
                         </div>
+
+                        {/* Image URL preview */}
+                        {player.image_url && (
+                          <div className="text-xs text-muted-foreground mt-1 truncate" title={player.image_url}>
+                            <span className={player.image_validated ? 'text-green-500' : 'text-orange-500'}>
+                              {player.image_validated ? '● Validated' : '● Not validated'}
+                            </span>
+                            <span className="mx-1">|</span>
+                            <span className="opacity-70">{player.image_url.substring(0, 40)}...</span>
+                          </div>
+                        )}
 
                         {/* Stats Preview */}
                         {player.stats && Object.keys(player.stats).length > 0 && (
@@ -936,6 +969,7 @@ function PlayerEditModal({ player, isOpen, onClose, onSave, saving, error }: Pla
     jersey_number: 0,
     position: '',
     image_url: null,
+    image_validated: false,
     bio: null,
     super_bowl_highlight: null,
     display_order: 0,
@@ -954,6 +988,7 @@ function PlayerEditModal({ player, isOpen, onClose, onSave, saving, error }: Pla
         jersey_number: player.jersey_number,
         position: player.position,
         image_url: player.image_url,
+        image_validated: player.image_validated,
         bio: player.bio,
         super_bowl_highlight: player.super_bowl_highlight,
         display_order: player.display_order,
@@ -979,6 +1014,7 @@ function PlayerEditModal({ player, isOpen, onClose, onSave, saving, error }: Pla
         jersey_number: 0,
         position: '',
         image_url: null,
+        image_validated: false,
         bio: null,
         super_bowl_highlight: null,
         display_order: 0,
@@ -1104,15 +1140,30 @@ function PlayerEditModal({ player, isOpen, onClose, onSave, saving, error }: Pla
               className="bg-muted border-border text-foreground"
             />
             {formData.image_url && (
-              <div className="mt-2 w-16 h-16 rounded-lg bg-muted overflow-hidden">
-                <img
-                  src={formData.image_url}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+              <div className="mt-2 flex items-center gap-3">
+                <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden">
+                  <img
+                    src={formData.image_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+                {/* Image Validated Toggle */}
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={formData.image_validated ?? false}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, image_validated: checked }))}
+                  />
+                  <span className={cn(
+                    'text-sm',
+                    formData.image_validated ? 'text-green-500' : 'text-orange-500'
+                  )}>
+                    {formData.image_validated ? 'Image Validated' : 'Not Validated'}
+                  </span>
+                </div>
               </div>
             )}
           </div>

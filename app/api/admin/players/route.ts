@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         jersey_number: p.jersey_number,
         position: p.position,
         image_url: p.image_url,
+        image_validated: (p as any).image_validated ?? false, // Default to false for demo data
         // Normalize stats - some demo data has array format, convert to Record
         stats: Array.isArray(p.stats)
           ? p.stats.reduce((acc, s) => ({ ...acc, [s.label]: s.value }), {} as Record<string, string | number>)
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
       jersey_number,
       position,
       image_url,
+      image_validated,
       stats,
       trivia,
       bio,
@@ -191,6 +193,7 @@ export async function POST(request: NextRequest) {
       jersey_number: parseInt(jersey_number),
       position,
       image_url: image_url || null,
+      image_validated: image_validated ?? false,
       stats: stats || null,
       trivia: trivia || null,
       bio: bio || null,
