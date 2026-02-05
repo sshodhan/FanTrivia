@@ -212,6 +212,20 @@ export interface PhotoWithUser extends PhotoUpload {
   has_liked?: boolean
 }
 
+export interface PhotoWithTeam {
+  id: string
+  team_id: string
+  image_url: string
+  caption: string | null
+  likes: number
+  is_approved: boolean
+  is_hidden: boolean
+  uploaded_at: string
+  team_name: string
+  team_image: string | null
+  has_liked: boolean
+}
+
 export interface PhotoLike {
   id: string
   photo_id: string

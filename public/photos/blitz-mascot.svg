@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="stadiumBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#002244"/>
+      <stop offset="100%" style="stop-color:#001433"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="300" fill="url(#stadiumBg)"/>
+
+  <!-- Stadium lights effect -->
+  <circle cx="50" cy="30" r="8" fill="#69BE28" opacity="0.8"/>
+  <circle cx="100" cy="25" r="6" fill="#69BE28" opacity="0.6"/>
+  <circle cx="300" cy="30" r="8" fill="#69BE28" opacity="0.8"/>
+  <circle cx="350" cy="25" r="6" fill="#69BE28" opacity="0.6"/>
+
+  <!-- Simplified Hawk head mascot -->
+  <ellipse cx="200" cy="130" rx="70" ry="60" fill="#4a5568"/>
+  <ellipse cx="200" cy="140" rx="55" ry="45" fill="#69BE28"/>
+
+  <!-- Beak -->
+  <polygon points="200,150 180,180 220,180" fill="#a0aec0"/>
+  <polygon points="200,155 185,175 215,175" fill="#718096"/>
+
+  <!-- Eyes -->
+  <ellipse cx="175" cy="125" rx="18" ry="15" fill="white"/>
+  <ellipse cx="225" cy="125" rx="18" ry="15" fill="white"/>
+  <circle cx="178" cy="125" r="8" fill="#002244"/>
+  <circle cx="228" cy="125" r="8" fill="#002244"/>
+  <circle cx="180" cy="123" r="3" fill="white"/>
+  <circle cx="230" cy="123" r="3" fill="white"/>
+
+  <!-- Speech bubble -->
+  <ellipse cx="310" cy="90" rx="70" ry="35" fill="white"/>
+  <polygon points="260,100 275,130 290,105" fill="white"/>
+  <text x="310" y="85" text-anchor="middle" fill="#002244" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Upload your</text>
+  <text x="310" y="100" text-anchor="middle" fill="#002244" font-family="Arial, sans-serif" font-size="11" font-weight="bold">photos!</text>
+
+  <!-- Call to action -->
+  <text x="200" y="250" text-anchor="middle" fill="#69BE28" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Tap "Share" to add your photo!</text>
+  <text x="200" y="275" text-anchor="middle" fill="#a0aec0" font-family="Arial, sans-serif" font-size="12">Be part of the 12th Man gallery</text>
+</svg>

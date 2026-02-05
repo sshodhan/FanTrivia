@@ -279,10 +279,23 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
       {/* Photo Grid */}
       <div className="flex-1 overflow-auto p-4">
         {photos.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <div className="text-5xl mb-4">📸</div>
-            <h2 className="text-xl font-bold text-foreground mb-2">No photos yet</h2>
-            <p className="text-muted-foreground">Be the first to share a photo!</p>
+          <div className="flex flex-col items-center justify-center h-64 text-center px-6">
+            <div className="text-6xl mb-4">📸</div>
+            <h2 className="text-2xl font-bold text-foreground mb-3">Join the 12th Man Gallery!</h2>
+            <p className="text-muted-foreground mb-6 max-w-xs">
+              Share your game day photos, Seahawks gear, or fan moments with fellow 12s!
+            </p>
+            {user && (
+              <Button
+                onClick={() => setShowUpload(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+                </svg>
+                Share Your First Photo
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
@@ -348,6 +361,25 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
                 </div>
               </div>
             ))}
+
+            {/* Upload CTA at bottom of gallery */}
+            {user && (
+              <div className="bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl p-6 text-center border border-primary/30">
+                <h3 className="text-lg font-bold text-foreground mb-2">Your turn!</h3>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Add your Seahawks photos to the gallery
+                </p>
+                <Button
+                  onClick={() => setShowUpload(true)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+                  </svg>
+                  Share a Photo
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -375,11 +407,12 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
               </button>
             </div>
 
-            {/* Hidden file input */}
+            {/* Hidden file input - supports camera capture on mobile */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              capture="environment"
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -389,18 +422,24 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "aspect-video rounded-xl mb-4 flex items-center justify-center border-2 border-dashed cursor-pointer transition-colors overflow-hidden",
-                previewUrl ? "border-primary bg-card" : "border-border bg-muted hover:border-primary/50"
+                previewUrl ? "border-primary bg-card" : "border-border bg-muted hover:border-primary/50 hover:bg-muted/80"
               )}
             >
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               ) : (
-                <div className="text-center text-muted-foreground">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
-                  </svg>
-                  <span className="text-sm">Tap to select a photo</span>
-                  <p className="text-xs mt-1">JPG, PNG, WebP, GIF (max 5MB)</p>
+                <div className="text-center text-muted-foreground px-4">
+                  <div className="flex justify-center gap-4 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                      <circle cx="12" cy="13" r="3"/>
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium">Take a photo or choose from gallery</span>
+                  <p className="text-xs mt-1 text-muted-foreground/70">JPG, PNG, WebP, GIF (max 5MB)</p>
                 </div>
               )}
             </div>
