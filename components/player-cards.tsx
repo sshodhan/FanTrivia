@@ -9,6 +9,44 @@ interface PlayerCardsProps {
   onBack: () => void;
 }
 
+// Player category type
+type PlayerCategory = 'sb48' | '2025-hawks' | 'hof';
+
+// Category configuration
+const CATEGORIES: {
+  id: PlayerCategory;
+  label: string;
+  emoji: string;
+  title: string;
+  subtitle: string;
+  statsLabel: string;
+}[] = [
+  {
+    id: 'sb48',
+    label: 'SB 48',
+    emoji: '🏆',
+    title: 'Super Bowl Heroes',
+    subtitle: 'Super Bowl XLVIII Champions',
+    statsLabel: 'Super Bowl XLVIII Stats',
+  },
+  {
+    id: '2025-hawks',
+    label: '2025 Hawks',
+    emoji: '🦅',
+    title: '2025 Seahawks',
+    subtitle: 'Current Roster Stars',
+    statsLabel: '2025 Season Stats',
+  },
+  {
+    id: 'hof',
+    label: 'Hall of Fame',
+    emoji: '⭐',
+    title: 'Hall of Fame',
+    subtitle: 'Seahawks Legends',
+    statsLabel: 'Career Stats',
+  },
+];
+
 // Display format for the component
 interface DisplayPlayer {
   id: string;
@@ -25,6 +63,7 @@ interface DisplayPlayer {
 interface PlayersResponse {
   players: ApiPlayer[];
   total: number;
+  category: string;
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -54,35 +93,67 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
 
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('sb48');
+
+  const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
   const { data, error, isLoading } = useSWR<PlayersResponse>(
-    '/api/players',
+    `/api/players?category=${selectedCategory}`,
     fetcher
   );
 
   const players = data?.players.map(transformPlayer) || [];
 
+  // Reusable header component
+  const renderHeader = () => (
+    <header className="p-4 flex items-center gap-4 border-b border-border">
+      <button
+        onClick={onBack}
+        className="text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Go back"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
+      <div>
+        <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
+          {currentCategory.title}
+        </h1>
+        <p className="text-sm text-muted-foreground">{currentCategory.subtitle}</p>
+      </div>
+    </header>
+  );
+
+  // Reusable pill selector component
+  const renderPillSelector = () => (
+    <div className="sticky top-0 z-10 bg-background border-b border-border">
+      <div className="flex gap-2 p-4 overflow-x-auto scrollbar-hide">
+        {CATEGORIES.map((category) => (
+          <button
+            key={category.id}
+            onClick={() => setSelectedCategory(category.id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all",
+              selectedCategory === category.id
+                ? "bg-primary text-primary-foreground"
+                : "bg-card text-foreground hover:bg-card/80"
+            )}
+          >
+            <span>{category.emoji}</span>
+            <span className="font-medium">{category.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <header className="p-4 flex items-center gap-4 border-b border-border">
-          <button
-            onClick={onBack}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Go back"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6"/>
-            </svg>
-          </button>
-          <div>
-            <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
-              Super Bowl Heroes
-            </h1>
-            <p className="text-sm text-muted-foreground">Super Bowl XLVIII Champions</p>
-          </div>
-        </header>
+        {renderHeader()}
+        {renderPillSelector()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading players...</div>
         </div>
@@ -94,23 +165,8 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <header className="p-4 flex items-center gap-4 border-b border-border">
-          <button
-            onClick={onBack}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Go back"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6"/>
-            </svg>
-          </button>
-          <div>
-            <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
-              Super Bowl Heroes
-            </h1>
-            <p className="text-sm text-muted-foreground">Super Bowl XLVIII Champions</p>
-          </div>
-        </header>
+        {renderHeader()}
+        {renderPillSelector()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-destructive">Failed to load players</div>
         </div>
@@ -121,23 +177,10 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="p-4 flex items-center gap-4 border-b border-border">
-        <button
-          onClick={onBack}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Go back"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
-        </button>
-        <div>
-          <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
-            Super Bowl Heroes
-          </h1>
-          <p className="text-sm text-muted-foreground">Super Bowl XLVIII Champions</p>
-        </div>
-      </header>
+      {renderHeader()}
+
+      {/* Category Pills */}
+      {renderPillSelector()}
 
       {/* Player Grid */}
       <div className="flex-1 overflow-auto p-4">
@@ -243,7 +286,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 
                 {/* Player Info Overlay - positioned at bottom of image */}
                 <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-1">Super Bowl XLVIII</p>
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-1">{currentCategory.subtitle}</p>
                   <h2 className="text-4xl font-bold text-foreground leading-tight">{selectedPlayer.name}</h2>
                   <p className="text-muted-foreground text-lg">{selectedPlayer.position}</p>
                 </div>
@@ -254,7 +297,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-lg">📊</span>
                   <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
-                    Super Bowl XLVIII Stats
+                    {currentCategory.statsLabel}
                   </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
