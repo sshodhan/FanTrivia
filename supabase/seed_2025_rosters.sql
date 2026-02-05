@@ -1,14 +1,14 @@
 -- ============================================
 -- SEED DATA: 2025 Full Rosters (Seahawks + Patriots)
 -- Seahawks: 24 players + 5 coaches (display_order 1-29)
--- Patriots: 24 players + 4 coaches (display_order 101-128)
+-- Patriots: 51 players + 4 coaches (display_order 101-170)
 -- Updated: Feb 5, 2026 - Official roster from seahawks.com
 -- Run this AFTER schema_user.sql AND migrations/20260205_add_image_validated.sql
 -- ============================================
 
 -- Clear existing 2025 players to avoid duplicates
 DELETE FROM players WHERE display_order BETWEEN 1 AND 50;
-DELETE FROM players WHERE display_order BETWEEN 100 AND 150;
+DELETE FROM players WHERE display_order BETWEEN 100 AND 200;
 
 -- ============================================
 -- 2025 SEAHAWKS - Super Bowl LX Roster (24 players + 5 coaches)
@@ -262,9 +262,10 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
 
 
 -- ============================================
--- 2025 PATRIOTS - Super Bowl LX Opponent (24 players + 4 coaches)
--- display_order: 101-128
+-- 2025 PATRIOTS - Super Bowl LX Opponent (51 players + 4 coaches)
+-- display_order: 101-170
 -- Updated with 2025 FA acquisitions: Diggs, Landry, Spillane, Davis, Henderson
+-- Full 51-man roster as of Feb 2026
 -- ============================================
 
 -- OFFENSE (12 players)
