@@ -134,47 +134,42 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
             return (
               <div
                 key={entry.username}
-                className="flex items-center gap-3"
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2.5 rounded-full transition-all',
+                  'bg-[#001B33] border border-[#002244]',
+                  'hover:bg-[#002244] hover:border-[#69BE28]',
+                  isCurrentUser && 'border-[#69BE28]'
+                )}
               >
-                {/* Rank Number - Outside the pill */}
-                <div className="w-6 flex-shrink-0 text-center">
-                  <span className="text-lg font-bold text-[#A5ACAF]">{entry.rank}</span>
+                {/* Rank Number - Small, inside pill */}
+                <span className="text-sm font-semibold text-[#A5ACAF] w-5 text-center flex-shrink-0">
+                  {entry.rank}
+                </span>
+
+                {/* Avatar Circle */}
+                <div className="w-9 h-9 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">{getAvatarEmoji(entry.avatar)}</span>
                 </div>
 
-                {/* Pill Container */}
-                <div
-                  className={cn(
-                    'flex-1 flex items-center gap-3 px-4 py-3 rounded-full transition-all',
-                    'bg-[#001B33] border border-[#002244]',
-                    'hover:bg-[#002244] hover:border-[#69BE28]',
-                    isCurrentUser && 'border-[#69BE28]'
-                  )}
-                >
-                  {/* Avatar Circle */}
-                  <div className="w-10 h-10 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl">{getAvatarEmoji(entry.avatar)}</span>
+                {/* Team Info - More space for username */}
+                <div className="flex-1 min-w-0 pr-1">
+                  <div className={cn(
+                    'font-bold truncate leading-tight',
+                    isCurrentUser ? 'text-[#69BE28]' : 'text-white'
+                  )}>
+                    {entry.username}
                   </div>
+                  <div className="text-xs text-[#A5ACAF]">
+                    {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
+                  </div>
+                </div>
 
-                  {/* Team Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className={cn(
-                      'font-bold truncate leading-tight',
-                      isCurrentUser ? 'text-[#69BE28]' : 'text-white'
-                    )}>
-                      {entry.username}
-                    </div>
-                    <div className="text-sm text-[#A5ACAF]">
-                      {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
-                    </div>
+                {/* Points - Compact */}
+                <div className="text-right flex-shrink-0 min-w-[40px]">
+                  <div className="text-xl font-black text-[#69BE28] leading-none">
+                    {entry.total_points}
                   </div>
-
-                  {/* Points */}
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-2xl font-black text-[#69BE28] leading-none">
-                      {entry.total_points}
-                    </div>
-                    <div className="text-xs font-medium text-[#A5ACAF]">pts</div>
-                  </div>
+                  <div className="text-[10px] font-medium text-[#A5ACAF]">pts</div>
                 </div>
               </div>
             );
