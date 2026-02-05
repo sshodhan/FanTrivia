@@ -134,58 +134,47 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
             return (
               <div
                 key={entry.username}
-                className={cn(
-                  'flex items-center gap-3 p-4 rounded-2xl transition-all',
-                  'bg-[#001B33] border border-[#002244] shadow-sm',
-                  'hover:bg-[#002244] hover:border-[#69BE28] hover:scale-[1.01]',
-                  'active:scale-[0.99]',
-                  isCurrentUser && 'border-[#69BE28]'
-                )}
+                className="flex items-center gap-3"
               >
-                {/* Rank Badge */}
-                {isTopThree(entry.rank) ? (
-                  <div className="w-12 h-12 rounded-full bg-[#69BE28] flex items-center justify-center flex-shrink-0">
-                    <span className="text-xl font-black text-[#002244]">{entry.rank}</span>
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl font-bold text-[#A5ACAF]">{entry.rank}</span>
-                  </div>
-                )}
-
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
-                  <span className="text-xl">{getAvatarEmoji(entry.avatar)}</span>
+                {/* Rank Number - Outside the pill */}
+                <div className="w-6 flex-shrink-0 text-center">
+                  <span className="text-lg font-bold text-[#A5ACAF]">{entry.rank}</span>
                 </div>
 
-                {/* Team Info */}
-                <div className="flex-1 min-w-0">
-                  <div className={cn(
-                    'font-bold text-lg truncate leading-tight',
-                    isCurrentUser ? 'text-[#69BE28]' : 'text-white'
-                  )}>
-                    {entry.username}
-                    {isCurrentUser && <span className="ml-1 text-xs opacity-70">(You)</span>}
+                {/* Pill Container */}
+                <div
+                  className={cn(
+                    'flex-1 flex items-center gap-3 px-4 py-3 rounded-full transition-all',
+                    'bg-[#001B33] border border-[#002244]',
+                    'hover:bg-[#002244] hover:border-[#69BE28]',
+                    isCurrentUser && 'border-[#69BE28]'
+                  )}
+                >
+                  {/* Avatar Circle */}
+                  <div className="w-10 h-10 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl">{getAvatarEmoji(entry.avatar)}</span>
                   </div>
-                  <div className="text-sm text-[#A5ACAF]">
-                    {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
-                  </div>
-                </div>
 
-                {/* Streak (only show if > 0) */}
-                {entry.current_streak > 0 && (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-lg">🔥</span>
-                    <span className="font-bold text-[#FF6B35]">{entry.current_streak}</span>
+                  {/* Team Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className={cn(
+                      'font-bold truncate leading-tight',
+                      isCurrentUser ? 'text-[#69BE28]' : 'text-white'
+                    )}>
+                      {entry.username}
+                    </div>
+                    <div className="text-sm text-[#A5ACAF]">
+                      {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
+                    </div>
                   </div>
-                )}
 
-                {/* Points */}
-                <div className="text-right flex-shrink-0 min-w-[60px]">
-                  <div className="text-3xl font-black text-[#69BE28] leading-none">
-                    {entry.total_points}
+                  {/* Points */}
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-2xl font-black text-[#69BE28] leading-none">
+                      {entry.total_points}
+                    </div>
+                    <div className="text-xs font-medium text-[#A5ACAF]">pts</div>
                   </div>
-                  <div className="text-sm font-medium text-[#A5ACAF]">pts</div>
                 </div>
               </div>
             );
