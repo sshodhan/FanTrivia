@@ -1,6 +1,7 @@
 -- ============================================
 -- SEED DATA: 2025 Full Rosters (Seahawks + Patriots)
--- 24 players each: Offense, Defense, Special Teams
+-- Seahawks: 24 players + 5 coaches (display_order 1-29)
+-- Patriots: 24 players + 4 coaches (display_order 101-128)
 -- Run this AFTER schema_user.sql
 -- ============================================
 
@@ -9,8 +10,8 @@ DELETE FROM players WHERE display_order BETWEEN 1 AND 50;
 DELETE FROM players WHERE display_order BETWEEN 100 AND 150;
 
 -- ============================================
--- 2025 SEAHAWKS - Super Bowl LX Roster (24 players)
--- display_order: 1-24
+-- 2025 SEAHAWKS - Super Bowl LX Roster (24 players + 5 coaches)
+-- display_order: 1-29
 -- ============================================
 
 -- OFFENSE (12 players)
@@ -214,10 +215,54 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 );
 
+-- COACHING STAFF (5 coaches)
+INSERT INTO players (name, jersey_number, position, display_order, image_url, bio, stats, trivia, is_active) VALUES
+(
+  'Mike Macdonald', 0, 'Head Coach', 25,
+  NULL,
+  'Seahawks Head Coach - 2025 Season',
+  '{"Record": "14-3", "NFC Seed": "1st", "Division": "NFC West", "Playoff Record": "2-0"}'::jsonb,
+  '["Youngest head coach to lead team to Super Bowl at 38", "Former Ravens defensive coordinator", "Defensive mastermind behind top-5 Seattle defense", "First-year head coach reaching Super Bowl"]'::jsonb,
+  true
+),
+(
+  'Klint Kubiak', 0, 'Offensive Coordinator', 26,
+  NULL,
+  'Seahawks OC - 2025 Season',
+  '{"Points/Game": "27.8", "Total Offense": "5,892 yds", "Passing": "4,048 yds", "Rushing": "1,844 yds"}'::jsonb,
+  '["Son of Super Bowl champion coach Gary Kubiak", "Former Vikings OC", "Architect of potent Seahawks offense", "Maximized Sam Darnolds potential"]'::jsonb,
+  true
+),
+(
+  'Aden Durde', 0, 'Defensive Coordinator', 27,
+  NULL,
+  'Seahawks DC - 2025 Season',
+  '{"Points Allowed": "18.2/game", "Sacks": "48", "Turnovers": "28", "3rd Down%": "34.2%"}'::jsonb,
+  '["Former Cowboys defensive assistant", "Implemented aggressive scheme", "Top-5 scoring defense", "Ball-hawking philosophy"]'::jsonb,
+  true
+),
+(
+  'Leslie Frazier', 0, 'Assistant Head Coach', 28,
+  NULL,
+  'Seahawks Assistant HC - 2025 Season',
+  '{"Experience": "25+ years", "Previous HC": "Vikings 2010-13", "Super Bowls": "2 (as player/coach)", "Mentored": "Multiple Pro Bowlers"}'::jsonb,
+  '["Former Vikings head coach", "Super Bowl champion as player (1985 Bears)", "Veteran defensive mind", "Key leadership voice in building culture"]'::jsonb,
+  true
+),
+(
+  'John Schneider', 0, 'General Manager', 29,
+  NULL,
+  'Seahawks GM - 2025 Season',
+  '{"Draft Picks": "150+", "Pro Bowlers Drafted": "15", "Tenure": "15 years", "Super Bowls": "2 appearances"}'::jsonb,
+  '["Architect of Legion of Boom era", "Built Super Bowl XLVIII championship roster", "Known for late-round gems", "Extended with Seahawks through 2027"]'::jsonb,
+  true
+);
+
 
 -- ============================================
--- 2025 PATRIOTS - Super Bowl LX Opponent (24 players)
--- display_order: 101-124
+-- 2025 PATRIOTS - Super Bowl LX Opponent (24 players + 4 coaches)
+-- display_order: 101-128
+-- Updated with 2025 FA acquisitions: Diggs, Landry, Spillane, Davis, Henderson
 -- ============================================
 
 -- OFFENSE (12 players)
@@ -239,11 +284,11 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'Antonio Gibson', 21, 'Running Back', 103,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/4039359.png',
+  'TreVeyon Henderson', 28, 'Running Back', 103,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/4567675.png',
   'Patriots RB2 - 2025 Season',
-  '{"Rush Yds": "445", "Rush TD": "4", "Rec Yds": "312", "Total Yds": "757", "Yds/Carry": "4.8"}'::jsonb,
-  '["Memphis product", "Former Washington Commander", "Explosive change-of-pace back", "Signed in 2024 free agency"]'::jsonb,
+  '{"Rush Yds": "512", "Rush TD": "5", "Rec Yds": "285", "Total Yds": "797", "Yds/Carry": "5.1"}'::jsonb,
+  '["2025 second-round pick from Ohio State", "Dynamic speed back with home-run ability", "Explosive complement to Stevenson", "Averaged 6.1 YPC in college career"]'::jsonb,
   true
 ),
 (
@@ -263,11 +308,11 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'Kendrick Bourne', 84, 'Wide Receiver', 106,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/3042876.png',
-  'Patriots WR3 - 2025 Season',
-  '{"Receptions": "45", "Rec Yds": "612", "Rec TD": "4", "Yds/Rec": "13.6", "YAC": "285"}'::jsonb,
-  '["Eastern Washington product", "Known for infectious energy", "Veteran leader and YAC specialist", "Signed from 49ers in 2021"]'::jsonb,
+  'Stefon Diggs', 14, 'Wide Receiver', 106,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/2976212.png',
+  'Patriots WR - 2025 Season',
+  '{"Receptions": "82", "Rec Yds": "1,108", "Rec TD": "9", "Yds/Rec": "13.5", "Targets": "124"}'::jsonb,
+  '["4-time Pro Bowl selection", "Maryland product", "Elite route runner signed in 2025 free agency", "Over 1,000 receiving yards for 5th straight season"]'::jsonb,
   true
 ),
 (
@@ -346,11 +391,11 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'Matthew Judon', 9, 'Edge Rusher', 116,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/2576492.png',
-  'Patriots EDGE - 2025 Pro Bowl',
-  '{"Sacks": "12.5", "Tackles": "52", "TFL": "15", "FF": "3", "QB Hits": "30"}'::jsonb,
-  '["4-time Pro Bowl selection", "Grand Valley State product", "Veteran edge rusher leading defense", "Team sack leader"]'::jsonb,
+  'Harold Landry III', 58, 'Edge Rusher', 116,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/3116164.png',
+  'Patriots EDGE - 2025 Season',
+  '{"Sacks": "11.0", "Tackles": "48", "TFL": "13", "FF": "2", "QB Hits": "26"}'::jsonb,
+  '["2018 second-round pick from Boston College", "Signed from Titans in 2025 free agency", "Elite edge rusher returning to New England roots", "Career-high sack production in Patriots system"]'::jsonb,
   true
 ),
 (
@@ -362,11 +407,11 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'Jahlani Tavai', 48, 'Linebacker', 118,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/3895836.png',
+  'Robert Spillane', 41, 'Linebacker', 118,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/3128685.png',
   'Patriots LB - 2025 Season',
-  '{"Tackles": "86", "Sacks": "1.5", "INT": "0", "Pass Def": "4", "TFL": "5"}'::jsonb,
-  '["Hawaii product", "Originally drafted by Detroit", "Versatile linebacker excelling in coverage", "Signed in 2022"]'::jsonb,
+  '{"Tackles": "102", "Sacks": "2.5", "INT": "2", "Pass Def": "7", "TFL": "8"}'::jsonb,
+  '["Western Michigan product", "Signed from Raiders in 2025 free agency", "Physical downhill linebacker", "Over 100 tackles in second Patriots season"]'::jsonb,
   true
 ),
 (
@@ -378,11 +423,11 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'Jonathan Jones', 31, 'Cornerback', 120,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/2578265.png',
+  'Carlton Davis III', 24, 'Cornerback', 120,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/3915486.png',
   'Patriots CB - 2025 Season',
-  '{"Tackles": "62", "INT": "2", "Pass Def": "10", "Passer Rating Allowed": "72.4", "Targets": "58"}'::jsonb,
-  '["Auburn product", "Elite special teams player", "Veteran corner with playoff experience", "9th season with Patriots"]'::jsonb,
+  '{"Tackles": "58", "INT": "3", "Pass Def": "12", "Passer Rating Allowed": "68.8", "Targets": "65"}'::jsonb,
+  '["Auburn product", "Signed from Buccaneers in 2025 free agency", "Physical press corner", "Super Bowl LV champion"]'::jsonb,
   true
 ),
 (
@@ -418,6 +463,41 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   'Patriots P - 2025 Season',
   '{"Avg": "47.8", "Net": "43.2", "Inside 20": "24", "Long": "62", "Touchbacks": "6"}'::jsonb,
   '["Michigan State product", "2023 sixth-round pick", "Elite hang time and directional punting", "Ray Guy Award finalist in college"]'::jsonb,
+  true
+);
+
+-- COACHING STAFF (4 coaches)
+INSERT INTO players (name, jersey_number, position, display_order, image_url, bio, stats, trivia, is_active) VALUES
+(
+  'Mike Vrabel', 0, 'Head Coach', 125,
+  NULL,
+  'Patriots Head Coach - 2025 Season',
+  '{"Record": "14-3", "AFC Seed": "1st", "Division": "AFC East", "Playoff Record": "2-0"}'::jsonb,
+  '["3-time Super Bowl champion as Patriots LB", "Former Titans head coach (54-45 record)", "Returned home to New England in 2025", "Led Patriots to first Super Bowl since Brady era"]'::jsonb,
+  true
+),
+(
+  'Josh McDaniels', 0, 'Offensive Coordinator', 126,
+  NULL,
+  'Patriots OC - 2025 Season',
+  '{"Points/Game": "26.4", "Total Offense": "5,724 yds", "Passing": "3,892 yds", "Rushing": "1,832 yds"}'::jsonb,
+  '["Reunited with Patriots in 2025", "6-time Super Bowl champion", "Mastermind behind Tom Brady offenses", "Maximizing Drake Mayes development"]'::jsonb,
+  true
+),
+(
+  'DeMarcus Covington', 0, 'Defensive Coordinator', 127,
+  NULL,
+  'Patriots DC - 2025 Season',
+  '{"Points Allowed": "19.8/game", "Sacks": "52", "Turnovers": "26", "3rd Down%": "36.1%"}'::jsonb,
+  '["Promoted from defensive line coach", "Former Patriots player (2004-05)", "Implementing aggressive scheme", "Top-10 scoring defense"]'::jsonb,
+  true
+),
+(
+  'Eliot Wolf', 0, 'General Manager', 128,
+  NULL,
+  'Patriots GM - 2025 Season',
+  '{"Draft Picks": "25+", "Key Signings": "Diggs, Landry, Spillane, Davis", "Tenure": "3 years", "First Super Bowl": "Yes"}'::jsonb,
+  '["Son of legendary GM Ron Wolf", "Built championship roster through smart FA moves", "Drafted Drake Maye 3rd overall in 2024", "Key 2025 FA class transformed roster"]'::jsonb,
   true
 );
 
