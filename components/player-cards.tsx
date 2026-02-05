@@ -12,37 +12,62 @@ interface PlayerCardsProps {
 // Player category type
 type PlayerCategory = 'sb48' | '2025-hawks' | '2025-pats' | 'hof';
 
-// Position filter type
-type PositionFilter = 'all' | 'offense' | 'defense' | 'special-teams' | 'coaches';
+// Unit filter type
+type UnitFilter = 'all' | 'offense' | 'defense' | 'special';
 
-// Position filter configuration
-const POSITION_FILTERS: { id: PositionFilter; label: string }[] = [
+// Unit filter configuration
+const UNIT_FILTERS: { id: UnitFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'offense', label: 'Offense' },
   { id: 'defense', label: 'Defense' },
-  { id: 'special-teams', label: 'Special Teams' },
-  { id: 'coaches', label: 'Coaches' },
+  { id: 'special', label: 'Special Teams' },
 ];
 
-// Helper to check if a position is a coach/staff position
-function isCoachPosition(position: string): boolean {
-  const coachPositions = ['Head Coach', 'Offensive Coordinator', 'Defensive Coordinator', 'Assistant Head Coach', 'General Manager', 'Coordinator', 'Coach'];
-  return coachPositions.some(cp => position.includes(cp) || position.toLowerCase().includes('coach') || position.toLowerCase().includes('coordinator') || position.toLowerCase().includes('manager'));
-}
+// Map positions to units
+const OFFENSE_POSITIONS = [
+  'Quarterback', 'QB',
+  'Running Back', 'RB', 'Halfback', 'HB', 'Fullback', 'FB',
+  'Wide Receiver', 'WR',
+  'Tight End', 'TE',
+  'Offensive Tackle', 'OT', 'Left Tackle', 'LT', 'Right Tackle', 'RT',
+  'Offensive Guard', 'OG', 'Left Guard', 'LG', 'Right Guard', 'RG',
+  'Center', 'C',
+  'Offensive Line', 'OL',
+];
 
-// Helper to determine position category
-function getPositionCategory(position: string): PositionFilter {
-  if (isCoachPosition(position)) return 'coaches';
+const DEFENSE_POSITIONS = [
+  'Defensive End', 'DE',
+  'Defensive Tackle', 'DT', 'Nose Tackle', 'NT',
+  'Linebacker', 'LB', 'Inside Linebacker', 'ILB', 'Outside Linebacker', 'OLB', 'Middle Linebacker', 'MLB',
+  'Cornerback', 'CB',
+  'Safety', 'S', 'Free Safety', 'FS', 'Strong Safety', 'SS',
+  'Defensive Back', 'DB',
+  'Defensive Line', 'DL',
+];
 
-  const offensePositions = ['Quarterback', 'Running Back', 'Wide Receiver', 'Tight End', 'Offensive Tackle', 'Guard', 'Center', 'Fullback'];
-  const defensePositions = ['Defensive End', 'Defensive Tackle', 'Linebacker', 'Cornerback', 'Safety', 'Edge Rusher', 'Nose Tackle'];
-  const specialTeamsPositions = ['Kicker', 'Punter', 'Long Snapper', 'Kick Returner', 'Punt Returner'];
+const SPECIAL_TEAMS_POSITIONS = [
+  'Kicker', 'K', 'PK',
+  'Punter', 'P',
+  'Long Snapper', 'LS',
+  'Kick Returner', 'KR',
+  'Punt Returner', 'PR',
+];
 
-  if (offensePositions.some(p => position.includes(p))) return 'offense';
-  if (defensePositions.some(p => position.includes(p))) return 'defense';
-  if (specialTeamsPositions.some(p => position.includes(p))) return 'special-teams';
-
-  return 'all';
+function getPlayerUnit(position: string): 'offense' | 'defense' | 'special' {
+  const upperPosition = position.toUpperCase();
+  
+  if (OFFENSE_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'offense';
+  }
+  if (DEFENSE_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'defense';
+  }
+  if (SPECIAL_TEAMS_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'special';
+  }
+  
+  // Default to offense if unknown
+  return 'offense';
 }
 
 // Category configuration
@@ -54,14 +79,6 @@ const CATEGORIES: {
   subtitle: string;
   statsLabel: string;
 }[] = [
-  {
-    id: 'sb48',
-    label: 'SB 48',
-    emoji: '🏆',
-    title: 'Super Bowl Heroes',
-    subtitle: 'Super Bowl XLVIII Champions',
-    statsLabel: 'Super Bowl XLVIII Stats',
-  },
   {
     id: '2025-hawks',
     label: '2025 Hawks',
@@ -77,6 +94,14 @@ const CATEGORIES: {
     title: '2025 Patriots',
     subtitle: 'Super Bowl LX Opponent',
     statsLabel: '2025 Season Stats',
+  },
+  {
+    id: 'sb48',
+    label: 'SB 48',
+    emoji: '🏆',
+    title: 'Super Bowl Heroes',
+    subtitle: 'Super Bowl XLVIII Champions',
+    statsLabel: 'Super Bowl XLVIII Stats',
   },
   {
     id: 'hof',
@@ -134,8 +159,8 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
 
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('sb48');
-  const [positionFilter, setPositionFilter] = useState<PositionFilter>('all');
+  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2025-hawks');
+  const [selectedUnit, setSelectedUnit] = useState<UnitFilter>('all');
 
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
@@ -145,11 +170,11 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
   );
 
   const allPlayers = data?.players.map(transformPlayer) || [];
-
-  // Filter players by position
-  const players = positionFilter === 'all'
-    ? allPlayers
-    : allPlayers.filter(p => getPositionCategory(p.position) === positionFilter);
+  
+  // Filter players by selected unit
+  const players = selectedUnit === 'all' 
+    ? allPlayers 
+    : allPlayers.filter(player => getPlayerUnit(player.position) === selectedUnit);
 
   // Reusable header component
   const renderHeader = () => (
@@ -175,15 +200,11 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
   // Reusable pill selector component
   const renderPillSelector = () => (
     <div className="sticky top-0 z-10 bg-background border-b border-border">
-      {/* Category Pills */}
-      <div className="flex gap-2 p-4 pb-2 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 p-4 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((category) => (
           <button
             key={category.id}
-            onClick={() => {
-              setSelectedCategory(category.id);
-              setPositionFilter('all'); // Reset position filter when changing category
-            }}
+            onClick={() => setSelectedCategory(category.id)}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all",
               selectedCategory === category.id
@@ -196,26 +217,28 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
           </button>
         ))}
       </div>
+    </div>
+  );
 
-      {/* Position Filter Tabs - only show for 2025 teams */}
-      {(selectedCategory === '2025-hawks' || selectedCategory === '2025-pats') && (
-        <div className="flex gap-4 px-4 pb-3 overflow-x-auto scrollbar-hide">
-          {POSITION_FILTERS.map((filter) => (
-            <button
-              key={filter.id}
-              onClick={() => setPositionFilter(filter.id)}
-              className={cn(
-                "text-sm font-medium whitespace-nowrap transition-colors pb-1",
-                positionFilter === filter.id
-                  ? "text-foreground border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      )}
+  // Unit filter pills component
+  const renderUnitFilter = () => (
+    <div className="bg-background border-b border-border">
+      <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+        {UNIT_FILTERS.map((unit) => (
+          <button
+            key={unit.id}
+            onClick={() => setSelectedUnit(unit.id)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-all",
+              selectedUnit === unit.id
+                ? "bg-muted-foreground/30 text-foreground font-medium"
+                : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
+            )}
+          >
+            {unit.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 
@@ -225,6 +248,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
       <div className="min-h-screen flex flex-col bg-background">
         {renderHeader()}
         {renderPillSelector()}
+        {renderUnitFilter()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading players...</div>
         </div>
@@ -238,6 +262,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
       <div className="min-h-screen flex flex-col bg-background">
         {renderHeader()}
         {renderPillSelector()}
+        {renderUnitFilter()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-destructive">Failed to load players</div>
         </div>
@@ -252,6 +277,9 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
 
       {/* Category Pills */}
       {renderPillSelector()}
+
+      {/* Unit Filter Pills */}
+      {renderUnitFilter()}
 
       {/* Player Grid */}
       <div className="flex-1 overflow-auto p-4">
@@ -276,14 +304,9 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        const fallback = isCoachPosition(player.position)
-                          ? '<span class="text-5xl">🏈</span>'
-                          : `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
-                        e.currentTarget.parentElement!.innerHTML = fallback;
+                        e.currentTarget.parentElement!.innerHTML = `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
                       }}
                     />
-                  ) : isCoachPosition(player.position) ? (
-                    <span className="text-5xl">🏈</span>
                   ) : (
                     <span className="text-5xl font-bold text-muted-foreground/30">
                       #{player.number}
@@ -297,9 +320,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                     {player.name}
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isCoachPosition(player.position) && player.number > 0 && (
-                      <span className="text-primary font-bold">#{player.number}</span>
-                    )}
+                    <span className="text-primary font-bold">#{player.number}</span>
                     <span className="text-muted-foreground text-sm">{player.position}</span>
                   </div>
                 </div>
@@ -338,24 +359,18 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 {/* Jersey number fallback when no image */}
                 {!selectedPlayer.imageUrl && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    {isCoachPosition(selectedPlayer.position) ? (
-                      <span className="text-[80px]">🏈</span>
-                    ) : (
-                      <span className="text-[120px] font-bold text-muted-foreground/20">
-                        #{selectedPlayer.number}
-                      </span>
-                    )}
+                    <span className="text-[120px] font-bold text-muted-foreground/20">
+                      #{selectedPlayer.number}
+                    </span>
                   </div>
                 )}
                 {/* Gradient overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-
-                {/* Jersey Number Badge - hide for coaches */}
-                {!isCoachPosition(selectedPlayer.position) && selectedPlayer.number > 0 && (
-                  <div className="absolute top-4 right-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
-                    <span className="text-primary-foreground font-bold text-xl">#{selectedPlayer.number}</span>
-                  </div>
-                )}
+                
+                {/* Jersey Number Badge */}
+                <div className="absolute top-4 right-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
+                  <span className="text-primary-foreground font-bold text-xl">#{selectedPlayer.number}</span>
+                </div>
                 
                 {/* Close Button */}
                 <button
