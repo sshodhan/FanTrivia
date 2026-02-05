@@ -66,7 +66,7 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
     { refreshInterval: 30000 }
   );
 
-  const photos = data?.photos.map(transformPhoto) || [];
+  const photos = data?.photos?.map(transformPhoto) || [];
 
   // Handle like/unlike
   const handleLike = async (photoId: string) => {
