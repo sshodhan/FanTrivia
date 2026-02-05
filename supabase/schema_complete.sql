@@ -28,7 +28,8 @@ DROP TABLE IF EXISTS users CASCADE;
 -- 1. USERS TABLE
 -- ============================================
 CREATE TABLE users (
-  username TEXT PRIMARY KEY,
+  user_id TEXT PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
   avatar TEXT NOT NULL DEFAULT 'hawk',
   is_preset_image BOOLEAN DEFAULT true,
   image_url TEXT,
@@ -37,6 +38,7 @@ CREATE TABLE users (
   days_played INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   last_played_at TIMESTAMPTZ,
+  is_admin BOOLEAN NOT NULL DEFAULT false,
   CONSTRAINT valid_avatar CHECK (
     avatar IN ('hawk', 'blitz', '12', 'superfan', '12th_man', 'girls_rule', 'hero', 'champion', 'trophy', 'queen', 'sparkle', 'fire')
   ),
@@ -45,6 +47,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_total_points ON users(total_points DESC);
 CREATE INDEX idx_users_created_at ON users(created_at DESC);
+CREATE INDEX idx_users_username ON users(username);
 
 -- ============================================
 -- 2. TRIVIA QUESTIONS TABLE
@@ -104,7 +107,7 @@ CREATE TABLE game_day_rounds (
 -- ============================================
 CREATE TABLE daily_answers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES trivia_questions(id) ON DELETE CASCADE,
   day_identifier TEXT NOT NULL,
   selected_answer TEXT NOT NULL CHECK (selected_answer IN ('a', 'b', 'c', 'd')),
@@ -114,10 +117,10 @@ CREATE TABLE daily_answers (
   time_taken_ms INTEGER,
   answered_at TIMESTAMPTZ DEFAULT NOW(),
   -- One answer per user per question per day
-  UNIQUE(username, question_id, day_identifier)
+  UNIQUE(user_id, question_id, day_identifier)
 );
 
-CREATE INDEX idx_answers_username ON daily_answers(username);
+CREATE INDEX idx_answers_user_id ON daily_answers(user_id);
 CREATE INDEX idx_answers_day ON daily_answers(day_identifier);
 CREATE INDEX idx_answers_date ON daily_answers(answered_at);
 
@@ -126,7 +129,7 @@ CREATE INDEX idx_answers_date ON daily_answers(answered_at);
 -- ============================================
 CREATE TABLE photo_uploads (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   image_url TEXT NOT NULL,
   caption TEXT,
   like_count INTEGER DEFAULT 0,
@@ -135,7 +138,7 @@ CREATE TABLE photo_uploads (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_photos_username ON photo_uploads(username);
+CREATE INDEX idx_photos_user_id ON photo_uploads(user_id);
 CREATE INDEX idx_photos_approved ON photo_uploads(is_approved, is_hidden, created_at DESC);
 
 -- ============================================
@@ -144,9 +147,9 @@ CREATE INDEX idx_photos_approved ON photo_uploads(is_approved, is_hidden, create
 CREATE TABLE photo_likes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   photo_id UUID NOT NULL REFERENCES photo_uploads(id) ON DELETE CASCADE,
-  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(photo_id, username)
+  UNIQUE(photo_id, user_id)
 );
 
 CREATE INDEX idx_photo_likes_photo ON photo_likes(photo_id);
@@ -282,7 +285,7 @@ BEGIN
   SET
     total_points = total_points + NEW.points_earned + NEW.streak_bonus,
     last_played_at = NOW()
-  WHERE username = NEW.username;
+  WHERE user_id = NEW.user_id;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -297,6 +300,7 @@ DROP FUNCTION IF EXISTS get_leaderboard(INTEGER);
 CREATE OR REPLACE FUNCTION get_leaderboard(p_limit INTEGER DEFAULT 50)
 RETURNS TABLE (
   rank BIGINT,
+  user_id TEXT,
   username TEXT,
   avatar TEXT,
   total_points INTEGER,
@@ -307,6 +311,7 @@ BEGIN
   RETURN QUERY
   SELECT
     ROW_NUMBER() OVER (ORDER BY u.total_points DESC) as rank,
+    u.user_id,
     u.username,
     u.avatar,
     u.total_points,
