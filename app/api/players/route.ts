@@ -13,7 +13,7 @@ function getSupabase() {
 }
 
 // Player categories for filtering
-type PlayerCategory = 'all' | 'sb48' | '2025-hawks' | 'hof'
+type PlayerCategory = 'all' | 'sb48' | '2025-hawks' | 'lob' | 'hof'
 
 // Demo players data organized by category
 const DEMO_PLAYERS: Player[] = [
@@ -189,12 +189,66 @@ const DEMO_PLAYERS: Player[] = [
     display_order: 52,
     is_active: false,
   },
+  // Legion of Boom
+  {
+    id: 'lob-richard-sherman',
+    name: 'Richard Sherman',
+    jersey_number: 25,
+    position: 'Cornerback',
+    image_url: null,
+    stats: { 'INT': '32', 'Pro Bowls': '5', 'All-Pro': '3x' },
+    bio: 'Legion of Boom - All-Pro Cornerback',
+    super_bowl_highlight: 'NFC Championship tip that sealed Super Bowl berth',
+    trivia: ['Led NFL in interceptions in 2013', 'Stanford graduate with 3.9 GPA', 'Famous post-game interview after NFC Championship'],
+    display_order: 40,
+    is_active: false,
+  },
+  {
+    id: 'lob-earl-thomas',
+    name: 'Earl Thomas',
+    jersey_number: 29,
+    position: 'Free Safety',
+    image_url: null,
+    stats: { 'INT': '28', 'Pro Bowls': '7', 'All-Pro': '3x' },
+    bio: 'Legion of Boom - Elite Free Safety',
+    super_bowl_highlight: 'Patrolled the deep middle, 2 playoff interceptions',
+    trivia: ['7-time Pro Bowl selection', 'Fastest player in the LOB', 'Known for elite ball-hawking skills'],
+    display_order: 41,
+    is_active: false,
+  },
+  {
+    id: 'lob-kam-chancellor',
+    name: 'Kam Chancellor',
+    jersey_number: 31,
+    position: 'Strong Safety',
+    image_url: null,
+    stats: { 'Tackles': '607', 'Pro Bowls': '4', 'FF': '7' },
+    bio: 'Legion of Boom - The Enforcer',
+    super_bowl_highlight: 'Devastating hits that set the tone for the defense',
+    trivia: ['Known as Bam Bam Kam', 'Most feared hitter in the NFL', 'Career ended due to neck injury in 2017'],
+    display_order: 42,
+    is_active: false,
+  },
+  {
+    id: 'lob-byron-maxwell',
+    name: 'Byron Maxwell',
+    jersey_number: 41,
+    position: 'Cornerback',
+    image_url: null,
+    stats: { 'INT': '7', 'Pass Def': '39', 'Tackles': '175' },
+    bio: 'Legion of Boom - Lockdown Corner',
+    super_bowl_highlight: 'Shut down receivers opposite Sherman',
+    trivia: ['Started opposite Richard Sherman', 'Key part of #1 ranked defense', 'Earned big contract after 2014 season'],
+    display_order: 43,
+    is_active: false,
+  },
 ]
 
 // Filter players by category using display_order ranges and is_active flag
 // Database structure:
 // - 2025 Seahawks: is_active = true, display_order 1-10
 // - Super Bowl XLVIII Heroes: is_active = false, display_order 30-39
+// - Legion of Boom: is_active = false, display_order 40-49
 // - Hall of Fame: is_active = false, display_order 50-59
 function filterByCategory(players: Player[], category: PlayerCategory): Player[] {
   switch (category) {
@@ -202,6 +256,8 @@ function filterByCategory(players: Player[], category: PlayerCategory): Player[]
       return players.filter(p => !p.is_active && p.display_order >= 30 && p.display_order < 40)
     case '2025-hawks':
       return players.filter(p => p.is_active === true)
+    case 'lob':
+      return players.filter(p => !p.is_active && p.display_order >= 40 && p.display_order < 50)
     case 'hof':
       return players.filter(p => !p.is_active && p.display_order >= 50 && p.display_order < 60)
     case 'all':

@@ -10,7 +10,7 @@ interface PlayerCardsProps {
 }
 
 // Player category type
-type PlayerCategory = 'sb48' | '2025-hawks' | 'hof';
+type PlayerCategory = 'sb48' | '2025-hawks' | 'lob' | 'hof';
 
 // Category configuration
 const CATEGORIES: {
@@ -36,6 +36,14 @@ const CATEGORIES: {
     title: '2025 Seahawks',
     subtitle: 'Current Roster Stars',
     statsLabel: '2025 Season Stats',
+  },
+  {
+    id: 'lob',
+    label: 'Legion of Boom',
+    emoji: '💥',
+    title: 'Legion of Boom',
+    subtitle: 'Legendary Secondary',
+    statsLabel: 'Career Stats',
   },
   {
     id: 'hof',
