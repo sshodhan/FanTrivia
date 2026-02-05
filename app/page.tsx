@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserProvider, useUser } from '@/lib/user-context';
+import { useUser } from '@/lib/user-context';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
 import { TriviaGame } from '@/components/trivia-game';
@@ -131,9 +131,5 @@ function AppContent() {
 }
 
 export default function Home() {
-  return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
-  );
+  return <AppContent />;
 }
