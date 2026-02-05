@@ -30,16 +30,16 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Kenneth Walker III', 9, 'Running Back', 2,
   'https://a.espncdn.com/i/headshots/nfl/players/full/4567048.png', false,
   'Seahawks RB1 - 2025 Season',
-  '{"Rush Yds": "1,027", "Rush TD": "9", "Carries": "221", "Yds/Carry": "4.6", "Receptions": "31"}'::jsonb,
-  '["Rushed for over 1,000 yards in 2025", "4 rushing TDs in final two playoff games", "2022 second-round pick from Michigan State", "Career-high 1,309 scrimmage yards"]'::jsonb,
+  '{"Rush Yds": "1,027", "Rush TD": "5", "Carries": "221", "Yds/Carry": "4.6", "Long": "55"}'::jsonb,
+  '["Rushed for over 1,000 yards in 2025", "2022 second-round pick from Michigan State", "Consistent workhorse back", "Key playoff performer"]'::jsonb,
   true
 ),
 (
   'George Holani', 36, 'Running Back', 3,
   NULL, false,
   'Seahawks RB2 - 2025 Season',
-  '{"Rush Yds": "412", "Rush TD": "4", "Rec Yds": "185", "Yds/Carry": "4.4", "Receptions": "22"}'::jsonb,
-  '["Boise State product", "Versatile backup running back", "Strong pass blocker", "Key contributor in playoff run"]'::jsonb,
+  '{"Rush Yds": "73", "Rush TD": "1", "Carries": "22", "Yds/Carry": "3.3", "Long": "9"}'::jsonb,
+  '["Boise State product", "Versatile backup running back", "Strong pass blocker", "Key depth contributor"]'::jsonb,
   true
 ),
 (
@@ -54,7 +54,7 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Cooper Kupp', 10, 'Wide Receiver', 5,
   'https://a.espncdn.com/i/headshots/nfl/players/full/2977187.png', false,
   'Seahawks WR - Super Bowl LVI MVP',
-  '{"Receptions": "68", "Rec Yds": "924", "Rec TD": "6", "Yds/Rec": "13.6", "Targets": "98"}'::jsonb,
+  '{"Receptions": "47", "Rec Yds": "593", "Rec TD": "2", "Yds/Rec": "12.6", "Long": "67"}'::jsonb,
   '["Super Bowl LVI MVP with Rams", "Signed 3-year $45M deal with Seattle", "Yakima, Washington native returns home", "2021 NFL Offensive Player of the Year"]'::jsonb,
   true
 ),
@@ -62,15 +62,15 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Rashid Shaheed', 22, 'Wide Receiver', 6,
   'https://a.espncdn.com/i/headshots/nfl/players/full/4032473.png', false,
   'Seahawks WR - Deep Threat',
-  '{"Receptions": "38", "Rec Yds": "612", "Rec TD": "5", "Yds/Rec": "16.1", "Long": "68"}'::jsonb,
-  '["Acquired from Saints at trade deadline", "Elite deep threat with 4.36 speed", "Weber State product", "Averaged 16+ yards per catch in 2025"]'::jsonb,
+  '{"Receptions": "15", "Rec Yds": "188", "Rec TD": "0", "Yds/Rec": "12.5", "Long": "33"}'::jsonb,
+  '["Acquired from Saints at trade deadline", "Elite deep threat with 4.36 speed", "Weber State product", "Building chemistry late in season"]'::jsonb,
   true
 ),
 (
   'AJ Barner', 88, 'Tight End', 7,
   NULL, false,
   'Seahawks TE - 2025 Season',
-  '{"Receptions": "42", "Rec Yds": "485", "Rec TD": "4", "Yds/Rec": "11.5", "First Downs": "24"}'::jsonb,
+  '{"Receptions": "52", "Rec Yds": "519", "Rec TD": "6", "Yds/Rec": "10.0", "Long": "61"}'::jsonb,
   '["Michigan product", "2024 fourth-round pick", "Athletic pass-catching tight end", "Key red zone target in rookie season"]'::jsonb,
   true
 ),
@@ -153,8 +153,8 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Ernest Jones IV', 13, 'Linebacker', 17,
   NULL, false,
   'Seahawks LB - Defensive Captain',
-  '{"Tackles": "118", "Sacks": "2.5", "INT": "2", "Pass Def": "8", "TFL": "6"}'::jsonb,
-  '["South Carolina product", "Acquired from Titans", "Team defensive leader and signal caller", "Leading tackler in 2025"]'::jsonb,
+  '{"Tackles": "126", "Solo": "60", "Sacks": "0.5", "INT": "5", "INT Yds": "150", "INT TD": "1"}'::jsonb,
+  '["South Carolina product", "Acquired from Titans", "Team defensive leader and signal caller", "Leading tackler with 126 tackles and 5 INTs"]'::jsonb,
   true
 ),
 (
@@ -169,7 +169,7 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Devon Witherspoon', 21, 'Cornerback', 19,
   'https://a.espncdn.com/i/headshots/nfl/players/full/4429013.png', false,
   'Seahawks CB - 2025 All-Pro',
-  '{"Tackles": "68", "INT": "4", "Pass Def": "16", "Passer Rating Allowed": "52.3", "Targets": "78"}'::jsonb,
+  '{"Tackles": "72", "Solo": "48", "Assist": "24", "Pass Def": "16", "Passer Rating Allowed": "52.3"}'::jsonb,
   '["2023 DROY finalist", "Illinois product", "Shutdown corner allowing lowest passer rating", "2023 first-round pick"]'::jsonb,
   true
 ),
@@ -193,7 +193,7 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Coby Bryant', 8, 'Safety', 22,
   NULL, false,
   'Seahawks S - 2025 Season',
-  '{"Tackles": "76", "INT": "2", "Pass Def": "6", "FF": "1", "TFL": "3"}'::jsonb,
+  '{"Tackles": "66", "INT": "4", "INT Yds": "43", "Pass Def": "8", "TFL": "3"}'::jsonb,
   '["Cincinnati product", "2022 Jim Thorpe Award winner", "Converted from cornerback to safety", "2022 fourth-round pick"]'::jsonb,
   true
 );
