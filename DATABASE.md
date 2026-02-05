@@ -71,7 +71,7 @@ The database consists of **10 tables** organized into these categories:
 ### Entity Relationship Diagram
 
 ```
-users (username PK)
+users (user_id PK, username UNIQUE)
   │
   ├── daily_answers ──► trivia_questions
   │
@@ -79,7 +79,7 @@ users (username PK)
   │       │
   │       └── photo_likes
   │
-  └── (referenced by username throughout)
+  └── is_admin flag for admin access
 
 game_settings (singleton, id=1)
   │
@@ -101,11 +101,12 @@ admin_action_logs (standalone audit)
 
 ### 1. `users`
 
-Stores user profiles with username-based authentication (no email/password).
+Stores user profiles with secure user ID authentication.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `username` | TEXT (PK) | Unique username (2-30 chars) |
+| `user_id` | TEXT (PK) | Unique identifier (e.g., `MyName_1234`) |
+| `username` | TEXT (UNIQUE) | Display name (2-30 chars) |
 | `avatar` | TEXT | Selected avatar preset |
 | `is_preset_image` | BOOLEAN | Using preset vs custom image |
 | `image_url` | TEXT | Custom avatar URL |
@@ -114,6 +115,9 @@ Stores user profiles with username-based authentication (no email/password).
 | `days_played` | INTEGER | Number of days participated |
 | `created_at` | TIMESTAMPTZ | Registration timestamp |
 | `last_played_at` | TIMESTAMPTZ | Last activity timestamp |
+| `is_admin` | BOOLEAN | Admin access flag (default false) |
+
+**User ID Format**: `{username_no_spaces}_{4_random_digits}` (e.g., `LegionOfBoom_4829`)
 
 **Valid Avatars**: `hawk`, `blitz`, `12`, `superfan`, `12th_man`, `girls_rule`, `hero`, `champion`, `trophy`, `queen`, `sparkle`, `fire`
 
@@ -309,9 +313,20 @@ Tracks which users liked which photos.
 
 ```
 1. User enters username → Frontend calls POST /api/register
-2. API inserts into `users` table (username, avatar, is_preset_image)
-3. API returns user data with initial stats (0 points, 0 streak)
-4. Frontend stores username in localStorage
+2. API checks if username already exists → returns error if taken
+3. API generates unique user_id: {username_no_spaces}_{4_random_digits}
+4. API inserts into `users` table (user_id, username, avatar, is_preset_image)
+5. API returns user data with user_id and initial stats (0 points, 0 streak)
+6. Frontend stores user object (including user_id) in localStorage
+```
+
+### User Sign In Flow (Recovery)
+
+```
+1. User enters their user_id → Frontend calls POST /api/signin
+2. API looks up user by user_id
+3. If found, returns user data
+4. Frontend stores user object in localStorage
 ```
 
 ### Daily Trivia Flow
@@ -357,8 +372,10 @@ Tracks which users liked which photos.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/register` | POST | Register new user |
-| `/api/register?username=X` | GET | Check if username exists |
+| `/api/register` | POST | Register new user (generates user_id) |
+| `/api/signin` | POST | Sign in with user_id |
+| `/api/user?user_id=X` | GET | Get user by user_id |
+| `/api/user?username=X` | GET | Get user by username |
 | `/api/trivia/daily` | GET | Get today's questions |
 | `/api/trivia/daily/answer` | POST | Submit answer |
 | `/api/trivia/live` | GET | Get live game state |

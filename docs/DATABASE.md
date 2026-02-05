@@ -23,21 +23,26 @@ Hawktrivia uses **Supabase** (PostgreSQL) as its database backend. The schema su
 
 ## Tables
 
-### teams
-Stores registered teams (anonymous users).
+### users
+Stores registered users with secure user ID authentication.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `name` | VARCHAR(50) | Team display name (2-30 chars) |
-| `image_url` | TEXT | Team avatar URL |
-| `is_preset_image` | BOOLEAN | Whether using preset mascot |
-| `device_fingerprint` | VARCHAR(255) | Unique device ID (prevents duplicates) |
-| `session_token` | VARCHAR(255) | Authentication token |
+| `user_id` | TEXT (PK) | Unique identifier (e.g., `MyName_1234`) |
+| `username` | TEXT (UNIQUE) | Display name (2-30 chars) |
+| `avatar` | TEXT | Selected avatar preset |
+| `is_preset_image` | BOOLEAN | Whether using preset avatar |
+| `image_url` | TEXT | Custom avatar URL |
+| `total_points` | INTEGER | Accumulated trivia points |
+| `current_streak` | INTEGER | Consecutive correct answers |
+| `days_played` | INTEGER | Number of days participated |
 | `created_at` | TIMESTAMP | Registration time |
-| `last_active` | TIMESTAMP | Last activity time |
+| `last_played_at` | TIMESTAMP | Last activity time |
+| `is_admin` | BOOLEAN | Admin access flag (default false) |
 
-**Indexes:** `device_fingerprint`, `session_token`
+**User ID Format:** `{username_no_spaces}_{4_random_digits}` (e.g., `LegionOfBoom_4829`)
+
+**Indexes:** `total_points DESC`, `created_at DESC`, `username`
 
 ---
 

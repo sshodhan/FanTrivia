@@ -11,13 +11,17 @@ import { cn } from '@/lib/utils';
 import { Check, Loader2 } from 'lucide-react';
 import type { AvatarId } from '@/lib/database.types';
 
+type AuthMode = 'signup' | 'signin';
+
 interface EntryScreenProps {
   onStartTrivia: () => void;
 }
 
 export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
-  const { user, registerUser, isLoading } = useUser();
+  const { user, registerUser, signIn, isLoading } = useUser();
+  const [authMode, setAuthMode] = useState<AuthMode>('signup');
   const [username, setUsername] = useState(user?.username || '');
+  const [userId, setUserId] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState<AvatarId>(user?.avatar || teamAvatars[0].id);
   const [error, setError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -58,31 +62,47 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    const trimmedUsername = username.trim();
+    if (authMode === 'signin') {
+      // Sign in with User ID
+      const trimmedUserId = userId.trim();
+      if (!trimmedUserId) {
+        setError('Please enter your User ID');
+        return;
+      }
 
-    if (!trimmedUsername) {
-      setError('Please enter a username');
-      return;
-    }
-
-    if (trimmedUsername.length < 2) {
-      setError('Username must be at least 2 characters');
-      return;
-    }
-
-    if (trimmedUsername.length > 30) {
-      setError('Username must be 30 characters or less');
-      return;
-    }
-
-    // Call the API to register
-    const result = await registerUser(trimmedUsername, selectedAvatar);
-
-    if (result.success) {
-      onStartTrivia();
+      const result = await signIn(trimmedUserId);
+      if (result.success) {
+        onStartTrivia();
+      } else {
+        setError(result.error || 'Sign in failed');
+      }
     } else {
-      setError(result.error || 'Registration failed');
+      // Sign up with username
+      const trimmedUsername = username.trim();
+
+      if (!trimmedUsername) {
+        setError('Please enter a username');
+        return;
+      }
+
+      if (trimmedUsername.length < 2) {
+        setError('Username must be at least 2 characters');
+        return;
+      }
+
+      if (trimmedUsername.length > 30) {
+        setError('Username must be 30 characters or less');
+        return;
+      }
+
+      const result = await registerUser(trimmedUsername, selectedAvatar);
+      if (result.success) {
+        onStartTrivia();
+      } else {
+        setError(result.error || 'Registration failed');
+      }
     }
   };
 
@@ -108,13 +128,46 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
         </p>
       </div>
 
-      {/* Registration Form */}
+      {/* Auth Form */}
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-        {/* Username Section */}
+        {/* Auth Mode Toggle */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">
+            {authMode === 'signup' ? 'Username' : 'User ID'}
+          </span>
+          <div className="flex-1" />
+          <div className="flex bg-card rounded-full p-0.5 border border-border">
+            <button
+              type="button"
+              onClick={() => { setAuthMode('signup'); setError(''); }}
+              className={cn(
+                'px-3 py-1 text-xs font-medium rounded-full transition-all',
+                authMode === 'signup'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Sign Up
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAuthMode('signin'); setError(''); }}
+              className={cn(
+                'px-3 py-1 text-xs font-medium rounded-full transition-all',
+                authMode === 'signin'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+
+        {/* Sign Up Mode */}
+        {authMode === 'signup' && (
+        <>
         <div className="space-y-2">
-          <label htmlFor="username" className="block text-sm font-semibold text-foreground">
-            Username
-          </label>
 
           {/* Suggested Names - Horizontal Scroll */}
           <div
@@ -160,9 +213,6 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
             maxLength={30}
             disabled={isLoading}
           />
-          {error && (
-            <p className="text-destructive text-sm">{error}</p>
-          )}
         </div>
 
         {/* Avatar Selection */}
@@ -195,6 +245,34 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
             ))}
           </div>
         </div>
+        </>
+        )}
+
+        {/* Sign In Mode */}
+        {authMode === 'signin' && (
+          <div className="space-y-2">
+            <Input
+              id="userId"
+              type="text"
+              placeholder="Enter your User ID (e.g., MyName_1234)"
+              value={userId}
+              onChange={(e) => {
+                setUserId(e.target.value);
+                setError('');
+              }}
+              className="bg-card border-border text-foreground placeholder:text-muted-foreground h-12 text-base"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Your User ID was shown when you first registered. Check Settings to find it.
+            </p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-destructive text-sm">{error}</p>
+        )}
 
         {/* Start Button */}
         <Button
@@ -205,7 +283,7 @@ export function EntryScreen({ onStartTrivia }: EntryScreenProps) {
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              REGISTERING...
+              {authMode === 'signup' ? 'REGISTERING...' : 'SIGNING IN...'}
             </>
           ) : (
             'START TRIVIA'
