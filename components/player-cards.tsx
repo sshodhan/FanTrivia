@@ -12,6 +12,39 @@ interface PlayerCardsProps {
 // Player category type
 type PlayerCategory = 'sb48' | '2025-hawks' | '2025-pats' | 'hof';
 
+// Position filter type
+type PositionFilter = 'all' | 'offense' | 'defense' | 'special-teams' | 'coaches';
+
+// Position filter configuration
+const POSITION_FILTERS: { id: PositionFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'offense', label: 'Offense' },
+  { id: 'defense', label: 'Defense' },
+  { id: 'special-teams', label: 'Special Teams' },
+  { id: 'coaches', label: 'Coaches' },
+];
+
+// Helper to check if a position is a coach/staff position
+function isCoachPosition(position: string): boolean {
+  const coachPositions = ['Head Coach', 'Offensive Coordinator', 'Defensive Coordinator', 'Assistant Head Coach', 'General Manager', 'Coordinator', 'Coach'];
+  return coachPositions.some(cp => position.includes(cp) || position.toLowerCase().includes('coach') || position.toLowerCase().includes('coordinator') || position.toLowerCase().includes('manager'));
+}
+
+// Helper to determine position category
+function getPositionCategory(position: string): PositionFilter {
+  if (isCoachPosition(position)) return 'coaches';
+
+  const offensePositions = ['Quarterback', 'Running Back', 'Wide Receiver', 'Tight End', 'Offensive Tackle', 'Guard', 'Center', 'Fullback'];
+  const defensePositions = ['Defensive End', 'Defensive Tackle', 'Linebacker', 'Cornerback', 'Safety', 'Edge Rusher', 'Nose Tackle'];
+  const specialTeamsPositions = ['Kicker', 'Punter', 'Long Snapper', 'Kick Returner', 'Punt Returner'];
+
+  if (offensePositions.some(p => position.includes(p))) return 'offense';
+  if (defensePositions.some(p => position.includes(p))) return 'defense';
+  if (specialTeamsPositions.some(p => position.includes(p))) return 'special-teams';
+
+  return 'all';
+}
+
 // Category configuration
 const CATEGORIES: {
   id: PlayerCategory;
@@ -102,6 +135,7 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('sb48');
+  const [positionFilter, setPositionFilter] = useState<PositionFilter>('all');
 
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
@@ -110,7 +144,12 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
     fetcher
   );
 
-  const players = data?.players.map(transformPlayer) || [];
+  const allPlayers = data?.players.map(transformPlayer) || [];
+
+  // Filter players by position
+  const players = positionFilter === 'all'
+    ? allPlayers
+    : allPlayers.filter(p => getPositionCategory(p.position) === positionFilter);
 
   // Reusable header component
   const renderHeader = () => (
@@ -136,11 +175,15 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
   // Reusable pill selector component
   const renderPillSelector = () => (
     <div className="sticky top-0 z-10 bg-background border-b border-border">
-      <div className="flex gap-2 p-4 overflow-x-auto scrollbar-hide">
+      {/* Category Pills */}
+      <div className="flex gap-2 p-4 pb-2 overflow-x-auto scrollbar-hide">
         {CATEGORIES.map((category) => (
           <button
             key={category.id}
-            onClick={() => setSelectedCategory(category.id)}
+            onClick={() => {
+              setSelectedCategory(category.id);
+              setPositionFilter('all'); // Reset position filter when changing category
+            }}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all",
               selectedCategory === category.id
@@ -153,6 +196,26 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
           </button>
         ))}
       </div>
+
+      {/* Position Filter Tabs - only show for 2025 teams */}
+      {(selectedCategory === '2025-hawks' || selectedCategory === '2025-pats') && (
+        <div className="flex gap-4 px-4 pb-3 overflow-x-auto scrollbar-hide">
+          {POSITION_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              onClick={() => setPositionFilter(filter.id)}
+              className={cn(
+                "text-sm font-medium whitespace-nowrap transition-colors pb-1",
+                positionFilter === filter.id
+                  ? "text-foreground border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -213,9 +276,14 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
+                        const fallback = isCoachPosition(player.position)
+                          ? '<span class="text-5xl">🏈</span>'
+                          : `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
+                        e.currentTarget.parentElement!.innerHTML = fallback;
                       }}
                     />
+                  ) : isCoachPosition(player.position) ? (
+                    <span className="text-5xl">🏈</span>
                   ) : (
                     <span className="text-5xl font-bold text-muted-foreground/30">
                       #{player.number}
@@ -229,7 +297,9 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                     {player.name}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-primary font-bold">#{player.number}</span>
+                    {!isCoachPosition(player.position) && player.number > 0 && (
+                      <span className="text-primary font-bold">#{player.number}</span>
+                    )}
                     <span className="text-muted-foreground text-sm">{player.position}</span>
                   </div>
                 </div>
@@ -268,18 +338,24 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 {/* Jersey number fallback when no image */}
                 {!selectedPlayer.imageUrl && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[120px] font-bold text-muted-foreground/20">
-                      #{selectedPlayer.number}
-                    </span>
+                    {isCoachPosition(selectedPlayer.position) ? (
+                      <span className="text-[80px]">🏈</span>
+                    ) : (
+                      <span className="text-[120px] font-bold text-muted-foreground/20">
+                        #{selectedPlayer.number}
+                      </span>
+                    )}
                   </div>
                 )}
                 {/* Gradient overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-                
-                {/* Jersey Number Badge */}
-                <div className="absolute top-4 right-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
-                  <span className="text-primary-foreground font-bold text-xl">#{selectedPlayer.number}</span>
-                </div>
+
+                {/* Jersey Number Badge - hide for coaches */}
+                {!isCoachPosition(selectedPlayer.position) && selectedPlayer.number > 0 && (
+                  <div className="absolute top-4 right-4 w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg z-10">
+                    <span className="text-primary-foreground font-bold text-xl">#{selectedPlayer.number}</span>
+                  </div>
+                )}
                 
                 {/* Close Button */}
                 <button
