@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         days_played: 0,
         created_at: new Date().toISOString(),
         last_played_at: null,
+        is_admin: false,
       }
       return NextResponse.json({ user: mockUser, isNew: true })
     }

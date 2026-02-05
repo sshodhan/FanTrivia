@@ -44,6 +44,7 @@ export interface User {
   days_played: number
   created_at: string
   last_played_at: string | null
+  is_admin: boolean
 }
 
 export interface UserInsert {
