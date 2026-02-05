@@ -35,6 +35,7 @@ export type AnswerOption = 'a' | 'b' | 'c' | 'd'
 // USER TYPES
 // ============================================
 export interface User {
+  user_id: string
   username: string
   avatar: AvatarId
   is_preset_image: boolean

@@ -235,6 +235,33 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
               </div>
             </div>
 
+            {/* User ID Section */}
+            {user?.user_id && (
+            <div className="bg-card rounded-xl p-4">
+              <h3 className="font-bold text-foreground mb-2">Your User ID</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Save this ID to sign in on other devices or after resetting.
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-muted px-3 py-2 rounded-lg text-sm text-foreground font-mono overflow-x-auto">
+                  {user.user_id}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(user.user_id);
+                    setRefreshStatus('User ID copied!');
+                    setTimeout(() => setRefreshStatus(null), 2000);
+                  }}
+                  className="shrink-0"
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+            )}
+
             {/* Refresh Profile */}
             <div className="bg-card rounded-xl p-4">
               <h3 className="font-bold text-foreground mb-2">Sync Profile</h3>
@@ -244,7 +271,7 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
               {refreshStatus && (
                 <p className={cn(
                   'text-sm mb-3',
-                  refreshStatus.includes('success') ? 'text-primary' : 'text-destructive'
+                  refreshStatus.includes('success') || refreshStatus.includes('copied') ? 'text-primary' : 'text-destructive'
                 )}>
                   {refreshStatus}
                 </p>

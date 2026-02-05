@@ -12,6 +12,13 @@ function getSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey)
 }
 
+// Generate user_id: username (no spaces) + _ + 4 random digits
+function generateUserId(username: string): string {
+  const cleanUsername = username.replace(/[^a-zA-Z0-9]/g, '')
+  const randomDigits = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+  return `${cleanUsername}_${randomDigits}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -43,6 +50,7 @@ export async function POST(request: NextRequest) {
     if (!supabase) {
       // Demo mode - return mock user
       const mockUser: User = {
+        user_id: generateUserId(trimmedUsername),
         username: trimmedUsername,
         avatar,
         is_preset_image: true,
@@ -65,14 +73,21 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingUser) {
-      // Return existing user (login)
-      return NextResponse.json({ user: existingUser, isNew: false })
+      // Username already taken - return error (not login)
+      return NextResponse.json(
+        { error: 'Username is already taken. Please choose another or sign in with your User ID.' },
+        { status: 409 }
+      )
     }
+
+    // Generate unique user_id
+    const user_id = generateUserId(trimmedUsername)
 
     // Create new user
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
+        user_id,
         username: trimmedUsername,
         avatar,
         is_preset_image: true,

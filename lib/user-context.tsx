@@ -13,6 +13,8 @@ interface UserContextType {
   isLoading: boolean;
   // Registration helper - calls API and sets user
   registerUser: (username: string, avatar: AvatarId) => Promise<{ success: boolean; error?: string }>;
+  // Sign in with user_id
+  signIn: (userId: string) => Promise<{ success: boolean; error?: string }>;
   // Refresh user data from server
   refreshUser: () => Promise<{ success: boolean; error?: string }>;
   // Game state (kept for compatibility)
@@ -91,7 +93,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         // Handle specific error codes
         if (response.status === 409) {
-          return { success: false, error: 'Username already taken. Please choose another.' };
+          return { success: false, error: data.error || 'Username already taken. Please choose another or sign in.' };
         }
         if (response.status === 400) {
           return { success: false, error: data.error || 'Invalid username or avatar.' };
@@ -112,6 +114,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [setUser]);
 
+  const signIn = useCallback(async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Sign in failed. Please check your User ID.' };
+      }
+
+      // Success - set the user
+      const signedInUser: User = data.user;
+      setUser(signedInUser);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { success: false, error: 'Network error. Please check your connection.' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [setUser]);
+
   const setTodayPlayed = useCallback((played: boolean) => {
     setTodayPlayedState(played);
     if (played) {
@@ -122,13 +153,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.username) {
+    if (!user?.user_id) {
       return { success: false, error: 'No user logged in' };
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user?username=${encodeURIComponent(user.username)}`);
+      const response = await fetch(`/api/user?user_id=${encodeURIComponent(user.user_id)}`);
       const data = await response.json();
 
       if (!response.ok) {
@@ -146,7 +177,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.username, setUser]);
+  }, [user?.user_id, setUser]);
 
   // Don't render until loaded to prevent hydration mismatch
   if (!isLoaded) {
@@ -160,6 +191,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       clearUser,
       isLoading,
       registerUser,
+      signIn,
       refreshUser,
       gameState,
       setGameState,
