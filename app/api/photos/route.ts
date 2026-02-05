@@ -144,6 +144,36 @@ export async function GET(request: NextRequest) {
       has_liked: likedPhotoIds.has(p.id)
     }))
 
+    // If database is empty and this is the first page, show placeholder photos
+    if (response.length === 0 && !cursor) {
+      logServer({
+        level: 'info',
+        component: 'photos-api',
+        event: 'empty_db_showing_placeholders',
+        data: { samplePhotosCount: samplePhotos?.length }
+      })
+
+      const placeholders: PhotoWithTeam[] = samplePhotos.map(p => ({
+        id: p.id,
+        team_id: p.teamId,
+        image_url: p.imageUrl,
+        caption: p.caption,
+        likes: p.likes,
+        is_approved: true,
+        is_hidden: false,
+        uploaded_at: p.createdAt,
+        team_name: p.teamName,
+        team_image: null,
+        has_liked: false
+      }))
+
+      return NextResponse.json({
+        photos: placeholders,
+        next_cursor: null,
+        has_more: false
+      })
+    }
+
     return NextResponse.json({
       photos: response,
       next_cursor: response.length > 0 ? response[response.length - 1].uploaded_at : null,
