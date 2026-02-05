@@ -9,10 +9,10 @@ import { ResultsScreen } from '@/components/results-screen';
 import { Scoreboard } from '@/components/scoreboard';
 import { PlayerCards } from '@/components/player-cards';
 import { PhotoWall } from '@/components/photo-wall';
-import { AdminConsole } from '@/components/admin-console';
+import { SettingsScreen } from '@/components/settings-screen';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'results' | 'scoreboard' | 'players' | 'photos' | 'admin';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
 interface GameResult {
   score: number;
@@ -62,6 +62,7 @@ function AppContent() {
   // Map NavScreen to currentScreen for bottom nav
   const getNavScreen = (): NavScreen => {
     if (['entry', 'trivia', 'results'].includes(currentScreen)) return 'home';
+    if (currentScreen === 'settings') return 'settings';
     return currentScreen as NavScreen;
   };
 
@@ -112,8 +113,8 @@ function AppContent() {
         <PhotoWall onBack={() => setCurrentScreen('home')} />
       )}
 
-      {currentScreen === 'admin' && (
-        <AdminConsole 
+      {currentScreen === 'settings' && (
+        <SettingsScreen 
           onBack={() => setCurrentScreen('home')} 
           onResetFlow={handleResetFlow}
         />
@@ -123,7 +124,6 @@ function AppContent() {
         <BottomNav
           currentScreen={getNavScreen()}
           onNavigate={handleNavigation}
-          showAdmin={true}
         />
       )}
     </main>
