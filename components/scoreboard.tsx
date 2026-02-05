@@ -35,19 +35,8 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
     return AVATARS[avatar as AvatarId]?.emoji || '🦅';
   };
 
-  const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
-    if (rank === 2) return 'bg-gray-300/20 text-gray-300';
-    if (rank === 3) return 'bg-amber-600/20 text-amber-600';
-    return 'bg-muted text-muted-foreground';
-  };
-
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return `#${rank}`;
-  };
+  // Top 3 get green circular badge, others just show rank number
+  const isTopThree = (rank: number) => rank <= 3;
 
   if (isLoading) {
     return (
@@ -146,47 +135,41 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
               <div
                 key={entry.username}
                 className={cn(
-                  'flex items-center gap-4 p-4 rounded-xl transition-all',
-                  isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-card'
+                  'flex items-center gap-2 px-3 py-2.5 rounded-full transition-all',
+                  'bg-[#001B33] border border-[#002244]',
+                  'hover:bg-[#002244] hover:border-[#69BE28]',
+                  isCurrentUser && 'border-[#69BE28]'
                 )}
               >
-                {/* Rank */}
-                <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold',
-                  getRankStyle(entry.rank)
-                )}>
-                  {entry.rank <= 3 ? getRankIcon(entry.rank) : entry.rank}
+                {/* Rank Number - Small, inside pill */}
+                <span className="text-sm font-semibold text-[#A5ACAF] w-5 text-center flex-shrink-0">
+                  {entry.rank}
+                </span>
+
+                {/* Avatar Circle */}
+                <div className="w-9 h-9 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">{getAvatarEmoji(entry.avatar)}</span>
                 </div>
 
-                {/* Avatar */}
-                <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
-
-                {/* User Info */}
-                <div className="flex-1 min-w-0">
+                {/* Team Info - More space for username */}
+                <div className="flex-1 min-w-0 pr-1">
                   <div className={cn(
-                    'font-bold truncate',
-                    isCurrentUser ? 'text-primary' : 'text-foreground'
+                    'font-bold truncate leading-tight',
+                    isCurrentUser ? 'text-[#69BE28]' : 'text-white'
                   )}>
                     {entry.username}
-                    {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs text-[#A5ACAF]">
                     {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
-                    {entry.current_streak > 1 && (
-                      <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
-                    )}
                   </div>
                 </div>
 
-                {/* Points */}
-                <div className="text-right">
-                  <div className={cn(
-                    'text-xl font-bold',
-                    isCurrentUser ? 'text-primary' : 'text-foreground'
-                  )}>
+                {/* Points - Compact */}
+                <div className="text-right flex-shrink-0 min-w-[40px]">
+                  <div className="text-xl font-black text-[#69BE28] leading-none">
                     {entry.total_points}
                   </div>
-                  <div className="text-xs text-muted-foreground">pts</div>
+                  <div className="text-[10px] font-medium text-[#A5ACAF]">pts</div>
                 </div>
               </div>
             );

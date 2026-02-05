@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { LeaderboardEntry, AvatarId } from '@/lib/database.types'
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -36,60 +37,51 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Try to use the get_leaderboard function first
-    const { data: leaderboard, error } = await supabase
-      .rpc('get_leaderboard', { p_limit: limit })
+    // Query users directly - skip RPC to ensure we get all users
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('username, avatar, total_points, current_streak, days_played')
+      .order('total_points', { ascending: false })
+      .limit(limit)
 
-    if (error) {
-      console.error('Leaderboard RPC error:', error)
+    if (usersError) {
+      logServerError('scoreboard', 'users_query_failed', usersError, { limit })
+      return NextResponse.json(
+        { error: 'Failed to fetch leaderboard' },
+        { status: 500 }
+      )
+    }
 
-      // Fallback to direct query if function doesn't exist
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('username, avatar, total_points, current_streak, days_played')
-        .gt('total_points', 0)
-        .order('total_points', { ascending: false })
-        .limit(limit)
-
-      if (usersError) {
-        console.error('Users query error:', usersError)
-        return NextResponse.json(
-          { error: 'Failed to fetch leaderboard' },
-          { status: 500 }
-        )
-      }
-
-      const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
-        rank: index + 1,
-        username: user.username,
-        avatar: user.avatar as AvatarId,
-        total_points: user.total_points,
-        current_streak: user.current_streak,
-        days_played: user.days_played,
-      }))
-
-      return NextResponse.json({
-        leaderboard: entries,
-        total: entries.length,
+    // Soft error: no users returned when we expected data
+    if (!users || users.length === 0) {
+      logServer({
+        level: 'warn',
+        component: 'scoreboard',
+        event: 'no_users_returned',
+        data: { 
+          limit,
+          usersNull: users === null,
+          usersUndefined: users === undefined,
+          usersEmpty: Array.isArray(users) && users.length === 0
+        }
       })
     }
 
-    // Format the RPC results
-    const entries: LeaderboardEntry[] = (leaderboard || []).map((entry: {
-      rank: number | bigint
-      username: string
-      avatar: string
-      total_points: number
-      current_streak: number
-      days_played: number
-    }) => ({
-      rank: Number(entry.rank),
-      username: entry.username,
-      avatar: entry.avatar as AvatarId,
-      total_points: entry.total_points,
-      current_streak: entry.current_streak,
-      days_played: entry.days_played,
+    const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
+      rank: index + 1,
+      username: user.username,
+      avatar: user.avatar as AvatarId,
+      total_points: user.total_points,
+      current_streak: user.current_streak,
+      days_played: user.days_played,
     }))
+
+    logServer({
+      level: 'info',
+      component: 'scoreboard',
+      event: 'leaderboard_fetched',
+      data: { entriesCount: entries.length, limit }
+    })
 
     return NextResponse.json({
       leaderboard: entries,
@@ -101,7 +93,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Scoreboard error:', error)
+    logServerError('scoreboard', 'unexpected_error', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
