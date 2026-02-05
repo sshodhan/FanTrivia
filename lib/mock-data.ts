@@ -788,6 +788,15 @@ export const sampleLeaderboard = [
 // Demo photos for photo wall - incentivize sharing
 export const samplePhotos = [
   {
+    id: 'demo-0',
+    teamId: 'demo-team-0',
+    teamName: 'Lumen Field Crew',
+    imageUrl: '/photos/lumen-field-fans.jpg',
+    caption: 'Game day at Lumen Field! Go Hawks!',
+    likes: 67,
+    createdAt: '2024-02-03T19:30:00Z',
+  },
+  {
     id: 'demo-1',
     teamId: 'demo-team-1',
     teamName: 'Hawk Nation',
