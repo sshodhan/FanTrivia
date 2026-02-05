@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
 import { samplePhotos } from '@/lib/mock-data'
 import type { PhotoWithTeam } from '@/lib/database.types'
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,8 +11,21 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50)
     const teamId = request.headers.get('x-team-id') // For checking if user liked
 
+    logServer({
+      level: 'info',
+      component: 'photos-api',
+      event: 'request_received',
+      data: { cursor, limit, teamId, isDemoMode: isDemoMode() }
+    })
+
     // Demo mode
     if (isDemoMode()) {
+      logServer({
+        level: 'info',
+        component: 'photos-api',
+        event: 'demo_mode_active',
+        data: { samplePhotosCount: samplePhotos?.length }
+      })
       let photos = [...samplePhotos]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
@@ -46,7 +60,19 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createSupabaseServerClient()
+    logServer({
+      level: 'info',
+      component: 'photos-api',
+      event: 'supabase_client',
+      data: { hasClient: !!supabase }
+    })
     if (!supabase) {
+      logServer({
+        level: 'error',
+        component: 'photos-api',
+        event: 'no_supabase_client',
+        data: { error: 'Database not available' }
+      })
       return NextResponse.json(
         { error: 'Database not available' },
         { status: 503 }
@@ -76,12 +102,19 @@ export async function GET(request: NextRequest) {
     const { data: photos, error } = await query
 
     if (error) {
-      console.error('Photos fetch error:', error)
+      logServerError('photos-api', 'query_failed', error, { cursor, limit, teamId })
       return NextResponse.json(
         { error: 'Failed to fetch photos' },
         { status: 500 }
       )
     }
+
+    logServer({
+      level: 'info',
+      component: 'photos-api',
+      event: 'query_success',
+      data: { photosCount: photos?.length, hasPhotos: !!photos }
+    })
 
     // Check which photos the user has liked
     let likedPhotoIds = new Set<string>()
@@ -118,7 +151,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Photos error:', error)
+    logServerError('photos-api', 'unexpected_error', error, {})
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

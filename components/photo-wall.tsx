@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
 import type { PhotoWithTeam } from '@/lib/database.types';
 import { AVATARS, type AvatarId } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 
 interface PhotoWallProps {
   onBack: () => void;
@@ -65,6 +66,31 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
     fetcher,
     { refreshInterval: 30000 }
   );
+
+  // Debug logging for photos loading
+  useEffect(() => {
+    logClientDebug('PhotoWall', 'SWR state', { 
+      isLoading, 
+      hasError: !!error,
+      errorMessage: error?.message || error,
+      hasData: !!data,
+      dataKeys: data ? Object.keys(data) : [],
+      photosArray: data?.photos,
+      photosIsArray: Array.isArray(data?.photos),
+      photosLength: data?.photos?.length,
+      rawData: data
+    }, { force: true });
+  }, [data, error, isLoading]);
+
+  // Log any fetch errors
+  useEffect(() => {
+    if (error) {
+      logClientError(error, 'PhotoWall Fetch Error', {
+        url: '/api/photos?limit=20',
+        userId: user?.user_id
+      });
+    }
+  }, [error, user?.user_id]);
 
   const photos = data?.photos?.map(transformPhoto) || [];
 
