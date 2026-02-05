@@ -1,16 +1,122 @@
 'use client';
 
 import { useState } from 'react';
-import { samplePlayers } from '@/lib/mock-data';
-import type { Player } from '@/lib/types';
+import useSWR from 'swr';
 import { cn } from '@/lib/utils';
+import type { Player as ApiPlayer } from '@/lib/database.types';
 
 interface PlayerCardsProps {
   onBack: () => void;
 }
 
+// Display format for the component
+interface DisplayPlayer {
+  id: string;
+  name: string;
+  number: number;
+  position: string;
+  imageUrl: string | null;
+  stats: { label: string; value: string }[];
+  trivia: string[];
+  bio: string;
+  superBowlHighlight: string | null;
+}
+
+interface PlayersResponse {
+  players: ApiPlayer[];
+  total: number;
+}
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+// Transform API player to display format
+function transformPlayer(player: ApiPlayer): DisplayPlayer {
+  // Convert stats object to array format
+  const statsArray = player.stats
+    ? Object.entries(player.stats).map(([label, value]) => ({
+        label,
+        value: String(value),
+      }))
+    : [];
+
+  return {
+    id: player.id,
+    name: player.name,
+    number: player.jersey_number,
+    position: player.position,
+    imageUrl: player.image_url,
+    stats: statsArray,
+    trivia: player.trivia || [],
+    bio: player.bio || '',
+    superBowlHighlight: player.super_bowl_highlight,
+  };
+}
+
 export function PlayerCards({ onBack }: PlayerCardsProps) {
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
+
+  const { data, error, isLoading } = useSWR<PlayersResponse>(
+    '/api/players',
+    fetcher
+  );
+
+  const players = data?.players.map(transformPlayer) || [];
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="p-4 flex items-center gap-4 border-b border-border">
+          <button
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <div>
+            <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
+              Super Bowl Heroes
+            </h1>
+            <p className="text-sm text-muted-foreground">Super Bowl XLVIII Champions</p>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading players...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="p-4 flex items-center gap-4 border-b border-border">
+          <button
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Go back"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6"/>
+            </svg>
+          </button>
+          <div>
+            <h1 className="font-[var(--font-heading)] text-2xl font-bold text-foreground">
+              Super Bowl Heroes
+            </h1>
+            <p className="text-sm text-muted-foreground">Super Bowl XLVIII Champions</p>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-destructive">Failed to load players</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -35,33 +141,51 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
 
       {/* Player Grid */}
       <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {samplePlayers.map((player) => (
-            <button
-              key={player.id}
-              onClick={() => setSelectedPlayer(player)}
-              className="bg-card rounded-xl p-4 text-left transition-all hover:scale-[1.02] hover:bg-card/80 active:scale-[0.98]"
-            >
-              {/* Player Avatar Placeholder */}
-              <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center">
-                <span className="text-5xl font-bold text-muted-foreground/30">
-                  #{player.number}
-                </span>
-              </div>
-              
-              {/* Player Info */}
-              <div className="space-y-1">
-                <div className="font-bold text-foreground truncate">
-                  {player.name}
+        {players.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No players found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            {players.map((player) => (
+              <button
+                key={player.id}
+                onClick={() => setSelectedPlayer(player)}
+                className="bg-card rounded-xl p-4 text-left transition-all hover:scale-[1.02] hover:bg-card/80 active:scale-[0.98]"
+              >
+                {/* Player Avatar / Image */}
+                <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                  {player.imageUrl ? (
+                    <img
+                      src={player.imageUrl}
+                      alt={player.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerHTML = `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
+                      }}
+                    />
+                  ) : (
+                    <span className="text-5xl font-bold text-muted-foreground/30">
+                      #{player.number}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-primary font-bold">#{player.number}</span>
-                  <span className="text-muted-foreground text-sm">{player.position}</span>
+
+                {/* Player Info */}
+                <div className="space-y-1">
+                  <div className="font-bold text-foreground truncate">
+                    {player.name}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary font-bold">#{player.number}</span>
+                    <span className="text-muted-foreground text-sm">{player.position}</span>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Player Detail Modal */}
@@ -79,15 +203,25 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
               {/* Player Image Header - Taller full-bleed design */}
               <div className="relative h-[55vh] min-h-[380px] bg-card">
                 {/* Full-bleed player image */}
-                <img 
-                  src={selectedPlayer.imageUrl}
-                  alt={selectedPlayer.name}
-                  className="absolute inset-0 w-full h-full object-cover object-top grayscale"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                {selectedPlayer.imageUrl && (
+                  <img
+                    src={selectedPlayer.imageUrl}
+                    alt={selectedPlayer.name}
+                    className="absolute inset-0 w-full h-full object-cover object-top grayscale"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+                {/* Jersey number fallback when no image */}
+                {!selectedPlayer.imageUrl && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[120px] font-bold text-muted-foreground/20">
+                      #{selectedPlayer.number}
+                    </span>
+                  </div>
+                )}
                 {/* Gradient overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                 
