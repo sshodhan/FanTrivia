@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User, AvatarId, GameState } from './database.types';
+import { logClientDebug } from '@/lib/error-tracking/client-logger';
 
 // Re-export GameState from types.ts for compatibility
 export type { GameState } from './types';
@@ -76,6 +77,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const registerUser = useCallback(async (username: string, avatar: AvatarId): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
+    logClientDebug('UserContext', 'registerUser called', { username, avatar }, { force: true });
 
     try {
       const response = await fetch('/api/register', {
@@ -85,8 +87,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
+      logClientDebug('UserContext', 'API response received', { 
+        status: response.status, 
+        ok: response.ok, 
+        data 
+      }, { force: true });
 
       if (!response.ok) {
+        logClientDebug('UserContext', 'Registration failed', { 
+          status: response.status, 
+          error: data.error 
+        }, { force: true, level: 'warn' });
         // Handle specific error codes
         if (response.status === 409) {
           return { success: false, error: 'Username already taken. Please choose another.' };
@@ -99,11 +110,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       // Success - set the user
       const registeredUser: User = data.user;
+      logClientDebug('UserContext', 'User registered successfully', { 
+        username: registeredUser.username,
+        isNew: data.isNew 
+      }, { force: true });
       setUser(registeredUser);
 
       return { success: true };
     } catch (error) {
-      console.error('Registration error:', error);
+      logClientDebug('UserContext', 'Network error', { 
+        error: error instanceof Error ? error.message : String(error) 
+      }, { force: true, level: 'warn' });
       return { success: false, error: 'Network error. Please check your connection.' };
     } finally {
       setIsLoading(false);
