@@ -36,60 +36,33 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Try to use the get_leaderboard function first
-    const { data: leaderboard, error } = await supabase
-      .rpc('get_leaderboard', { p_limit: limit })
+    // Query users directly - skip RPC to ensure we get all users
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('username, avatar, total_points, current_streak, days_played')
+      .order('total_points', { ascending: false })
+      .limit(limit)
 
-    if (error) {
-      console.error('Leaderboard RPC error:', error)
+    console.log('[v0] Users query result:', { users, usersError })
 
-      // Fallback to direct query if function doesn't exist
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('username, avatar, total_points, current_streak, days_played')
-        .gte('total_points', 0)
-        .order('total_points', { ascending: false })
-        .limit(limit)
-
-      if (usersError) {
-        console.error('Users query error:', usersError)
-        return NextResponse.json(
-          { error: 'Failed to fetch leaderboard' },
-          { status: 500 }
-        )
-      }
-
-      const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
-        rank: index + 1,
-        username: user.username,
-        avatar: user.avatar as AvatarId,
-        total_points: user.total_points,
-        current_streak: user.current_streak,
-        days_played: user.days_played,
-      }))
-
-      return NextResponse.json({
-        leaderboard: entries,
-        total: entries.length,
-      })
+    if (usersError) {
+      console.error('[v0] Users query error:', usersError)
+      return NextResponse.json(
+        { error: 'Failed to fetch leaderboard' },
+        { status: 500 }
+      )
     }
 
-    // Format the RPC results
-    const entries: LeaderboardEntry[] = (leaderboard || []).map((entry: {
-      rank: number | bigint
-      username: string
-      avatar: string
-      total_points: number
-      current_streak: number
-      days_played: number
-    }) => ({
-      rank: Number(entry.rank),
-      username: entry.username,
-      avatar: entry.avatar as AvatarId,
-      total_points: entry.total_points,
-      current_streak: entry.current_streak,
-      days_played: entry.days_played,
+    const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
+      rank: index + 1,
+      username: user.username,
+      avatar: user.avatar as AvatarId,
+      total_points: user.total_points,
+      current_streak: user.current_streak,
+      days_played: user.days_played,
     }))
+
+    console.log('[v0] Leaderboard entries:', entries)
 
     return NextResponse.json({
       leaderboard: entries,
