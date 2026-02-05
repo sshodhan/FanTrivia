@@ -120,6 +120,7 @@ interface DisplayPlayer {
   number: number;
   position: string;
   imageUrl: string | null;
+  imageValidated: boolean;
   stats: { label: string; value: string }[];
   trivia: string[];
   bio: string;
@@ -150,6 +151,7 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
     number: player.jersey_number,
     position: player.position,
     imageUrl: player.image_url,
+    imageValidated: player.image_validated ?? false,
     stats: statsArray,
     trivia: player.trivia || [],
     bio: player.bio || '',
@@ -295,9 +297,9 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 onClick={() => setSelectedPlayer(player)}
                 className="bg-card rounded-xl p-4 text-left transition-all hover:scale-[1.02] hover:bg-card/80 active:scale-[0.98]"
               >
-                {/* Player Avatar / Image */}
+                {/* Player Avatar / Image - Only show if validated */}
                 <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                  {player.imageUrl ? (
+                  {player.imageUrl && player.imageValidated ? (
                     <img
                       src={player.imageUrl}
                       alt={player.name}
@@ -344,8 +346,8 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
             <div className="overflow-y-auto max-h-[95vh]">
               {/* Player Image Header - Taller full-bleed design */}
               <div className="relative h-[55vh] min-h-[380px] bg-card">
-                {/* Full-bleed player image */}
-                {selectedPlayer.imageUrl && (
+                {/* Full-bleed player image - Only show if validated */}
+                {selectedPlayer.imageUrl && selectedPlayer.imageValidated && (
                   <img
                     src={selectedPlayer.imageUrl}
                     alt={selectedPlayer.name}
@@ -356,8 +358,8 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                     }}
                   />
                 )}
-                {/* Jersey number fallback when no image */}
-                {!selectedPlayer.imageUrl && (
+                {/* Jersey number fallback when no image or not validated */}
+                {(!selectedPlayer.imageUrl || !selectedPlayer.imageValidated) && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-[120px] font-bold text-muted-foreground/20">
                       #{selectedPlayer.number}

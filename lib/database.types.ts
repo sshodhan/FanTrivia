@@ -242,6 +242,7 @@ export interface Player {
   jersey_number: number
   position: string
   image_url: string | null
+  image_validated: boolean              // Only show image if admin has validated
   stats: Record<string, string | number> | null  // Flexible key-value stats
   trivia: string[] | null                        // Array of trivia facts
   bio: string | null
