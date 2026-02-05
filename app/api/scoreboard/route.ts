@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('username, avatar, total_points, current_streak, days_played')
-        .gt('total_points', 0)
+        .gte('total_points', 0)
         .order('total_points', { ascending: false })
         .limit(limit)
 
