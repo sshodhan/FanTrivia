@@ -1,18 +1,18 @@
 -- ============================================
 -- SEED DATA: 2025 Full Rosters (Seahawks + Patriots)
--- Seahawks: 24 players + 5 coaches (display_order 1-29)
+-- Seahawks: 53 players + 5 coaches (display_order 1-58)
 -- Patriots: 51 players + 4 coaches (display_order 101-170)
 -- Updated: Feb 5, 2026 - Official roster from seahawks.com
 -- Run this AFTER schema_user.sql AND migrations/20260205_add_image_validated.sql
 -- ============================================
 
 -- Clear existing 2025 players to avoid duplicates
-DELETE FROM players WHERE display_order BETWEEN 1 AND 50;
+DELETE FROM players WHERE display_order BETWEEN 1 AND 100;
 DELETE FROM players WHERE display_order BETWEEN 100 AND 200;
 
 -- ============================================
--- 2025 SEAHAWKS - Super Bowl LX Roster (24 players + 5 coaches)
--- display_order: 1-29
+-- 2025 SEAHAWKS - Super Bowl LX Roster (53 players + 5 coaches)
+-- display_order: 1-58 (core 1-24, additional 30-58)
 -- Source: seahawks.com/team/roster (Feb 5, 2026)
 -- ============================================
 
@@ -185,7 +185,7 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Julian Love', 20, 'Safety', 21,
   'https://a.espncdn.com/i/headshots/nfl/players/full/3929856.png', false,
   'Seahawks S - 2025 Season',
-  '{"Tackles": "89", "INT": "3", "Pass Def": "8", "TFL": "4", "FF": "1"}'::jsonb,
+  '{"Tackles": "89", "INT": "1", "INT Yds": "26", "Pass Def": "8", "TFL": "4"}'::jsonb,
   '["Notre Dame product", "Signed from Giants in 2023", "Versatile safety making impact plays", "2019 fourth-round pick"]'::jsonb,
   true
 ),
@@ -204,16 +204,261 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Jason Myers', 5, 'Kicker', 23,
   'https://a.espncdn.com/i/headshots/nfl/players/full/2515934.png', false,
   'Seahawks K - 2025 Season',
-  '{"FG%": "92.3%", "FG Made": "24/26", "XP%": "100%", "Long": "56", "Points": "168"}'::jsonb,
-  '["Pro Bowl selection in 2018", "Marist College product", "Automatic from 50+ yards", "Perfect on extra points"]'::jsonb,
+  '{"FG%": "85.4%", "FG Made": "41/48", "50+ Yds": "9/11", "Long": "59", "Points": "152"}'::jsonb,
+  '["Pro Bowl selection in 2018", "Marist College product", "9 makes from 50+ yards", "11 years NFL experience"]'::jsonb,
   true
 ),
 (
   'Michael Dickson', 4, 'Punter', 24,
   'https://a.espncdn.com/i/headshots/nfl/players/full/3122899.png', false,
   'Seahawks P - 2025 Pro Bowl',
-  '{"Avg": "48.2", "Net": "44.1", "Inside 20": "28", "Long": "64", "Touchbacks": "4"}'::jsonb,
+  '{"Avg": "49.0", "Net": "42.2", "Inside 20": "20", "Punts": "52", "Long": "60"}'::jsonb,
   '["2018 Ray Guy Award winner", "Australian-born", "Elite punter flipping field position", "2025 Pro Bowl selection"]'::jsonb,
+  true
+);
+
+-- ADDITIONAL SEAHAWKS PLAYERS (29 players, display_order 30-58)
+INSERT INTO players (name, jersey_number, position, display_order, image_url, image_validated, bio, stats, trivia, is_active) VALUES
+-- Additional Quarterbacks
+(
+  'Drew Lock', 2, 'Quarterback', 30,
+  NULL, false,
+  'Seahawks QB2 - 2025 Season',
+  '{"Pass Yds": "15", "Comp": "2/3", "Rating": "78.5"}'::jsonb,
+  '["Missouri product", "7 years NFL experience", "Veteran backup quarterback", "Former Broncos starter"]'::jsonb,
+  true
+),
+(
+  'Jalen Milroe', 6, 'Quarterback', 31,
+  NULL, false,
+  'Seahawks QB3 - 2025 Season',
+  '{"Pass Yds": "0", "Rush Yds": "0"}'::jsonb,
+  '["Alabama product", "2025 draft pick", "Dynamic dual-threat quarterback", "SEC experience"]'::jsonb,
+  true
+),
+-- Additional Wide Receivers
+(
+  'Jake Bobo', 19, 'Wide Receiver', 32,
+  NULL, false,
+  'Seahawks WR - 2025 Season',
+  '{"Receptions": "2", "Rec Yds": "20", "Rec TD": "0"}'::jsonb,
+  '["Duke product", "3 years NFL experience", "Reliable depth receiver", "Special teams contributor"]'::jsonb,
+  true
+),
+(
+  'Dareke Young', 83, 'Wide Receiver', 33,
+  NULL, false,
+  'Seahawks WR - 2025 Season',
+  '{"Receptions": "2", "Rec Yds": "48", "KR Yds": "322", "KR Avg": "32.2"}'::jsonb,
+  '["Lenoir-Rhyne product", "Elite kick returner", "Special teams ace", "4 years NFL experience"]'::jsonb,
+  true
+),
+-- Additional Tight Ends
+(
+  'Elijah Arroyo', 18, 'Tight End', 34,
+  NULL, false,
+  'Seahawks TE - 2025 Season',
+  '{"Receptions": "15", "Rec Yds": "179", "Rec TD": "1"}'::jsonb,
+  '["Miami product", "Rookie contributor", "Athletic tight end with receiving upside", "Strong blocker"]'::jsonb,
+  true
+),
+(
+  'Eric Saubert', 81, 'Tight End', 35,
+  NULL, false,
+  'Seahawks TE - 2025 Season',
+  '{"Receptions": "4", "Rec Yds": "31", "Rec TD": "0"}'::jsonb,
+  '["Drake product", "8 years NFL experience", "Veteran blocking tight end", "Special teams contributor"]'::jsonb,
+  true
+),
+(
+  'Nick Kallerup', 89, 'Tight End', 36,
+  NULL, false,
+  'Seahawks TE - 2025 Season',
+  '{"Receptions": "0", "Rec Yds": "0", "Rec TD": "0"}'::jsonb,
+  '["Minnesota product", "Rookie contributor", "Blocking tight end depth", "Practice squad callup"]'::jsonb,
+  true
+),
+-- Additional Fullbacks
+(
+  'Brady Russell', 38, 'Fullback', 37,
+  NULL, false,
+  'Seahawks FB - 2025 Season',
+  '{"Receptions": "0", "Rec Yds": "0", "Blocks": "42"}'::jsonb,
+  '["Colorado product", "3 years NFL experience", "Lead blocker in short yardage", "Special teams contributor"]'::jsonb,
+  true
+),
+(
+  'Robbie Ouzts', 40, 'Fullback', 38,
+  NULL, false,
+  'Seahawks FB - 2025 Season',
+  '{"Receptions": "0", "Rec Yds": "0"}'::jsonb,
+  '["Alabama product", "Rookie contributor", "Physical lead blocker", "Special teams ace"]'::jsonb,
+  true
+),
+-- Additional Offensive Line
+(
+  'Christian Haynes', 64, 'Guard', 39,
+  NULL, false,
+  'Seahawks G - 2025 Season',
+  '{"Sacks Allowed": "1", "Pressures": "8", "PFF Grade": "72.4"}'::jsonb,
+  '["Connecticut product", "2 years NFL experience", "Interior line depth", "Versatile guard"]'::jsonb,
+  true
+),
+(
+  'Mason Richman', 78, 'Offensive Tackle', 40,
+  NULL, false,
+  'Seahawks T/G - 2025 Season',
+  '{"Sacks Allowed": "2", "Pressures": "12", "PFF Grade": "68.5"}'::jsonb,
+  '["Iowa product", "Rookie contributor", "Versatile lineman", "Can play multiple positions"]'::jsonb,
+  true
+),
+(
+  'Jalen Sundell', 61, 'Center', 41,
+  NULL, false,
+  'Seahawks C - 2025 Season',
+  '{"Sacks Allowed": "0", "Pressures": "4", "PFF Grade": "70.1"}'::jsonb,
+  '["North Dakota State product", "2 years NFL experience", "Interior depth", "Smart center"]'::jsonb,
+  true
+),
+(
+  'Grey Zabel', 76, 'Guard', 42,
+  NULL, false,
+  'Seahawks G - 2025 Season',
+  '{"Sacks Allowed": "1", "Pressures": "6", "PFF Grade": "67.8"}'::jsonb,
+  '["North Dakota State product", "Rookie contributor", "Guard depth", "Physical blocker"]'::jsonb,
+  true
+),
+(
+  'Amari Kight', 79, 'Offensive Tackle', 43,
+  NULL, false,
+  'Seahawks T - 2025 Season',
+  '{"Sacks Allowed": "2", "Pressures": "10", "PFF Grade": "66.2"}'::jsonb,
+  '["UCF product", "Rookie contributor", "Swing tackle depth", "Athletic lineman"]'::jsonb,
+  true
+),
+-- Additional Defensive Line
+(
+  'Mike Morris', 94, 'Defensive End', 44,
+  NULL, false,
+  'Seahawks DE - 2025 Season',
+  '{"Sacks": "3.5", "Tackles": "28", "TFL": "5"}'::jsonb,
+  '["Michigan product", "3 years NFL experience", "Edge rusher depth", "Run defender"]'::jsonb,
+  true
+),
+(
+  'Rylie Mills', 98, 'Defensive End', 45,
+  NULL, false,
+  'Seahawks DE - 2025 Season',
+  '{"Sacks": "2.0", "Tackles": "18", "TFL": "3"}'::jsonb,
+  '["Notre Dame product", "Rookie contributor", "Rookie edge defender", "Pass rush upside"]'::jsonb,
+  true
+),
+(
+  'Brandon Pili', 95, 'Nose Tackle', 46,
+  NULL, false,
+  'Seahawks NT - 2025 Season',
+  '{"Sacks": "1.0", "Tackles": "22", "TFL": "4"}'::jsonb,
+  '["USC product", "3 years NFL experience", "Run-stuffing interior depth", "Space eater"]'::jsonb,
+  true
+),
+-- Additional Linebackers
+(
+  'Derick Hall', 58, 'Linebacker', 47,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Sacks": "5.5", "Tackles": "42", "TFL": "8"}'::jsonb,
+  '["Auburn product", "3 years NFL experience", "Pass rush specialist", "Edge defender"]'::jsonb,
+  true
+),
+(
+  'DeMarcus Lawrence', 0, 'Linebacker', 48,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Sacks": "4.0", "Tackles": "32", "TFL": "6"}'::jsonb,
+  '["Boise State product", "12 years NFL experience", "Veteran pass rusher", "Former Cowboys star"]'::jsonb,
+  true
+),
+(
+  'Tyrice Knight', 48, 'Linebacker', 49,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Tackles": "58", "Sacks": "1.5", "TFL": "4"}'::jsonb,
+  '["UTEP product", "2 years NFL experience", "Off-ball linebacker", "Special teams contributor"]'::jsonb,
+  true
+),
+(
+  'Drake Thomas', 42, 'Linebacker', 50,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Tackles": "96", "Solo": "47", "Sacks": "3.5", "TFL": "8"}'::jsonb,
+  '["NC State product", "3 years NFL experience", "Second-leading tackler", "Run defender"]'::jsonb,
+  true
+),
+(
+  'Patrick O''Connell', 52, 'Linebacker', 51,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Tackles": "28", "Sacks": "1.0", "TFL": "3"}'::jsonb,
+  '["Montana product", "2 years NFL experience", "Special teams contributor", "High motor"]'::jsonb,
+  true
+),
+(
+  'Jared Ivey', 51, 'Linebacker', 52,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Tackles": "12", "Sacks": "0.5", "TFL": "2"}'::jsonb,
+  '["Ole Miss product", "Rookie contributor", "Edge depth", "Developmental player"]'::jsonb,
+  true
+),
+(
+  'Connor O''Toole', 57, 'Linebacker', 53,
+  NULL, false,
+  'Seahawks LB - 2025 Season',
+  '{"Tackles": "8", "TFL": "1"}'::jsonb,
+  '["Utah product", "Rookie contributor", "Linebacker depth", "Special teams player"]'::jsonb,
+  true
+),
+-- Additional Cornerbacks
+(
+  'Josh Jobe', 29, 'Cornerback', 54,
+  NULL, false,
+  'Seahawks CB - 2025 Season',
+  '{"Tackles": "32", "INT": "1", "Pass Def": "6"}'::jsonb,
+  '["Alabama product", "4 years NFL experience", "Depth cornerback with ball skills", "Special teams ace"]'::jsonb,
+  true
+),
+(
+  'Nehemiah Pritchett', 28, 'Cornerback', 55,
+  NULL, false,
+  'Seahawks CB - 2025 Season',
+  '{"Tackles": "22", "INT": "0", "Pass Def": "4"}'::jsonb,
+  '["Auburn product", "2 years NFL experience", "Nickel corner depth", "Coverage specialist"]'::jsonb,
+  true
+),
+-- Additional Safeties
+(
+  'Nick Emmanwori', 3, 'Safety', 56,
+  NULL, false,
+  'Seahawks S - 2025 Season',
+  '{"Tackles": "81", "Solo": "56", "INT": "1", "Sacks": "2.5"}'::jsonb,
+  '["South Carolina product", "Rookie contributor", "Hard-hitting rookie safety", "Third on team in tackles"]'::jsonb,
+  true
+),
+(
+  'Ty Okada', 39, 'Safety', 57,
+  NULL, false,
+  'Seahawks S - 2025 Season',
+  '{"Tackles": "65", "Solo": "46", "Sacks": "1.5"}'::jsonb,
+  '["Montana State product", "1 year NFL experience", "Versatile safety depth", "Special teams contributor"]'::jsonb,
+  true
+),
+-- Long Snapper
+(
+  'Chris Stoll', 41, 'Long Snapper', 58,
+  NULL, false,
+  'Seahawks LS - 2025 Season',
+  '{"Snaps": "100%", "FG Snaps": "48", "Punt Snaps": "52"}'::jsonb,
+  '["Penn State product", "3 years NFL experience", "Perfect snapping consistency", "Reliable specialist"]'::jsonb,
   true
 );
 
@@ -757,5 +1002,7 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
 -- ============================================
 -- Verify counts
 -- ============================================
--- SELECT 'Seahawks 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 1 AND 30;
+-- SELECT 'Seahawks 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 1 AND 60;
+-- Expected: 58 total (53 players + 5 coaches)
 -- SELECT 'Patriots 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 100 AND 170;
+-- Expected: 55 total (51 players + 4 coaches)
