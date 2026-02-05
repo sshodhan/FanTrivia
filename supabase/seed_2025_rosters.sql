@@ -757,4 +757,4 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
 -- Verify counts
 -- ============================================
 -- SELECT 'Seahawks 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 1 AND 30;
--- SELECT 'Patriots 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 100 AND 130;
+-- SELECT 'Patriots 2025' as category, COUNT(*) FROM players WHERE display_order BETWEEN 100 AND 170;

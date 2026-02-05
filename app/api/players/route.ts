@@ -1346,7 +1346,7 @@ const DEMO_PLAYERS: Player[] = [
 // Filter players by category using display_order ranges and is_active flag
 // Database structure:
 // - 2025 Seahawks: is_active = true, display_order 1-30
-// - 2025 Patriots: is_active = true, display_order 100-130
+// - 2025 Patriots: is_active = true, display_order 100-170
 // - Super Bowl XLVIII Heroes: is_active = false, display_order 200-220
 // - Hall of Fame: is_active = false, display_order 300-320
 function filterByCategory(players: Player[], category: PlayerCategory): Player[] {
@@ -1356,7 +1356,7 @@ function filterByCategory(players: Player[], category: PlayerCategory): Player[]
     case '2025-hawks':
       return players.filter(p => p.is_active === true && p.display_order >= 1 && p.display_order < 50)
     case '2025-pats':
-      return players.filter(p => p.is_active === true && p.display_order >= 100 && p.display_order < 150)
+      return players.filter(p => p.is_active === true && p.display_order >= 100 && p.display_order < 200)
     case 'hof':
       return players.filter(p => !p.is_active && p.display_order >= 300 && p.display_order < 350)
     case 'all':
