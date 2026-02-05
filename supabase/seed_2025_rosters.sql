@@ -49,19 +49,19 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, bi
   true
 ),
 (
-  'DK Metcalf', 14, 'Wide Receiver', 5,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/4047650.png',
-  'Seahawks WR - Deep Threat',
-  '{"Receptions": "78", "Rec Yds": "1,087", "Rec TD": "8", "Yds/Rec": "13.9", "Long": "62"}'::jsonb,
-  '["6-foot-4 with 4.33 speed", "Dominant red zone target with 8 TDs", "Known for chasedown tackle in 2020", "2019 second-round pick from Ole Miss"]'::jsonb,
+  'Cooper Kupp', 10, 'Wide Receiver', 5,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/2977187.png',
+  'Seahawks WR - Super Bowl LVI MVP',
+  '{"Receptions": "68", "Rec Yds": "924", "Rec TD": "6", "Yds/Rec": "13.6", "Targets": "98"}'::jsonb,
+  '["Super Bowl LVI MVP with Rams", "Signed 3-year $45M deal with Seattle", "Yakima, Washington native returns home", "2021 NFL Offensive Player of the Year"]'::jsonb,
   true
 ),
 (
-  'Tyler Lockett', 16, 'Wide Receiver', 6,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/2577327.png',
-  'Seahawks WR - Veteran Leader',
-  '{"Receptions": "62", "Rec Yds": "758", "Rec TD": "5", "Yds/Rec": "12.2", "3rd Down Catches": "24"}'::jsonb,
-  '["10th season with Seahawks", "Kansas State legend", "Clutch third-down receptions in playoffs", "3-time Pro Bowl selection"]'::jsonb,
+  'Rashid Shaheed', 22, 'Wide Receiver', 6,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/4032473.png',
+  'Seahawks WR - Deep Threat',
+  '{"Receptions": "38", "Rec Yds": "612", "Rec TD": "5", "Yds/Rec": "16.1", "Long": "68"}'::jsonb,
+  '["Acquired from Saints at trade deadline", "Elite deep threat with 4.36 speed", "Weber State product", "Averaged 16+ yards per catch in 2025"]'::jsonb,
   true
 ),
 (
