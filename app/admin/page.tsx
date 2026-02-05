@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTeam } from '@/lib/user-context';
+import { useUser } from '@/lib/user-context';
 import { AdminConsole } from '@/components/admin-console';
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, isLoading } = useTeam();
+  const { user, isLoading } = useUser();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
