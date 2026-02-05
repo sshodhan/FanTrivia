@@ -22,14 +22,6 @@ const CATEGORIES: {
   statsLabel: string;
 }[] = [
   {
-    id: 'sb48',
-    label: 'SB 48',
-    emoji: '🏆',
-    title: 'Super Bowl Heroes',
-    subtitle: 'Super Bowl XLVIII Champions',
-    statsLabel: 'Super Bowl XLVIII Stats',
-  },
-  {
     id: '2025-hawks',
     label: '2025 Hawks',
     emoji: '🦅',
@@ -44,6 +36,14 @@ const CATEGORIES: {
     title: '2025 Patriots',
     subtitle: 'Super Bowl LX Opponent',
     statsLabel: '2025 Season Stats',
+  },
+  {
+    id: 'sb48',
+    label: 'SB 48',
+    emoji: '🏆',
+    title: 'Super Bowl Heroes',
+    subtitle: 'Super Bowl XLVIII Champions',
+    statsLabel: 'Super Bowl XLVIII Stats',
   },
   {
     id: 'hof',
@@ -101,7 +101,7 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
 
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('sb48');
+  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2025-hawks');
 
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
