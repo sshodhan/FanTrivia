@@ -12,6 +12,64 @@ interface PlayerCardsProps {
 // Player category type
 type PlayerCategory = 'sb48' | '2025-hawks' | '2025-pats' | 'hof';
 
+// Unit filter type
+type UnitFilter = 'all' | 'offense' | 'defense' | 'special';
+
+// Unit filter configuration
+const UNIT_FILTERS: { id: UnitFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'offense', label: 'Offense' },
+  { id: 'defense', label: 'Defense' },
+  { id: 'special', label: 'Special Teams' },
+];
+
+// Map positions to units
+const OFFENSE_POSITIONS = [
+  'Quarterback', 'QB',
+  'Running Back', 'RB', 'Halfback', 'HB', 'Fullback', 'FB',
+  'Wide Receiver', 'WR',
+  'Tight End', 'TE',
+  'Offensive Tackle', 'OT', 'Left Tackle', 'LT', 'Right Tackle', 'RT',
+  'Offensive Guard', 'OG', 'Left Guard', 'LG', 'Right Guard', 'RG',
+  'Center', 'C',
+  'Offensive Line', 'OL',
+];
+
+const DEFENSE_POSITIONS = [
+  'Defensive End', 'DE',
+  'Defensive Tackle', 'DT', 'Nose Tackle', 'NT',
+  'Linebacker', 'LB', 'Inside Linebacker', 'ILB', 'Outside Linebacker', 'OLB', 'Middle Linebacker', 'MLB',
+  'Cornerback', 'CB',
+  'Safety', 'S', 'Free Safety', 'FS', 'Strong Safety', 'SS',
+  'Defensive Back', 'DB',
+  'Defensive Line', 'DL',
+];
+
+const SPECIAL_TEAMS_POSITIONS = [
+  'Kicker', 'K', 'PK',
+  'Punter', 'P',
+  'Long Snapper', 'LS',
+  'Kick Returner', 'KR',
+  'Punt Returner', 'PR',
+];
+
+function getPlayerUnit(position: string): 'offense' | 'defense' | 'special' {
+  const upperPosition = position.toUpperCase();
+  
+  if (OFFENSE_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'offense';
+  }
+  if (DEFENSE_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'defense';
+  }
+  if (SPECIAL_TEAMS_POSITIONS.some(p => upperPosition === p.toUpperCase())) {
+    return 'special';
+  }
+  
+  // Default to offense if unknown
+  return 'offense';
+}
+
 // Category configuration
 const CATEGORIES: {
   id: PlayerCategory;
@@ -102,6 +160,7 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2025-hawks');
+  const [selectedUnit, setSelectedUnit] = useState<UnitFilter>('all');
 
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
 
@@ -110,7 +169,12 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
     fetcher
   );
 
-  const players = data?.players.map(transformPlayer) || [];
+  const allPlayers = data?.players.map(transformPlayer) || [];
+  
+  // Filter players by selected unit
+  const players = selectedUnit === 'all' 
+    ? allPlayers 
+    : allPlayers.filter(player => getPlayerUnit(player.position) === selectedUnit);
 
   // Reusable header component
   const renderHeader = () => (
@@ -156,12 +220,35 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
     </div>
   );
 
+  // Unit filter pills component
+  const renderUnitFilter = () => (
+    <div className="bg-background border-b border-border">
+      <div className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-hide">
+        {UNIT_FILTERS.map((unit) => (
+          <button
+            key={unit.id}
+            onClick={() => setSelectedUnit(unit.id)}
+            className={cn(
+              "px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-all",
+              selectedUnit === unit.id
+                ? "bg-muted-foreground/30 text-foreground font-medium"
+                : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10"
+            )}
+          >
+            {unit.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         {renderHeader()}
         {renderPillSelector()}
+        {renderUnitFilter()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-muted-foreground">Loading players...</div>
         </div>
@@ -175,6 +262,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
       <div className="min-h-screen flex flex-col bg-background">
         {renderHeader()}
         {renderPillSelector()}
+        {renderUnitFilter()}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-destructive">Failed to load players</div>
         </div>
@@ -189,6 +277,9 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
 
       {/* Category Pills */}
       {renderPillSelector()}
+
+      {/* Unit Filter Pills */}
+      {renderUnitFilter()}
 
       {/* Player Grid */}
       <div className="flex-1 overflow-auto p-4">
