@@ -10,7 +10,7 @@ interface PlayerCardsProps {
 }
 
 // Player category type
-type PlayerCategory = 'sb48' | '2025-hawks' | 'lob' | 'hof';
+type PlayerCategory = 'sb48' | '2025-hawks' | '2025-pats' | 'hof';
 
 // Category configuration
 const CATEGORIES: {
@@ -34,22 +34,22 @@ const CATEGORIES: {
     label: '2025 Hawks',
     emoji: '🦅',
     title: '2025 Seahawks',
-    subtitle: 'Current Roster Stars',
+    subtitle: 'Super Bowl LX Roster',
     statsLabel: '2025 Season Stats',
   },
   {
-    id: 'lob',
-    label: 'Legion of Boom',
-    emoji: '💥',
-    title: 'Legion of Boom',
-    subtitle: 'Legendary Secondary',
-    statsLabel: 'Career Stats',
+    id: '2025-pats',
+    label: '2025 Pats',
+    emoji: '🔴',
+    title: '2025 Patriots',
+    subtitle: 'Super Bowl LX Opponent',
+    statsLabel: '2025 Season Stats',
   },
   {
     id: 'hof',
     label: 'Hall of Fame',
     emoji: '⭐',
-    title: 'Hall of Fame',
+    title: 'Seahawks Hall of Fame',
     subtitle: 'Seahawks Legends',
     statsLabel: 'Career Stats',
   },

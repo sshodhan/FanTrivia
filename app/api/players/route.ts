@@ -13,7 +13,7 @@ function getSupabase() {
 }
 
 // Player categories for filtering
-type PlayerCategory = 'all' | 'sb48' | '2025-hawks' | 'lob' | 'hof'
+type PlayerCategory = 'all' | 'sb48' | '2025-hawks' | '2025-pats' | 'hof'
 
 // Demo players data organized by category
 const DEMO_PLAYERS: Player[] = [
@@ -189,75 +189,75 @@ const DEMO_PLAYERS: Player[] = [
     display_order: 52,
     is_active: false,
   },
-  // Legion of Boom
+  // 2025 Patriots (Super Bowl LX Opponent)
   {
-    id: 'lob-richard-sherman',
-    name: 'Richard Sherman',
-    jersey_number: 25,
+    id: '2025-pats-drake-maye',
+    name: 'Drake Maye',
+    jersey_number: 10,
+    position: 'Quarterback',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/4432577.png',
+    stats: { 'Pass Yds': '3,892', 'Pass TD': '28', 'Rating': '96.4' },
+    bio: 'Patriots QB - 2025 Season - Super Bowl LX',
+    super_bowl_highlight: 'Led Patriots to Super Bowl LX in sophomore season',
+    trivia: ['2024 first-round pick from North Carolina', 'Youngest QB to lead Patriots to Super Bowl'],
+    display_order: 20,
+    is_active: true,
+  },
+  {
+    id: '2025-pats-christian-gonzalez',
+    name: 'Christian Gonzalez',
+    jersey_number: 0,
     position: 'Cornerback',
-    image_url: null,
-    stats: { 'INT': '32', 'Pro Bowls': '5', 'All-Pro': '3x' },
-    bio: 'Legion of Boom - All-Pro Cornerback',
-    super_bowl_highlight: 'NFC Championship tip that sealed Super Bowl berth',
-    trivia: ['Led NFL in interceptions in 2013', 'Stanford graduate with 3.9 GPA', 'Famous post-game interview after NFC Championship'],
-    display_order: 40,
-    is_active: false,
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/4426354.png',
+    stats: { 'Tackles': '58', 'INT': '5', 'Pass Def': '14' },
+    bio: 'Patriots CB - 2025 Pro Bowl',
+    super_bowl_highlight: 'Elite shutdown corner anchoring Patriots defense',
+    trivia: ['2023 first-round pick', '2025 Pro Bowl selection'],
+    display_order: 21,
+    is_active: true,
   },
   {
-    id: 'lob-earl-thomas',
-    name: 'Earl Thomas',
-    jersey_number: 29,
-    position: 'Free Safety',
-    image_url: null,
-    stats: { 'INT': '28', 'Pro Bowls': '7', 'All-Pro': '3x' },
-    bio: 'Legion of Boom - Elite Free Safety',
-    super_bowl_highlight: 'Patrolled the deep middle, 2 playoff interceptions',
-    trivia: ['7-time Pro Bowl selection', 'Fastest player in the LOB', 'Known for elite ball-hawking skills'],
-    display_order: 41,
-    is_active: false,
+    id: '2025-pats-rhamondre-stevenson',
+    name: 'Rhamondre Stevenson',
+    jersey_number: 38,
+    position: 'Running Back',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/4259545.png',
+    stats: { 'Rush Yds': '1,156', 'Rush TD': '8', 'Rec Yds': '421' },
+    bio: 'Patriots RB - 2025 Dual-Threat Back',
+    super_bowl_highlight: 'Workhorse back powering Patriots playoff run',
+    trivia: ['Over 1,500 yards from scrimmage in 2025', 'Key receiving threat out of backfield'],
+    display_order: 22,
+    is_active: true,
   },
   {
-    id: 'lob-kam-chancellor',
-    name: 'Kam Chancellor',
-    jersey_number: 31,
-    position: 'Strong Safety',
-    image_url: null,
-    stats: { 'Tackles': '607', 'Pro Bowls': '4', 'FF': '7' },
-    bio: 'Legion of Boom - The Enforcer',
-    super_bowl_highlight: 'Devastating hits that set the tone for the defense',
-    trivia: ['Known as Bam Bam Kam', 'Most feared hitter in the NFL', 'Career ended due to neck injury in 2017'],
-    display_order: 42,
-    is_active: false,
-  },
-  {
-    id: 'lob-byron-maxwell',
-    name: 'Byron Maxwell',
-    jersey_number: 41,
-    position: 'Cornerback',
-    image_url: null,
-    stats: { 'INT': '7', 'Pass Def': '39', 'Tackles': '175' },
-    bio: 'Legion of Boom - Lockdown Corner',
-    super_bowl_highlight: 'Shut down receivers opposite Sherman',
-    trivia: ['Started opposite Richard Sherman', 'Key part of #1 ranked defense', 'Earned big contract after 2014 season'],
-    display_order: 43,
-    is_active: false,
+    id: '2025-pats-matthew-judon',
+    name: 'Matthew Judon',
+    jersey_number: 9,
+    position: 'Linebacker',
+    image_url: 'https://a.espncdn.com/i/headshots/nfl/players/full/2576492.png',
+    stats: { 'Sacks': '12.5', 'Tackles': '52', 'FF': '3' },
+    bio: 'Patriots LB - 2025 Pass Rush Leader',
+    super_bowl_highlight: 'Veteran edge rusher leading Patriots defense',
+    trivia: ['4-time Pro Bowl selection', 'Team sack leader in 2025'],
+    display_order: 23,
+    is_active: true,
   },
 ]
 
 // Filter players by category using display_order ranges and is_active flag
 // Database structure:
 // - 2025 Seahawks: is_active = true, display_order 1-10
+// - 2025 Patriots: is_active = true, display_order 20-29
 // - Super Bowl XLVIII Heroes: is_active = false, display_order 30-39
-// - Legion of Boom: is_active = false, display_order 40-49
 // - Hall of Fame: is_active = false, display_order 50-59
 function filterByCategory(players: Player[], category: PlayerCategory): Player[] {
   switch (category) {
     case 'sb48':
       return players.filter(p => !p.is_active && p.display_order >= 30 && p.display_order < 40)
     case '2025-hawks':
-      return players.filter(p => p.is_active === true)
-    case 'lob':
-      return players.filter(p => !p.is_active && p.display_order >= 40 && p.display_order < 50)
+      return players.filter(p => p.is_active === true && p.display_order >= 1 && p.display_order < 10)
+    case '2025-pats':
+      return players.filter(p => p.is_active === true && p.display_order >= 20 && p.display_order < 30)
     case 'hof':
       return players.filter(p => !p.is_active && p.display_order >= 50 && p.display_order < 60)
     case 'all':
