@@ -35,19 +35,8 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
     return AVATARS[avatar as AvatarId]?.emoji || '🦅';
   };
 
-  const getRankStyle = (rank: number) => {
-    if (rank === 1) return 'bg-yellow-500/20 text-yellow-500';
-    if (rank === 2) return 'bg-gray-300/20 text-gray-300';
-    if (rank === 3) return 'bg-amber-600/20 text-amber-600';
-    return 'bg-muted text-muted-foreground';
-  };
-
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
-    return `#${rank}`;
-  };
+  // Top 3 get green circular badge, others just show rank number
+  const isTopThree = (rank: number) => rank <= 3;
 
   if (isLoading) {
     return (
@@ -146,47 +135,57 @@ export function Scoreboard({ onBack, userScore }: ScoreboardProps) {
               <div
                 key={entry.username}
                 className={cn(
-                  'flex items-center gap-4 p-4 rounded-xl transition-all',
-                  isCurrentUser ? 'bg-primary/10 border border-primary/30' : 'bg-card'
+                  'flex items-center gap-3 p-4 rounded-2xl transition-all',
+                  'bg-[#001B33] border border-[#002244] shadow-sm',
+                  'hover:bg-[#002244] hover:border-[#69BE28] hover:scale-[1.01]',
+                  'active:scale-[0.99]',
+                  isCurrentUser && 'border-[#69BE28]'
                 )}
               >
-                {/* Rank */}
-                <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold',
-                  getRankStyle(entry.rank)
-                )}>
-                  {entry.rank <= 3 ? getRankIcon(entry.rank) : entry.rank}
-                </div>
+                {/* Rank Badge */}
+                {isTopThree(entry.rank) ? (
+                  <div className="w-12 h-12 rounded-full bg-[#69BE28] flex items-center justify-center flex-shrink-0">
+                    <span className="text-xl font-black text-[#002244]">{entry.rank}</span>
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                    <span className="text-2xl font-bold text-[#A5ACAF]">{entry.rank}</span>
+                  </div>
+                )}
 
                 {/* Avatar */}
-                <span className="text-2xl">{getAvatarEmoji(entry.avatar)}</span>
+                <div className="w-10 h-10 rounded-full bg-[#002244] flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">{getAvatarEmoji(entry.avatar)}</span>
+                </div>
 
-                {/* User Info */}
+                {/* Team Info */}
                 <div className="flex-1 min-w-0">
                   <div className={cn(
-                    'font-bold truncate',
-                    isCurrentUser ? 'text-primary' : 'text-foreground'
+                    'font-bold text-lg truncate leading-tight',
+                    isCurrentUser ? 'text-[#69BE28]' : 'text-white'
                   )}>
                     {entry.username}
-                    {isCurrentUser && <span className="ml-2 text-xs">(You)</span>}
+                    {isCurrentUser && <span className="ml-1 text-xs opacity-70">(You)</span>}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-[#A5ACAF]">
                     {entry.days_played} day{entry.days_played !== 1 ? 's' : ''} played
-                    {entry.current_streak > 1 && (
-                      <span className="ml-2 text-primary">🔥 {entry.current_streak}</span>
-                    )}
                   </div>
                 </div>
 
+                {/* Streak (only show if > 0) */}
+                {entry.current_streak > 0 && (
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <span className="text-lg">🔥</span>
+                    <span className="font-bold text-[#FF6B35]">{entry.current_streak}</span>
+                  </div>
+                )}
+
                 {/* Points */}
-                <div className="text-right">
-                  <div className={cn(
-                    'text-xl font-bold',
-                    isCurrentUser ? 'text-primary' : 'text-foreground'
-                  )}>
+                <div className="text-right flex-shrink-0 min-w-[60px]">
+                  <div className="text-3xl font-black text-[#69BE28] leading-none">
                     {entry.total_points}
                   </div>
-                  <div className="text-xs text-muted-foreground">pts</div>
+                  <div className="text-sm font-medium text-[#A5ACAF]">pts</div>
                 </div>
               </div>
             );
