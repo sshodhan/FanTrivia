@@ -791,7 +791,7 @@ export const samplePhotos = [
     id: 'demo-0',
     teamId: 'demo-team-0',
     teamName: 'Lumen Field Crew',
-    imageUrl: '/photos/lumen-field-fans.jpg',
+    imageUrl: '/photos/seattle-skyline-hawks.svg',
     caption: 'Game day at Lumen Field! Go Hawks!',
     likes: 67,
     createdAt: '2024-02-03T19:30:00Z',
