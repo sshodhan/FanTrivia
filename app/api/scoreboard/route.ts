@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { LeaderboardEntry, AvatarId } from '@/lib/database.types'
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -43,14 +44,27 @@ export async function GET(request: NextRequest) {
       .order('total_points', { ascending: false })
       .limit(limit)
 
-    console.log('[v0] Users query result:', { users, usersError })
-
     if (usersError) {
-      console.error('[v0] Users query error:', usersError)
+      logServerError('scoreboard', 'users_query_failed', usersError, { limit })
       return NextResponse.json(
         { error: 'Failed to fetch leaderboard' },
         { status: 500 }
       )
+    }
+
+    // Soft error: no users returned when we expected data
+    if (!users || users.length === 0) {
+      logServer({
+        level: 'warn',
+        component: 'scoreboard',
+        event: 'no_users_returned',
+        data: { 
+          limit,
+          usersNull: users === null,
+          usersUndefined: users === undefined,
+          usersEmpty: Array.isArray(users) && users.length === 0
+        }
+      })
     }
 
     const entries: LeaderboardEntry[] = (users || []).map((user, index) => ({
@@ -62,7 +76,12 @@ export async function GET(request: NextRequest) {
       days_played: user.days_played,
     }))
 
-    console.log('[v0] Leaderboard entries:', entries)
+    logServer({
+      level: 'info',
+      component: 'scoreboard',
+      event: 'leaderboard_fetched',
+      data: { entriesCount: entries.length, limit }
+    })
 
     return NextResponse.json({
       leaderboard: entries,
@@ -74,7 +93,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Scoreboard error:', error)
+    logServerError('scoreboard', 'unexpected_error', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
