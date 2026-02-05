@@ -122,7 +122,7 @@ import { AVATARS, calculatePoints, SCORING_CONFIG } from '@/lib/database.types'
 
 | Type | Purpose |
 |------|---------|
-| `User` | Full user profile from database |
+| `User` | Full user profile (includes `user_id`, `username`, `is_admin`) |
 | `TriviaQuestionPublic` | Question without correct answer (for display) |
 | `AnswerSubmission` | What frontend sends when user answers |
 | `AnswerResult` | Response after submitting answer |
@@ -131,15 +131,35 @@ import { AVATARS, calculatePoints, SCORING_CONFIG } from '@/lib/database.types'
 | `LeaderboardEntry` | User entry on scoreboard |
 | `AvatarId` | Valid avatar identifiers |
 
+### User Type
+
+```typescript
+interface User {
+  user_id: string        // Unique ID (e.g., 'HawkFan12_4829')
+  username: string       // Display name (unique)
+  avatar: AvatarId       // Selected avatar
+  is_preset_image: boolean
+  image_url: string | null
+  total_points: number
+  current_streak: number
+  days_played: number
+  created_at: string
+  last_played_at: string | null
+  is_admin: boolean      // Admin access flag
+}
+```
+
 ---
 
 ## API Endpoints Reference
 
-### User Registration & Login
+### User Registration & Sign In
+
+The app uses a secure user ID system. Each user gets a unique `user_id` (e.g., `HawkFan12_4829`) that they can use to recover their account.
 
 #### `POST /api/register`
 
-Register new user or login existing user.
+Register a new user. Returns error if username is already taken.
 
 **Request:**
 ```typescript
@@ -153,8 +173,45 @@ const response = await fetch('/api/register', {
 })
 
 const { user, isNew } = await response.json()
-// user: User object
-// isNew: true if newly created, false if existing user
+// user: User object with user_id (e.g., 'HawkFan12_4829')
+// isNew: true (always for registration)
+```
+
+**Error Response (409):**
+```typescript
+{ error: 'Username is already taken. Please choose another or sign in with your User ID.' }
+```
+
+#### `POST /api/signin`
+
+Sign in with an existing user_id (for account recovery).
+
+**Request:**
+```typescript
+const response = await fetch('/api/signin', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    user_id: 'HawkFan12_4829'
+  })
+})
+
+const { user } = await response.json()
+// user: Full User object
+```
+
+**Error Response (404):**
+```typescript
+{ error: 'User not found. Please check your User ID.' }
+```
+
+#### `GET /api/user?user_id=X` or `GET /api/user?username=X`
+
+Get user data by user_id or username.
+
+**Response:**
+```typescript
+{ user: User | null }
 ```
 
 **Valid Avatars:**
@@ -162,15 +219,6 @@ const { user, isNew } = await response.json()
 'hawk' | 'blitz' | '12' | 'superfan' | '12th_man' |
 'girls_rule' | 'hero' | 'champion' | 'trophy' |
 'queen' | 'sparkle' | 'fire'
-```
-
-#### `GET /api/register?username=HawkFan12`
-
-Check if username exists.
-
-**Response:**
-```typescript
-{ exists: boolean, user: User | null }
 ```
 
 ---
@@ -374,30 +422,67 @@ await fetch(`/api/photos/${photoId}/like`, {
 
 ## Code Examples
 
+### Using the User Context
+
+The app provides a `useUser` hook for authentication:
+
+```typescript
+'use client'
+
+import { useUser } from '@/lib/user-context'
+
+export function MyComponent() {
+  const { 
+    user,           // Current user or null
+    isLoading,      // Loading state
+    registerUser,   // (username, avatar) => Promise
+    signIn,         // (userId) => Promise
+    refreshUser,    // () => Promise - fetch latest from server
+    clearUser       // () => void - logout
+  } = useUser()
+
+  // Check if admin
+  if (user?.is_admin) {
+    // Show admin features
+  }
+
+  // Get user_id for recovery
+  const userId = user?.user_id // e.g., 'HawkFan12_4829'
+}
+```
+
 ### Complete User Registration Flow
 
 ```typescript
 'use client'
 
 import { useState } from 'react'
-import { AVATARS, type AvatarId, type User } from '@/lib/database.types'
+import { useUser } from '@/lib/user-context'
+import { AVATARS, type AvatarId } from '@/lib/database.types'
 
 export function RegisterForm() {
+  const { registerUser, signIn } = useUser()
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup')
   const [username, setUsername] = useState('')
+  const [userId, setUserId] = useState('')
   const [avatar, setAvatar] = useState<AvatarId>('hawk')
   const [error, setError] = useState('')
-  const [user, setUser] = useState<User | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, avatar })
-      })
+    if (mode === 'signin') {
+      const result = await signIn(userId)
+      if (!result.success) setError(result.error || 'Sign in failed')
+      return
+    }
+
+    const result = await registerUser(username, avatar)
+    if (!result.success) {
+      setError(result.error || 'Registration failed')
+    }
+  }
 
       const data = await response.json()
 
@@ -701,6 +786,50 @@ try {
 
 ---
 
+## Admin Access
+
+Admin functionality is available to users with `is_admin: true` in the database.
+
+### How to Grant Admin Access
+
+```sql
+-- In Supabase SQL Editor
+UPDATE users SET is_admin = true WHERE username = 'YourUsername';
+```
+
+### Accessing Admin Features
+
+1. **Via Settings Screen**: Admin users see an "Admin" tab in Settings
+2. **Via Direct URL**: Navigate to `/admin` (redirects non-admins to home)
+
+### Admin Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| Questions | Add, edit, delete trivia questions |
+| Scores | View and manage user scores |
+| Photos | Approve/reject uploaded photos |
+| Settings | Configure game settings |
+| Logs | View admin action logs |
+
+### Checking Admin Status
+
+```typescript
+import { useUser } from '@/lib/user-context'
+
+function AdminFeature() {
+  const { user } = useUser()
+  
+  if (!user?.is_admin) {
+    return null // Hide from non-admins
+  }
+  
+  return <AdminPanel />
+}
+```
+
+---
+
 ## Demo Mode
 
 When Supabase is not configured, the app runs in demo mode with mock data.
@@ -749,9 +878,18 @@ function App() {
 
 ```typescript
 // localStorage keys used by the app
-localStorage.getItem('hawktrivia_username')  // Current user
-localStorage.getItem('hawktrivia_avatar')    // Selected avatar
+localStorage.getItem('hawktrivia_user')       // Full User object (JSON)
+localStorage.getItem('hawktrivia_todayPlayed') // Has played today
+localStorage.getItem('hawktrivia_playedDate')  // Date of last play
 ```
+
+### User ID Format
+
+User IDs are generated as `{username_no_spaces}_{4_random_digits}`:
+- `HawkFan12` becomes `HawkFan12_4829`
+- `Legion of Boom` becomes `LegionofBoom_7156`
+
+Users should save their User ID for account recovery (shown in Settings > Profile).
 
 ### Environment Variable Checklist
 
