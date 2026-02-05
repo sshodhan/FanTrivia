@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join HawkTrivia - Seahawks Super Bowl Trivia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #001f3f 0%, #002b54 50%, #001a33 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 400px;
+            background: linear-gradient(180deg, #002b54 0%, #001f3f 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(105, 190, 40, 0.2);
+            border: 2px solid #69BE28;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #69BE28 0%, #4a9a1e 100%);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: #001f3f;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: #001f3f;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .tagline {
+            font-family: 'Oswald', sans-serif;
+            font-size: 24px;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .tagline span {
+            color: #69BE28;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .player-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            border: 2px solid #69BE28;
+        }
+
+        .player-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-card .name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 31, 63, 0.9));
+            padding: 20px 4px 4px;
+            font-size: 9px;
+            color: #69BE28;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .features {
+            background: rgba(105, 190, 40, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #ffffff;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .feature:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature .icon {
+            width: 24px;
+            height: 24px;
+            background: #69BE28;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #001f3f;
+            font-weight: bold;
+        }
+
+        .cta {
+            background: linear-gradient(90deg, #69BE28 0%, #4a9a1e 100%);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .cta-text {
+            font-family: 'Oswald', sans-serif;
+            font-size: 20px;
+            color: #001f3f;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .url-box {
+            background: #001a33;
+            border: 1px dashed #69BE28;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .url-box .label {
+            font-size: 10px;
+            color: #a5acaf;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .url-box .url {
+            font-size: 14px;
+            color: #69BE28;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 16px;
+            background: #001a33;
+        }
+
+        .footer .hashtag {
+            font-family: 'Oswald', sans-serif;
+            font-size: 18px;
+            color: #69BE28;
+            font-weight: 600;
+        }
+
+        .footer .go-hawks {
+            font-size: 12px;
+            color: #a5acaf;
+            margin-top: 4px;
+        }
+
+        .emoji {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <h1>🏈 HawkTrivia</h1>
+            <div class="subtitle">Seahawks Super Bowl Trivia Challenge</div>
+        </div>
+
+        <div class="content">
+            <div class="tagline">
+                Are You a <span>True 12?</span><br>
+                Prove It! 🦅
+            </div>
+
+            <div class="players-grid">
+                <div class="player-card">
+                    <img src="../players/wilson.jpg" alt="Russell Wilson">
+                    <div class="name">Wilson</div>
+                </div>
+                <div class="player-card">
+                    <img src="../players/lynch.jpg" alt="Marshawn Lynch">
+                    <div class="name">Lynch</div>
+                </div>
+                <div class="player-card">
+                    <img src="../players/sherman.jpg" alt="Richard Sherman">
+                    <div class="name">Sherman</div>
+                </div>
+                <div class="player-card">
+                    <img src="../players/chancellor.jpg" alt="Kam Chancellor">
+                    <div class="name">Chancellor</div>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="icon">🎯</div>
+                    <span>Daily trivia challenges about Super Bowl XLVIII</span>
+                </div>
+                <div class="feature">
+                    <div class="icon">🏆</div>
+                    <span>Compete on the leaderboard with fellow 12s</span>
+                </div>
+                <div class="feature">
+                    <div class="icon">🔥</div>
+                    <span>Build streaks & earn points</span>
+                </div>
+                <div class="feature">
+                    <div class="icon">📸</div>
+                    <span>Share photos in our community wall</span>
+                </div>
+            </div>
+
+            <div class="cta">
+                <div class="cta-text">🎮 Join the Game Now!</div>
+            </div>
+
+            <div class="url-box">
+                <div class="label">Play at</div>
+                <div class="url">hawktrivia.vercel.app</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="hashtag">#GoHawks #WeAre12 #LegionOfBoom</div>
+            <div class="go-hawks">Let's GO SEAHAWKS! 💚💙</div>
+        </div>
+    </div>
+</body>
+</html>
