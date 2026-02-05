@@ -273,24 +273,24 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Drake Maye', 10, 'Quarterback', 101,
   'https://a.espncdn.com/i/headshots/nfl/players/full/4432577.png', false,
   'Patriots QB - 2025 Season',
-  '{"Pass Yds": "3,892", "Pass TD": "28", "INT": "10", "Rating": "96.4", "CMP%": "68.2%", "Record": "12-5"}'::jsonb,
-  '["2024 first-round pick from North Carolina", "Youngest QB in franchise history to start Super Bowl", "Led Patriots to first playoff berth since 2021", "Second consecutive Pro Bowl selection"]'::jsonb,
+  '{"Pass Yds": "4,394", "Pass TD": "31", "INT": "8", "Rating": "113.5", "CMP%": "72%", "Record": "14-3"}'::jsonb,
+  '["2024 first-round pick from North Carolina", "Youngest QB in franchise history to start Super Bowl", "Led Patriots to first playoff berth since 2021", "113.5 passer rating - career high"]'::jsonb,
   true
 ),
 (
   'Rhamondre Stevenson', 38, 'Running Back', 102,
   'https://a.espncdn.com/i/headshots/nfl/players/full/4259545.png', false,
-  'Patriots RB1 - 2025 Season',
-  '{"Rush Yds": "1,156", "Rush TD": "8", "Rec Yds": "421", "Total Yds": "1,577", "Yds/Carry": "4.4"}'::jsonb,
-  '["Oklahoma product", "Elite pass-catching running back", "Workhorse back powering Patriots playoff run", "Over 1,500 yards from scrimmage"]'::jsonb,
+  'Patriots RB2 - 2025 Season',
+  '{"Rush Yds": "603", "Rush TD": "7", "Rec": "32", "Rec Yds": "345", "Rec TD": "2"}'::jsonb,
+  '["Oklahoma product", "Elite pass-catching running back", "Veteran leader in backfield", "Strong receiving option out of backfield"]'::jsonb,
   true
 ),
 (
   'TreVeyon Henderson', 28, 'Running Back', 103,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/4567675.png', false,
-  'Patriots RB2 - 2025 Season',
-  '{"Rush Yds": "512", "Rush TD": "5", "Rec Yds": "285", "Total Yds": "797", "Yds/Carry": "5.1"}'::jsonb,
-  '["2025 second-round pick from Ohio State", "Dynamic speed back with home-run ability", "Explosive complement to Stevenson", "Averaged 6.1 YPC in college career"]'::jsonb,
+  NULL, false,
+  'Patriots RB1 - 2025 Season',
+  '{"Rush Yds": "911", "Rush TD": "9", "Rec": "35", "Rec Yds": "221", "Rec TD": "1"}'::jsonb,
+  '["2025 second-round pick from Ohio State", "Lead back with 911 rush yards", "9 rushing TDs in rookie season", "Explosive complement to Stevenson"]'::jsonb,
   true
 ),
 (
@@ -310,19 +310,19 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   true
 ),
 (
-  'Stefon Diggs', 14, 'Wide Receiver', 106,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/2976212.png', false,
-  'Patriots WR - 2025 Season',
-  '{"Receptions": "82", "Rec Yds": "1,108", "Rec TD": "9", "Yds/Rec": "13.5", "Targets": "124"}'::jsonb,
-  '["4-time Pro Bowl selection", "Maryland product", "Elite route runner signed in 2025 free agency", "Over 1,000 receiving yards for 5th straight season"]'::jsonb,
+  'Stefon Diggs', 8, 'Wide Receiver', 106,
+  'https://a.espncdn.com/i/headshots/nfl/players/full/16460.png', false,
+  'Patriots WR1 - 2025 Season',
+  '{"Receptions": "85", "Rec Yds": "1,013", "Rec TD": "4", "Yds/Rec": "11.9", "Targets": "124"}'::jsonb,
+  '["4-time Pro Bowl selection", "Maryland product", "Signed from Houston in 2025 free agency", "Over 1,000 receiving yards in first Patriots season"]'::jsonb,
   true
 ),
 (
   'Hunter Henry', 85, 'Tight End', 107,
   'https://a.espncdn.com/i/headshots/nfl/players/full/3051889.png', false,
   'Patriots TE - 2025 Season',
-  '{"Receptions": "58", "Rec Yds": "642", "Rec TD": "6", "Yds/Rec": "11.1", "Red Zone Targets": "18"}'::jsonb,
-  '["Arkansas product", "2016 second-round pick", "Red zone weapon with sure hands", "Team leader in TD receptions"]'::jsonb,
+  '{"Receptions": "60", "Rec Yds": "768", "Rec TD": "7", "Yds/Rec": "12.8", "Red Zone Targets": "22"}'::jsonb,
+  '["Arkansas product", "2016 second-round pick", "Red zone weapon with 7 TDs", "Career year in 2025"]'::jsonb,
   true
 ),
 (
@@ -364,9 +364,25 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   '{"Sacks Allowed": "5", "Pressures": "28", "PFF Grade": "71.2", "Snaps": "1,088", "Penalties": "7"}'::jsonb,
   '["Illinois product", "Started all 17 games", "Physical run blocker on right side", "2022 sixth-round pick"]'::jsonb,
   true
+),
+(
+  'Mack Hollins', 13, 'Wide Receiver', 133,
+  NULL, false,
+  'Patriots WR - 2025 Season',
+  '{"Receptions": "46", "Rec Yds": "550", "Rec TD": "2", "Yds/Rec": "12.0", "Long": "54"}'::jsonb,
+  '["North Carolina product", "Deep threat and special teams ace", "Veteran presence in receiver room", "Signed in 2025"]'::jsonb,
+  true
+),
+(
+  'Kayshon Boutte', 0, 'Wide Receiver', 134,
+  NULL, false,
+  'Patriots WR - 2025 Season',
+  '{"Receptions": "33", "Rec Yds": "551", "Rec TD": "6", "Yds/Rec": "16.7", "Long": "39"}'::jsonb,
+  '["LSU product", "2023 sixth-round pick", "Deep threat with 6 TDs", "Breakout season in year 2"]'::jsonb,
+  true
 );
 
--- DEFENSE (10 players)
+-- DEFENSE (13 players)
 INSERT INTO players (name, jersey_number, position, display_order, image_url, image_validated, bio, stats, trivia, is_active) VALUES
 (
   'Keion White', 94, 'Defensive End', 113,
@@ -410,18 +426,18 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
 ),
 (
   'Robert Spillane', 41, 'Linebacker', 118,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/3128685.png', false,
+  NULL, false,
   'Patriots LB - 2025 Season',
-  '{"Tackles": "102", "Sacks": "2.5", "INT": "2", "Pass Def": "7", "TFL": "8"}'::jsonb,
-  '["Western Michigan product", "Signed from Raiders in 2025 free agency", "Physical downhill linebacker", "Over 100 tackles in second Patriots season"]'::jsonb,
+  '{"Tackles": "97", "Sacks": "1.0", "INT": "2", "Pass Def": "7", "TFL": "8"}'::jsonb,
+  '["Western Michigan product", "Signed from Raiders", "Leading tackler with 97 tackles", "Physical downhill linebacker"]'::jsonb,
   true
 ),
 (
   'Christian Gonzalez', 0, 'Cornerback', 119,
-  'https://a.espncdn.com/i/headshots/nfl/players/full/4426354.png', false,
+  NULL, false,
   'Patriots CB - 2025 All-Pro',
-  '{"Tackles": "58", "INT": "5", "Pass Def": "14", "Passer Rating Allowed": "48.2", "Targets": "72"}'::jsonb,
-  '["Oregon product", "2023 first-round pick", "Elite shutdown corner anchoring secondary", "First-team All-Pro in 2025"]'::jsonb,
+  '{"Tackles": "69", "INT": "0", "Pass Def": "14", "Passer Rating Allowed": "48.2", "Targets": "72"}'::jsonb,
+  '["Oregon product", "2023 first-round pick", "Elite shutdown corner - opponents avoid his side", "69 tackles in 2025"]'::jsonb,
   true
 ),
 (
@@ -446,6 +462,54 @@ INSERT INTO players (name, jersey_number, position, display_order, image_url, im
   'Patriots S - 2025 Season',
   '{"Tackles": "78", "INT": "2", "Sacks": "1.0", "FF": "2", "Pass Def": "5"}'::jsonb,
   '["Michigan product", "Former first-round pick", "Versatile safety with big-play ability", "Signed in 2024"]'::jsonb,
+  true
+),
+(
+  'Craig Woodson', 21, 'Safety', 135,
+  NULL, false,
+  'Patriots S - 2025 Season',
+  '{"Tackles": "79", "INT": "0", "Pass Def": "6", "TFL": "4"}'::jsonb,
+  '["Texas product", "2025 draft pick", "Sure tackler with 79 stops", "Rookie contributor"]'::jsonb,
+  true
+),
+(
+  'Jaylinn Hawkins', 33, 'Safety', 136,
+  NULL, false,
+  'Patriots S - 2025 Season',
+  '{"Tackles": "71", "INT": "4", "Pass Def": "7", "INT TD": "0"}'::jsonb,
+  '["California product", "Team INT leader with 4 picks", "Former Falcons safety", "Key ball hawk"]'::jsonb,
+  true
+),
+(
+  'Marcus Jones', 25, 'Cornerback', 137,
+  NULL, false,
+  'Patriots CB - 2025 Season',
+  '{"Tackles": "42", "INT": "3", "INT TD": "1", "Pass Def": "8"}'::jsonb,
+  '["Houston product", "2022 third-round pick", "Ball hawk with 3 INTs and a pick-six", "Dynamic return man"]'::jsonb,
+  true
+),
+(
+  'Marte Mapu', 32, 'Linebacker', 138,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "65", "INT": "1", "Pass Def": "5", "TFL": "4"}'::jsonb,
+  '["Sacramento State product", "2023 third-round pick", "Hybrid safety/linebacker", "Key interception in playoffs"]'::jsonb,
+  true
+),
+(
+  'Christian Elliss', 52, 'Linebacker', 139,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "94", "TFL": "7", "Sacks": "1.5", "FF": "1"}'::jsonb,
+  '["Idaho product", "High-motor linebacker with 94 tackles", "Former Vikings LB", "Key special teams player"]'::jsonb,
+  true
+),
+(
+  'Jack Gibbens', 44, 'Linebacker', 140,
+  NULL, false,
+  'Patriots LB - 2025 Season',
+  '{"Tackles": "81", "TFL": "5", "Sacks": "1.0", "FF": "0"}'::jsonb,
+  '["Minnesota product", "Reliable tackler with 81 stops", "Key special teams contributor", "Undrafted gem"]'::jsonb,
   true
 );
 
