@@ -130,6 +130,8 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
   );
 
   // Build tabs - Admin only shows for admin users
+  console.log('[v0] SettingsScreen user:', { username: user?.username, is_admin: user?.is_admin });
+  
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
     { id: 'preferences', label: 'Preferences' },
