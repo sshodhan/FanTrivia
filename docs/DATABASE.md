@@ -2,7 +2,9 @@
 
 ## Overview
 
-Hawktrivia uses **Supabase** (PostgreSQL) as its database backend. The schema supports team registration, trivia gameplay, scoring, photo sharing, and admin functionality.
+HawkTrivia uses **Supabase** (PostgreSQL) as its database backend. The schema supports user registration, trivia gameplay, scoring, photo sharing, player profiles, and admin functionality.
+
+> **Primary reference**: See [/DATABASE.md](/DATABASE.md) for comprehensive documentation including data flows, API endpoints, and frontend integration.
 
 ## Quick Setup
 
@@ -15,13 +17,13 @@ Hawktrivia uses **Supabase** (PostgreSQL) as its database backend. The schema su
    ```
 3. Run the schema SQL in Supabase SQL Editor:
    ```bash
-   # Copy contents of supabase/schema.sql and execute in Supabase Dashboard > SQL Editor
+   # Copy contents of supabase/schema_complete.sql and execute in Supabase Dashboard > SQL Editor
    ```
 4. Create a storage bucket named `photos` (public)
 
 ---
 
-## Tables
+## Tables (10 total)
 
 ### users
 Stores registered users with secure user ID authentication.
@@ -36,11 +38,13 @@ Stores registered users with secure user ID authentication.
 | `total_points` | INTEGER | Accumulated trivia points |
 | `current_streak` | INTEGER | Consecutive correct answers |
 | `days_played` | INTEGER | Number of days participated |
-| `created_at` | TIMESTAMP | Registration time |
-| `last_played_at` | TIMESTAMP | Last activity time |
+| `created_at` | TIMESTAMPTZ | Registration time |
+| `last_played_at` | TIMESTAMPTZ | Last activity time |
 | `is_admin` | BOOLEAN | Admin access flag (default false) |
 
 **User ID Format:** `{username_no_spaces}_{4_random_digits}` (e.g., `LegionOfBoom_4829`)
+
+**Valid Avatars:** `hawk`, `blitz`, `12`, `superfan`, `12th_man`, `girls_rule`, `hero`, `champion`, `trophy`, `queen`, `sparkle`, `fire`
 
 **Indexes:** `total_points DESC`, `created_at DESC`, `username`
 
@@ -51,145 +55,150 @@ All trivia questions in the system.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID (PK) | Question ID |
 | `question_text` | TEXT | The question |
-| `image_url` | TEXT | Background image URL |
-| `image_source` | ENUM | 'web', 'generated', 'uploaded' |
-| `options` | JSONB | Array of 4 answer strings |
-| `correct_answer_index` | INTEGER | 0-3 index of correct answer |
-| `hint_text` | TEXT | Hint shown after 7 seconds |
-| `time_limit_seconds` | INTEGER | Default 15 |
+| `image_url` | TEXT | Optional question image |
+| `image_source` | TEXT | `web`, `generated`, or `uploaded` |
+| `option_a` | TEXT | Answer choice A |
+| `option_b` | TEXT | Answer choice B |
+| `option_c` | TEXT | Answer choice C |
+| `option_d` | TEXT | Answer choice D |
+| `correct_answer` | TEXT | Correct option (`a`, `b`, `c`, `d`) |
+| `hint_text` | TEXT | Optional hint |
+| `time_limit_seconds` | INTEGER | Per-question timer (default 15) |
 | `points` | INTEGER | Base points (default 100) |
-| `difficulty` | ENUM | 'easy', 'medium', 'hard' |
-| `category` | VARCHAR(50) | Question category |
-| `created_at` | TIMESTAMP | Creation time |
+| `difficulty` | TEXT | `easy`, `medium`, or `hard` |
+| `category` | TEXT | Question category |
+| `is_active` | BOOLEAN | Whether question is available |
+| `created_at` | TIMESTAMPTZ | Creation time |
 
-**Example options format:**
-```json
-["Russell Wilson", "Matt Hasselbeck", "Tarvaris Jackson", "Charlie Whitehurst"]
-```
+**Indexes:** `category`, `difficulty`, `is_active`
 
 ---
 
 ### daily_trivia_sets
-Groups of 5 questions for each pre-game day.
+Pre-configured question sets for each day.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `day_identifier` | VARCHAR(20) | 'day_minus_4', 'day_minus_3', etc. |
+| `id` | UUID (PK) | Set ID |
+| `day_identifier` | TEXT (UNIQUE) | Day key (e.g., `day_minus_4`) |
 | `display_date` | DATE | Calendar date shown to users |
-| `question_ids` | UUID[] | Array of 5 question IDs |
+| `question_ids` | UUID[] | Array of question IDs |
 | `is_active` | BOOLEAN | Whether this set is playable |
-| `created_at` | TIMESTAMP | Creation time |
+| `created_at` | TIMESTAMPTZ | Creation time |
 
 ---
 
 ### game_day_rounds
-Questions for live Super Bowl day trivia.
+Questions for live synchronized game rounds.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
+| `id` | UUID (PK) | Round ID |
 | `round_number` | INTEGER | Round sequence number |
 | `question_ids` | UUID[] | Array of question IDs |
 | `is_live` | BOOLEAN | Whether round is currently active |
-| `started_at` | TIMESTAMP | When round started |
-| `ended_at` | TIMESTAMP | When round ended |
+| `started_at` | TIMESTAMPTZ | When round started |
+| `ended_at` | TIMESTAMPTZ | When round ended |
 
 ---
 
-### scores
-Individual answer records for each team/question.
+### daily_answers
+Individual answer records for each user/question.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `team_id` | UUID | FK to teams |
-| `question_id` | UUID | FK to trivia_questions |
-| `day_identifier` | VARCHAR(20) | Which day this was answered |
+| `id` | UUID (PK) | Answer ID |
+| `user_id` | TEXT (FK) | References users.user_id |
+| `question_id` | UUID (FK) | References trivia_questions.id |
+| `day_identifier` | TEXT | Which day this was answered |
+| `selected_answer` | TEXT | User's choice (`a`, `b`, `c`, `d`) |
 | `is_correct` | BOOLEAN | Whether answer was correct |
-| `points_earned` | INTEGER | Points including time bonus |
+| `points_earned` | INTEGER | Base points earned |
 | `streak_bonus` | INTEGER | Additional streak multiplier points |
 | `time_taken_ms` | INTEGER | Response time in milliseconds |
-| `answered_at` | TIMESTAMP | When answered |
+| `answered_at` | TIMESTAMPTZ | When answered |
 
-**Unique constraint:** `(team_id, question_id)` - prevents duplicate answers
-
----
-
-### team_daily_progress
-Tracks completion status per team per day.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | UUID | Primary key |
-| `team_id` | UUID | FK to teams |
-| `day_identifier` | VARCHAR(20) | Which day |
-| `completed` | BOOLEAN | Whether all 5 questions done |
-| `total_points` | INTEGER | Sum of points for that day |
-| `completed_at` | TIMESTAMP | When completed |
-
-**Unique constraint:** `(team_id, day_identifier)`
+**Unique constraint:** `(user_id, question_id, day_identifier)` - one answer per user per question per day
 
 ---
 
 ### photo_uploads
-User-uploaded party photos.
+User-uploaded fan photos.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `team_id` | UUID | FK to teams (uploader) |
+| `id` | UUID (PK) | Photo ID |
+| `user_id` | TEXT (FK) | References users.user_id |
 | `image_url` | TEXT | Supabase Storage URL |
-| `caption` | TEXT | Optional caption (max 100 chars) |
-| `likes` | INTEGER | Like count (denormalized) |
+| `caption` | TEXT | Optional caption |
+| `like_count` | INTEGER | Like count (auto-updated by trigger) |
 | `is_approved` | BOOLEAN | Admin approval status |
 | `is_hidden` | BOOLEAN | Admin hide status |
-| `uploaded_at` | TIMESTAMP | Upload time |
+| `created_at` | TIMESTAMPTZ | Upload time |
 
 ---
 
 ### photo_likes
-Tracks which teams liked which photos.
+Tracks which users liked which photos.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `photo_id` | UUID | FK to photo_uploads |
-| `team_id` | UUID | FK to teams (liker) |
-| `created_at` | TIMESTAMP | When liked |
+| `id` | UUID (PK) | Like ID |
+| `photo_id` | UUID (FK) | References photo_uploads.id |
+| `user_id` | TEXT (FK) | References users.user_id |
+| `created_at` | TIMESTAMPTZ | When liked |
 
-**Unique constraint:** `(photo_id, team_id)` - one like per team per photo
+**Unique constraint:** `(photo_id, user_id)` - one like per user per photo
 
-**Trigger:** Automatically updates `photo_uploads.likes` count on insert/delete
+**Trigger:** Automatically updates `photo_uploads.like_count` on insert/delete
 
 ---
 
-### seahawks_players
-Seahawks roster for player cards feature.
+### players
+Player profiles: 2025 rosters, Super Bowl heroes, and Hall of Fame legends.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `name` | VARCHAR(100) | Player name |
-| `position` | VARCHAR(50) | Position (QB, RB, WR, etc.) |
-| `number` | INTEGER | Jersey number |
-| `image_url` | TEXT | Player photo URL |
-| `stats` | JSONB | Key statistics |
+| `id` | UUID (PK) | Player ID |
+| `name` | TEXT | Player name |
+| `jersey_number` | INTEGER | Jersey number |
+| `position` | TEXT | Playing position |
+| `image_url` | TEXT | Player headshot URL |
+| `image_validated` | BOOLEAN | Admin-verified image (default false) |
+| `stats` | JSONB | Key-value statistics |
+| `trivia` | JSONB | Array of trivia facts |
 | `bio` | TEXT | Player biography |
 | `super_bowl_highlight` | TEXT | Notable Super Bowl moment |
-| `is_active` | BOOLEAN | Whether currently on roster |
+| `display_order` | INTEGER | Sort order |
+| `is_active` | BOOLEAN | Show in UI |
 
-**Example stats format:**
+**Display order convention:**
+- 1-58: 2025 Seahawks roster
+- 101-170: 2025 Patriots roster
+
+**Stats JSONB example:**
 ```json
-{
-  "passing_yards": 4500,
-  "touchdowns": 35,
-  "interceptions": 10,
-  "passer_rating": 105.2
-}
+{"Pass Yds": "4,048", "Pass TD": "25", "INT": "14", "Rating": "99.1"}
 ```
+
+---
+
+### game_settings
+Singleton table (always id=1) controlling game state.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | INTEGER (PK) | Always 1 (CHECK constraint) |
+| `current_mode` | TEXT | `pre_game`, `daily`, `live`, `ended` |
+| `questions_per_day` | INTEGER | Number of daily questions |
+| `timer_duration` | INTEGER | Seconds per question |
+| `scores_locked` | BOOLEAN | Prevent new answers |
+| `current_day` | TEXT | Current day identifier |
+| `live_question_index` | INTEGER | Current question in live mode |
+| `is_paused` | BOOLEAN | Pause live game |
+| `updated_at` | TIMESTAMPTZ | Last modification |
 
 ---
 
@@ -198,29 +207,14 @@ Audit trail of admin actions.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | UUID | Primary key |
-| `action_type` | VARCHAR(50) | Action name |
-| `target_type` | VARCHAR(50) | What was affected |
-| `target_id` | UUID | ID of affected record |
+| `id` | UUID (PK) | Log entry ID |
+| `action_type` | TEXT | Type of action |
+| `target_type` | TEXT | What was affected |
+| `target_id` | TEXT | Specific target ID |
 | `details` | JSONB | Additional context |
-| `performed_at` | TIMESTAMP | When action occurred |
+| `performed_at` | TIMESTAMPTZ | When action occurred |
 
-**Action types:** `game_start`, `game_pause`, `game_end`, `next_question`, `question_create`, `question_update`, `question_delete`, `game_state_update`
-
----
-
-### game_state
-Singleton table for global game state.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | INTEGER | Always 1 (singleton) |
-| `current_mode` | ENUM | 'pre_game', 'daily', 'live', 'ended' |
-| `current_day` | VARCHAR(20) | Current day identifier |
-| `live_question_index` | INTEGER | Current question in live game |
-| `is_paused` | BOOLEAN | Whether game is paused |
-| `leaderboard_locked` | BOOLEAN | Freeze final standings |
-| `updated_at` | TIMESTAMP | Last state change |
+**Action types:** `game_start`, `game_pause`, `game_resume`, `game_end`, `next_question`, `mode_change`
 
 ---
 
@@ -230,13 +224,15 @@ All tables have RLS enabled. Key policies:
 
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| teams | Anyone | Anyone | Owner | - |
-| trivia_questions | Anyone | - | - | - |
+| users | Public | Public | Public | - |
+| trivia_questions | Active only | - | - | - |
 | daily_trivia_sets | Active only | - | - | - |
-| scores | Anyone | Owner | - | - |
-| photo_uploads | Approved only | Owner | - | - |
-| seahawks_players | Active only | - | - | - |
-| game_state | Anyone | - | - | - |
+| game_day_rounds | Public | - | - | - |
+| daily_answers | Public | Public | - | - |
+| photo_uploads | Approved only | Public | - | - |
+| photo_likes | Public | Public | - | Public |
+| players | Active only | - | - | - |
+| game_settings | Public | - | - | - |
 
 **Note:** Admin operations use the service role key which bypasses RLS.
 
@@ -244,21 +240,23 @@ All tables have RLS enabled. Key policies:
 
 ## Database Functions
 
-### get_team_total_points(team_id UUID)
-Returns total points for a team across all scores.
-
-```sql
-SELECT get_team_total_points('uuid-here');
--- Returns: 2450
-```
-
-### get_leaderboard(limit INTEGER)
-Returns ranked leaderboard with team stats.
+### get_leaderboard(p_limit INTEGER)
+Returns ranked leaderboard with user stats.
 
 ```sql
 SELECT * FROM get_leaderboard(50);
--- Returns: rank, team_id, team_name, team_image, total_points, days_played
+-- Returns: rank, user_id, username, avatar, total_points, current_streak, days_played
 ```
+
+### update_user_stats()
+Trigger function (AFTER INSERT on `daily_answers`):
+- Adds `points_earned + streak_bonus` to user's `total_points`
+- Increments `days_played` if new day
+- Updates `last_played_at` timestamp
+
+### update_photo_like_count()
+Trigger function (AFTER INSERT/DELETE on `photo_likes`):
+- Increments/decrements `like_count` on the associated photo
 
 ---
 
@@ -268,6 +266,7 @@ SELECT * FROM get_leaderboard(50);
 Base Points:     100 per correct answer
 Time Bonus:      +50 if answered within 5 seconds
 Streak Multipliers:
+  - 0-1 correct: 1.0x
   - 2 correct:   1.2x
   - 3 correct:   1.5x
   - 4 correct:   2.0x
@@ -282,39 +281,31 @@ Streak Multipliers:
 
 ---
 
-## Storage Buckets
-
-### photos (public)
-Stores user-uploaded party photos.
-
-**Path format:** `{team_id}/{uuid}.{ext}`
-
-**Allowed types:** `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-
-**Max size:** 5MB
-
----
-
 ## Entity Relationship Diagram
 
 ```
-┌─────────────┐     ┌──────────────────┐
-│   teams     │────<│     scores       │
-└─────────────┘     └──────────────────┘
-       │                    │
-       │            ┌───────┴───────┐
-       │            │               │
-       ▼            ▼               ▼
-┌─────────────┐  ┌──────────────┐  ┌───────────────────┐
-│photo_uploads│  │team_daily_   │  │trivia_questions   │
-└─────────────┘  │progress      │  └───────────────────┘
-       │         └──────────────┘           │
-       │                                    │
-       ▼                                    ▼
-┌─────────────┐                  ┌───────────────────┐
-│photo_likes  │                  │daily_trivia_sets  │
-└─────────────┘                  │game_day_rounds    │
-                                 └───────────────────┘
+users (user_id PK, username UNIQUE)
+  |
+  |-- daily_answers --> trivia_questions
+  |
+  |-- photo_uploads
+  |       |
+  |       +-- photo_likes
+  |
+  +-- is_admin flag for admin access
+
+game_settings (singleton, id=1)
+  |
+  +-- Controls: current_mode, live_question_index, is_paused
+
+trivia_questions
+  |
+  |-- daily_trivia_sets (question_ids[])
+  |
+  +-- game_day_rounds (question_ids[])
+
+players (standalone - 2025 rosters, SB heroes, HOF legends)
+admin_action_logs (standalone audit trail)
 ```
 
 ---
@@ -323,29 +314,48 @@ Stores user-uploaded party photos.
 
 | Table | Index | Columns |
 |-------|-------|---------|
-| teams | idx_teams_device_fingerprint | device_fingerprint |
-| teams | idx_teams_session_token | session_token |
+| users | idx_users_total_points | total_points DESC |
+| users | idx_users_created_at | created_at DESC |
+| users | idx_users_username | username |
 | trivia_questions | idx_questions_category | category |
 | trivia_questions | idx_questions_difficulty | difficulty |
+| trivia_questions | idx_questions_active | is_active |
 | daily_trivia_sets | idx_daily_sets_day | day_identifier |
 | daily_trivia_sets | idx_daily_sets_active | is_active |
-| scores | idx_scores_team | team_id |
-| scores | idx_scores_day | day_identifier |
-| scores | idx_scores_answered_at | answered_at |
-| team_daily_progress | idx_progress_team_day | (team_id, day_identifier) |
-| photo_uploads | idx_photos_team | team_id |
-| photo_uploads | idx_photos_uploaded_at | uploaded_at DESC |
-| photo_uploads | idx_photos_approved | (is_approved, is_hidden) |
-| seahawks_players | idx_players_active | is_active |
-| seahawks_players | idx_players_position | position |
+| daily_answers | idx_answers_user_id | user_id |
+| daily_answers | idx_answers_day | day_identifier |
+| daily_answers | idx_answers_date | answered_at |
+| photo_uploads | idx_photos_user_id | user_id |
+| photo_uploads | idx_photos_approved | (is_approved, is_hidden, created_at DESC) |
+| photo_likes | idx_photo_likes_photo | photo_id |
+| players | idx_players_active | (is_active, display_order) |
+| players | idx_players_image_validated | image_validated (partial: WHERE true) |
 | admin_action_logs | idx_logs_performed_at | performed_at DESC |
+
+---
+
+## Storage Buckets
+
+### photos (public)
+Stores user-uploaded party photos.
+
+**Allowed types:** `image/jpeg`, `image/png`, `image/webp`, `image/gif`
+
+**Max size:** 5MB
 
 ---
 
 ## Migrations
 
-The full schema is in `supabase/schema.sql`. For incremental changes:
+The full schema is in `supabase/schema_complete.sql`. Applied migrations:
 
+| Migration | Description |
+|-----------|-------------|
+| `20260204_add_user_id_and_admin.sql` | Adds user_id PK and is_admin flag |
+| `20260205_update_patriots_roster.sql` | Updates Patriots stats + adds 24 roster players |
+| `20260205_add_image_validated.sql` | Adds image_validated column to players |
+
+For new changes:
 1. Create migration file: `supabase/migrations/YYYYMMDD_description.sql`
 2. Test locally with Supabase CLI
 3. Apply to production via SQL Editor
@@ -363,3 +373,7 @@ Supabase provides:
 # Manual backup (requires direct database connection)
 pg_dump -h db.your-project.supabase.co -U postgres -d postgres > backup.sql
 ```
+
+---
+
+*Last updated: February 2026*

@@ -26,8 +26,15 @@ This document provides comprehensive documentation for the HawkTrivia database s
 2. **Validate Schema Setup**:
    - Run `supabase/test_schema.sql` to verify all tables, functions, and triggers
 
-3. **Optional: Add 2025 Season Data**:
-   - Run `supabase/seed_2025_data.sql` for additional players and 40 more trivia questions
+3. **Add 2025 Season Data**:
+   - Run `supabase/seed_2025_data.sql` for 17 players and 40 more trivia questions
+
+4. **Add Full 2025 Rosters** (optional):
+   - First run `supabase/migrations/20260205_add_image_validated.sql`
+   - Then run `supabase/seed_2025_rosters.sql` for full Seahawks (58) + Patriots (55) rosters
+
+5. **Set Up Daily Trivia Sets** (optional):
+   - Run `supabase/seed_daily_trivia_sets.sql` to map 5 days to question categories
 
 4. **Verify Environment Variables** in `.env.local`:
    ```bash
@@ -64,7 +71,7 @@ The database consists of **10 tables** organized into these categories:
 ### Content & Social
 | Table | Purpose |
 |-------|---------|
-| `players` | Super Bowl heroes with stats and trivia |
+| `players` | Player profiles: 2025 rosters, Super Bowl heroes, HOF legends |
 | `photo_uploads` | User-uploaded fan photos |
 | `photo_likes` | Photo like tracking |
 
@@ -145,7 +152,9 @@ Central question bank for all trivia content.
 | `is_active` | BOOLEAN | Whether question is available |
 | `created_at` | TIMESTAMPTZ | Creation timestamp |
 
-**Categories in seed data**: Super Bowl XLVIII, Legion of Boom, Russell Wilson Era, Seahawks Legends, Stadium & 12s, Memorable Moments, Players & Numbers, Seahawks History
+**Categories in seed data**:
+- From `schema_complete.sql` (51 questions): Super Bowl XLVIII, Legion of Boom, Russell Wilson Era, Seahawks Legends, Stadium & 12s, Memorable Moments, Players & Numbers, Seahawks History
+- From `seed_2025_data.sql` (40 questions): 2025 Season Stats, 2025 Seahawks Stars, 2025 Comparison QBs, 2025 Comparison Defense, Seahawks Hall of Fame, Super Bowl Connections
 
 ---
 
@@ -188,7 +197,7 @@ Tracks individual user responses to trivia questions.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Answer ID |
-| `username` | TEXT (FK) | User who answered |
+| `user_id` | TEXT (FK) | References users.user_id |
 | `question_id` | UUID (FK) | Question answered |
 | `day_identifier` | TEXT (NOT NULL) | Day context (e.g., 'day_minus_4') |
 | `selected_answer` | TEXT | User's choice (`a`, `b`, `c`, `d`) |
@@ -198,7 +207,7 @@ Tracks individual user responses to trivia questions.
 | `time_taken_ms` | INTEGER | Response time in milliseconds |
 | `answered_at` | TIMESTAMPTZ | Answer timestamp |
 
-**Unique Constraint**: `UNIQUE(username, question_id, day_identifier)` - One answer per user per question per day.
+**Unique Constraint**: `UNIQUE(user_id, question_id, day_identifier)` - One answer per user per question per day.
 
 ---
 
@@ -245,7 +254,7 @@ Audit trail for administrative actions.
 
 ### 8. `players`
 
-Super Bowl heroes and Seahawks legends with detailed stats.
+Player profiles including 2025 rosters (Seahawks, Patriots), Super Bowl heroes, and Hall of Fame legends.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -254,6 +263,7 @@ Super Bowl heroes and Seahawks legends with detailed stats.
 | `jersey_number` | INTEGER | Jersey number |
 | `position` | TEXT | Playing position |
 | `image_url` | TEXT | Player headshot |
+| `image_validated` | BOOLEAN | Admin-verified image (default false) |
 | `stats` | JSONB | Key-value stat pairs |
 | `trivia` | JSONB | Array of trivia facts |
 | `bio` | TEXT | Short biography |
@@ -280,7 +290,7 @@ User-submitted fan photos for the photo gallery.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Photo ID |
-| `username` | TEXT (FK) | Uploader |
+| `user_id` | TEXT (FK) | References users.user_id |
 | `image_url` | TEXT | Storage URL |
 | `caption` | TEXT | User caption |
 | `like_count` | INTEGER | Number of likes |
@@ -300,7 +310,7 @@ Tracks which users liked which photos.
 |--------|------|-------------|
 | `id` | UUID (PK) | Like ID |
 | `photo_id` | UUID (FK) | Photo that was liked |
-| `username` | TEXT (FK) | User who liked |
+| `user_id` | TEXT (FK) | References users.user_id |
 | `created_at` | TIMESTAMPTZ | Like timestamp |
 
 **Unique Constraint**: One like per user per photo.
@@ -402,7 +412,7 @@ Tracks which users liked which photos.
 
 | Component | API Endpoint | Data Used |
 |-----------|-------------|-----------|
-| `ScoreBoard` | `/api/leaderboard` | Users ranked by total_points |
+| `ScoreBoard` | `/api/scoreboard` | Users ranked by total_points |
 | `TriviaGame` | `/api/trivia/daily` | Questions without answers |
 | `LiveGame` | `/api/trivia/live` | Current question, game state |
 | `PlayerCards` | `/api/players` | Player stats, trivia, highlights |
@@ -415,7 +425,7 @@ The frontend uses SWR for data fetching with automatic revalidation:
 
 ```typescript
 // Example: Scoreboard with auto-refresh
-const { data } = useSWR('/api/leaderboard', fetcher, {
+const { data } = useSWR('/api/scoreboard', fetcher, {
   refreshInterval: 30000, // Refresh every 30 seconds
   revalidateOnFocus: true
 })
@@ -440,18 +450,39 @@ const { data } = useSWR(
 
 ### Initial Setup: `schema_complete.sql`
 
-Creates all tables and includes:
+Creates all 10 tables and includes:
 - 6 Super Bowl XLVIII heroes (Wilson, Lynch, Sherman, Smith, Thomas, Chancellor)
 - 51 trivia questions across 8 categories
 - All functions, triggers, and RLS policies
+- Default game_settings row (singleton)
 
 ### Extended Data: `seed_2025_data.sql`
 
 Run after schema_complete.sql to add:
-- 2025 Seahawks roster (Darnold, Smith-Njigba, Walker, etc.)
-- Comparison QBs (Maye, Stafford)
-- Hall of Fame legends (Largent, Jones, Kennedy, Easley)
-- 40 additional trivia questions for 2025 season content
+- 2025 Seahawks offense (5): Darnold, JSN, Walker, Myers, Dickson
+- 2025 Seahawks defense (4): Witherspoon, Mafe, Williams, Love
+- 2025 Seahawks coach (1): Macdonald
+- Comparison QBs (2): Maye, Stafford
+- Super Bowl XLVIII heroes (6): Wilson, Lynch, Sherman, Smith, Thomas, Chancellor
+- Super Bowl XLIX context (1): Brady
+- Hall of Fame legends (4): Largent, Kennedy, Jones, Easley
+- 40 additional trivia questions across 7 new categories
+
+### Full Rosters: `seed_2025_rosters.sql`
+
+Run after seed_2025_data.sql (and `migrations/20260205_add_image_validated.sql`) to add:
+- **Seahawks**: 53 players + 5 coaches (display_order 1-58)
+- **Patriots**: 51 players + 4 coaches (display_order 101-170)
+- Source: official team roster pages (Feb 5, 2026)
+
+### Daily Trivia Sets: `seed_daily_trivia_sets.sql`
+
+Maps day identifiers to question categories:
+- `day_minus_4`: Super Bowl XLVIII (10 questions)
+- `day_minus_3`: Legion of Boom (6 questions)
+- `day_minus_2`: 2025 Season Stats (8 questions)
+- `day_minus_1`: 2025 Comparison QBs (6 questions)
+- `game_day`: 2025 Comparison Defense (8 questions)
 
 ### Re-seeding Trivia Questions
 
@@ -507,12 +538,14 @@ Returns top N users by total_points:
 SELECT * FROM get_leaderboard(50);
 ```
 
-Returns: rank, username, avatar, total_points, current_streak, days_played
+Returns: rank, user_id, username, avatar, total_points, current_streak, days_played
 
 ### `update_user_stats()`
 
 Trigger function that runs after INSERT on `daily_answers`:
+- Looks up user by `user_id` (FK from daily_answers)
 - Adds `points_earned + streak_bonus` to user's `total_points`
+- Increments `days_played` if it's a new day
 - Updates `last_played_at` timestamp
 
 ### `update_photo_like_count()`
@@ -526,12 +559,34 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 
 | File | Purpose |
 |------|---------|
-| `supabase/schema_complete.sql` | Complete schema + 51 questions (run this first) |
-| `supabase/seed_2025_data.sql` | Extended 2025 data + 40 more questions (optional) |
+| `supabase/schema_complete.sql` | Complete schema (10 tables) + 51 questions + 6 Super Bowl heroes (run first) |
+| `supabase/seed_2025_data.sql` | 2025 players (17) + 40 trivia questions across 7 new categories |
+| `supabase/seed_2025_rosters.sql` | Full 2025 rosters: Seahawks (53 players + 5 coaches) + Patriots (51 players + 4 coaches) |
+| `supabase/seed_daily_trivia_sets.sql` | Maps day identifiers to question sets (5 days) |
 | `supabase/test_schema.sql` | Validation queries to verify schema setup |
+| `supabase/migrations/20260204_add_user_id_and_admin.sql` | Adds user_id PK and is_admin flag |
+| `supabase/migrations/20260205_update_patriots_roster.sql` | Updates Patriots stats + adds 24 additional roster players |
+| `supabase/migrations/20260205_add_image_validated.sql` | Adds image_validated column to players table |
 | `lib/database.types.ts` | TypeScript type definitions |
 | `lib/supabase.ts` | Supabase client initialization |
 | `FRONTEND_GUIDE.md` | Frontend integration guide with code examples |
+
+---
+
+## Known Code/Schema Discrepancies
+
+The following TypeScript types and API routes still reference `username` as a foreign key, but the SQL schema (`schema_complete.sql`) defines these columns as `user_id`:
+
+| File | Issue |
+|------|-------|
+| `lib/database.types.ts` | `DailyAnswer.username`, `DailyAnswerInsert.username`, `AnswerSubmission.username` should be `user_id` |
+| `lib/database.types.ts` | `PhotoUpload.username`, `PhotoUploadInsert.username`, `PhotoLike.username` should be `user_id` |
+| `app/api/trivia/daily/answer/route.ts` | Queries/inserts using `username` instead of `user_id` |
+| `app/api/photos/route.ts` | Queries using `username` instead of `user_id` |
+| `app/api/photos/upload/route.ts` | Inserts using `username` instead of `user_id` |
+| `app/api/photos/[photoId]/like/route.ts` | Queries/inserts using `username` instead of `user_id` |
+
+**Note**: If the live database was set up before the `user_id` migration and the FK migration steps in `20260204_add_user_id_and_admin.sql` were not applied (they are commented out), the tables may still have `username` columns and these routes would work. For any fresh setup using `schema_complete.sql`, these routes need to be updated to use `user_id`.
 
 ---
 
