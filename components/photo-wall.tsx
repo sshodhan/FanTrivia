@@ -8,6 +8,7 @@ import { AVATARS, type AvatarId } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
+import { PhotoLightbox } from '@/components/photo-lightbox';
 
 interface PhotoWallProps {
   onBack: () => void;
@@ -55,20 +56,6 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lightboxPhoto, setLightboxPhoto] = useState<DisplayPhoto | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Close lightbox on Escape key and lock body scroll
-  useEffect(() => {
-    if (!lightboxPhoto) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxPhoto(null);
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [lightboxPhoto]);
 
   // Fetcher that includes user_id header
   const fetcher = (url: string) =>
@@ -426,93 +413,19 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
 
       {/* Photo Lightbox Modal */}
       {lightboxPhoto && (
-        <div
-          className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm animate-in fade-in duration-200"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Full view: ${lightboxPhoto.caption || 'Photo'}`}
-        >
-          {/* Scrollable content container for small screens */}
-          <div className="absolute inset-0 flex flex-col overflow-y-auto">
-            {/* Top bar with user info and close */}
-            <div className="flex items-center justify-between px-3 py-3 sm:px-5 sm:py-4 safe-top shrink-0">
-              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-base sm:text-lg">{AVATARS[lightboxPhoto.userAvatar]?.emoji || '🦅'}</span>
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-foreground text-sm sm:text-base truncate">{lightboxPhoto.username}</div>
-                  <div className="text-xs text-muted-foreground">{formatDate(lightboxPhoto.uploadedAt)}</div>
-                </div>
-              </div>
-              {/* Close button - large touch target for mobile */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setLightboxPhoto(null);
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  setLightboxPhoto(null);
-                }}
-                className="relative z-[60] w-11 h-11 sm:w-10 sm:h-10 bg-muted/80 rounded-full flex items-center justify-center text-foreground active:bg-muted active:scale-95 transition-all shrink-0 ml-2 touch-manipulation"
-                aria-label="Close full view"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                </svg>
-              </button>
-            </div>
-
-            {/* Full-bleed photo area */}
-            <div className="flex-1 flex items-center justify-center px-2 sm:px-4 min-h-0">
-              <img
-                src={lightboxPhoto.imageUrl}
-                alt={lightboxPhoto.caption || 'Photo'}
-                className="max-w-full max-h-[70vh] sm:max-h-[75vh] w-auto h-auto rounded-lg object-contain animate-in zoom-in-95 duration-200"
-              />
-            </div>
-
-            {/* Bottom bar with caption and actions */}
-            <div className="px-3 py-3 sm:px-5 sm:py-4 safe-bottom shrink-0">
-              {lightboxPhoto.caption && (
-                <p className="text-foreground text-sm sm:text-base mb-2.5 sm:mb-3 leading-relaxed">{lightboxPhoto.caption}</p>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  handleLike(lightboxPhoto.id);
-                  setLightboxPhoto(prev => prev ? {
-                    ...prev,
-                    hasLiked: !prev.hasLiked,
-                    likes: prev.hasLiked ? prev.likes - 1 : prev.likes + 1,
-                  } : null);
-                }}
-                className={cn(
-                  "flex items-center gap-2 py-1 transition-colors touch-manipulation",
-                  lightboxPhoto.hasLiked ? "text-primary" : "text-muted-foreground active:text-primary"
-                )}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill={lightboxPhoto.hasLiked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-                </svg>
-                <span className="font-medium">{lightboxPhoto.likes}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <PhotoLightbox
+          photo={lightboxPhoto}
+          onClose={() => setLightboxPhoto(null)}
+          onLike={() => {
+            handleLike(lightboxPhoto.id);
+            setLightboxPhoto(prev => prev ? {
+              ...prev,
+              hasLiked: !prev.hasLiked,
+              likes: prev.hasLiked ? prev.likes - 1 : prev.likes + 1,
+            } : null);
+          }}
+          formatDate={formatDate}
+        />
       )}
 
       {/* Upload Modal */}
