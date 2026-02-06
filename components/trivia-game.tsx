@@ -101,6 +101,7 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
         .map(transformApiQuestion);
 
       logClientDebug('TriviaGame', 'Questions loaded from API', {
+        data_source: apiData.data_source || 'unknown',
         total_from_api: apiData.questions.length,
         already_answered: apiData.already_answered_ids?.length || 0,
         available: availableQuestions.length,
@@ -126,6 +127,12 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
       setQuestionsReady(true);
     } else if (apiError || (apiData && (!apiData.questions || apiData.questions.length === 0))) {
       // Fallback to mock questions
+      logClientDebug('TriviaGame', 'FALLING BACK TO CLIENT MOCK DATA', {
+        reason: apiError ? 'api_error' : 'empty_api_response',
+        api_error: apiError?.message || null,
+        api_data: apiData ? { questions_count: apiData.questions?.length, data_source: apiData.data_source } : null,
+      }, { force: true, level: 'warn' });
+
       const mockQuestions = [...sampleQuestions]
         .sort(() => Math.random() - 0.5)
         .slice(0, 5)

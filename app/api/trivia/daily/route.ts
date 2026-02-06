@@ -125,6 +125,19 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabase()
 
+    logServer({
+      level: 'info',
+      component: 'trivia-daily',
+      event: 'request_received',
+      data: {
+        username: username || 'anonymous',
+        has_supabase_url: !!supabaseUrl,
+        has_supabase_key: !!supabaseServiceKey,
+        supabase_client_created: !!supabase,
+        data_source: supabase ? 'supabase' : 'demo',
+      }
+    })
+
     // Demo mode
     if (!supabase) {
       logServer({
@@ -140,6 +153,7 @@ export async function GET(request: NextRequest) {
         day_identifier: 'demo',
         questions: DEMO_QUESTIONS,
         already_answered_ids: [],
+        data_source: 'demo',
         settings: {
           questions_per_day: 5,
           timer_duration: 15,
@@ -167,6 +181,19 @@ export async function GET(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
+    logServer({
+      level: 'info',
+      component: 'trivia-daily',
+      event: 'game_settings_loaded',
+      data: {
+        from_db: !!settings,
+        current_day: gameSettings.current_day,
+        current_mode: gameSettings.current_mode,
+        questions_per_day: gameSettings.questions_per_day,
+        timer_duration: gameSettings.timer_duration,
+      }
+    })
+
     // Get questions user has already answered today
     let alreadyAnsweredIds: string[] = []
     if (username) {
@@ -186,12 +213,25 @@ export async function GET(request: NextRequest) {
     let questions: any[] = []
     let fetchError: string | null = null
 
-    const { data: dailySet } = await supabase
+    const { data: dailySet, error: dailySetError } = await supabase
       .from('daily_trivia_sets')
       .select('question_ids')
       .eq('day_identifier', gameSettings.current_day)
       .eq('is_active', true)
       .single()
+
+    logServer({
+      level: dailySet ? 'info' : 'warn',
+      component: 'trivia-daily',
+      event: 'daily_set_lookup',
+      data: {
+        day: gameSettings.current_day,
+        found: !!dailySet,
+        question_ids: dailySet?.question_ids || [],
+        question_count: dailySet?.question_ids?.length || 0,
+        error: dailySetError?.message || null,
+      }
+    })
 
     if (dailySet?.question_ids && dailySet.question_ids.length > 0) {
       logServer({
@@ -287,10 +327,24 @@ export async function GET(request: NextRequest) {
 
     // If no questions in DB, return demo questions
     if (!questions || questions.length === 0) {
+      logServer({
+        level: 'warn',
+        component: 'trivia-daily',
+        event: 'falling_back_to_demo_questions',
+        data: {
+          reason: 'no_questions_from_db',
+          day: gameSettings.current_day,
+          had_daily_set: !!dailySet,
+          daily_set_question_ids: dailySet?.question_ids || [],
+          demo_question_count: DEMO_QUESTIONS.slice(0, gameSettings.questions_per_day).length,
+          demo_question_ids: DEMO_QUESTIONS.slice(0, gameSettings.questions_per_day).map(q => q.id),
+        }
+      })
       const response: DailyTriviaResponse = {
         day_identifier: gameSettings.current_day,
         questions: DEMO_QUESTIONS.slice(0, gameSettings.questions_per_day),
         already_answered_ids: [],
+        data_source: 'demo_fallback',
         settings: {
           questions_per_day: gameSettings.questions_per_day,
           timer_duration: gameSettings.timer_duration,
@@ -325,6 +379,7 @@ export async function GET(request: NextRequest) {
       day_identifier: gameSettings.current_day,
       questions: strippedQuestions,
       already_answered_ids: alreadyAnsweredIds,
+      data_source: 'supabase',
       settings: {
         questions_per_day: gameSettings.questions_per_day,
         timer_duration: gameSettings.timer_duration,

@@ -315,6 +315,7 @@ export interface DailyTriviaResponse {
   day_identifier: string
   questions: TriviaQuestionPublic[]
   already_answered_ids: string[]
+  data_source: 'supabase' | 'demo' | 'demo_fallback' | 'mock_fallback'
   settings: {
     questions_per_day: number
     timer_duration: number
