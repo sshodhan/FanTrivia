@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Verify user exists
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('username, current_streak, total_points')
+      .select('username, current_streak, total_points, days_played, last_played_at')
       .eq('username', username)
       .single()
 
@@ -182,14 +182,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update user's current streak and total points
+    // Check if this is the first play of a new calendar day
+    const todayDate = new Date().toISOString().split('T')[0]
+    const lastPlayedDate = user.last_played_at
+      ? new Date(user.last_played_at).toISOString().split('T')[0]
+      : null
+    const isNewDay = lastPlayedDate !== todayDate
+
+    // Update user's current streak, total points, and days_played
     const pointsToAdd = points + streakBonus
+    const updateData: Record<string, unknown> = {
+      current_streak: newStreak,
+      total_points: user.total_points + pointsToAdd,
+    }
+    if (isNewDay) {
+      updateData.days_played = (user.days_played || 0) + 1
+    }
     await supabase
       .from('users')
-      .update({ 
-        current_streak: newStreak,
-        total_points: user.total_points + pointsToAdd
-      })
+      .update(updateData)
       .eq('username', username)
 
     // Get updated total points
