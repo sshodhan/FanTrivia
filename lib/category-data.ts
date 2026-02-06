@@ -175,6 +175,20 @@ export const ALL_CATEGORIES: Category[] = [
   },
 ];
 
+// Map day_identifier strings from game_settings to numeric unlock days
+// day_minus_4 = Day 1, day_minus_3 = Day 2, ..., game_day = Day 5
+const DAY_IDENTIFIER_MAP: Record<string, number> = {
+  day_minus_4: 1,
+  day_minus_3: 2,
+  day_minus_2: 3,
+  day_minus_1: 4,
+  game_day: 5,
+};
+
+export function dayIdentifierToNumber(dayIdentifier: string): number {
+  return DAY_IDENTIFIER_MAP[dayIdentifier] ?? 1;
+}
+
 // Get categories for a specific tab
 export function getCategoriesByTab(tabId: TabFilter): Category[] {
   return ALL_CATEGORIES.filter(cat => cat.pillFilters.includes(tabId));
