@@ -10,9 +10,10 @@ import { Scoreboard } from '@/components/scoreboard';
 import { PlayerCards } from '@/components/player-cards';
 import { PhotoWall } from '@/components/photo-wall';
 import { SettingsScreen } from '@/components/settings-screen';
+import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
 interface GameResult {
   score: number;
@@ -40,6 +41,19 @@ function AppContent() {
     setShowNav(!hideNavScreens.includes(currentScreen));
   }, [currentScreen]);
 
+  const handleStartCategory = (categoryId: string) => {
+    // For now, start the general trivia game
+    // Future: pass categoryId to load category-specific questions
+    setCurrentScreen('trivia');
+  };
+
+  const handleViewCategoryResults = (categoryId: string) => {
+    // Future: navigate to category-specific results
+    if (gameResult) {
+      setCurrentScreen('results');
+    }
+  };
+
   const handleStartTrivia = () => {
     if (todayPlayed) return;
     setCurrentScreen('trivia');
@@ -51,7 +65,11 @@ function AppContent() {
   };
 
   const handleNavigation = (screen: NavScreen) => {
-    setCurrentScreen(screen as AppScreen);
+    if (screen === 'trivia') {
+      setCurrentScreen('categories');
+    } else {
+      setCurrentScreen(screen as AppScreen);
+    }
   };
 
   const handleResetFlow = () => {
@@ -62,6 +80,7 @@ function AppContent() {
   // Map NavScreen to currentScreen for bottom nav
   const getNavScreen = (): NavScreen => {
     if (['entry', 'trivia', 'results'].includes(currentScreen)) return 'home';
+    if (currentScreen === 'categories') return 'trivia';
     if (currentScreen === 'settings') return 'settings';
     return currentScreen as NavScreen;
   };
@@ -111,6 +130,17 @@ function AppContent() {
 
       {currentScreen === 'photos' && (
         <PhotoWall onBack={() => setCurrentScreen('home')} />
+      )}
+
+      {currentScreen === 'categories' && (
+        <DailyCategoriesScreen
+          currentDay={1}
+          completedCategories={[]}
+          streak={user?.current_streak ?? 0}
+          onStartCategory={handleStartCategory}
+          onViewResults={handleViewCategoryResults}
+          onBack={() => setCurrentScreen('home')}
+        />
       )}
 
       {currentScreen === 'settings' && (
