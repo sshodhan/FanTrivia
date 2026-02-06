@@ -284,6 +284,11 @@ BEGIN
   UPDATE users
   SET
     total_points = total_points + NEW.points_earned + NEW.streak_bonus,
+    days_played = CASE
+      WHEN last_played_at IS NULL OR last_played_at::date < NOW()::date
+      THEN days_played + 1
+      ELSE days_played
+    END,
     last_played_at = NOW()
   WHERE user_id = NEW.user_id;
   RETURN NEW;
