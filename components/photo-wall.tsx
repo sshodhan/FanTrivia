@@ -8,6 +8,7 @@ import { AVATARS, type AvatarId } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
+import { PhotoLightbox } from '@/components/photo-lightbox';
 
 interface PhotoWallProps {
   onBack: () => void;
@@ -53,6 +54,7 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<DisplayPhoto | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetcher that includes user_id header
@@ -93,6 +95,22 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   }, [error, user?.user_id]);
 
   const photos = data?.photos?.map(transformPhoto) || [];
+
+  // Keep lightbox photo in sync with SWR data (e.g. after like/unlike mutate)
+  // Use data directly (stable reference from SWR) instead of the derived `photos` array
+  useEffect(() => {
+    if (lightboxPhoto && data?.photos) {
+      const rawUpdated = data.photos.find(p => p.id === lightboxPhoto.id);
+      if (rawUpdated) {
+        const updated = transformPhoto(rawUpdated);
+        // Only update if values actually changed to avoid re-render loops
+        if (updated.likes !== lightboxPhoto.likes || updated.hasLiked !== lightboxPhoto.hasLiked) {
+          setLightboxPhoto(updated);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   // Handle like/unlike
   const handleLike = async (photoId: string) => {
@@ -312,13 +330,22 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
                   </div>
                 </div>
 
-                {/* Photo Image */}
-                <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                {/* Photo Image - clickable to open lightbox */}
+                <button
+                  type="button"
+                  onClick={() => photo.imageUrl && setLightboxPhoto(photo)}
+                  className={cn(
+                    "aspect-video w-full bg-muted flex items-center justify-center overflow-hidden",
+                    photo.imageUrl && "cursor-pointer"
+                  )}
+                  aria-label={photo.imageUrl ? `View full photo: ${photo.caption || 'Photo'}` : undefined}
+                  disabled={!photo.imageUrl}
+                >
                   {photo.imageUrl ? (
                     <img
                       src={photo.imageUrl}
                       alt={photo.caption || 'Photo'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-200 hover:scale-[1.02]"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
@@ -331,7 +358,7 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
                       <span className="text-sm">Photo</span>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* Caption & Actions */}
                 <div className="p-4">
@@ -383,6 +410,23 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
           </div>
         )}
       </div>
+
+      {/* Photo Lightbox Modal */}
+      {lightboxPhoto && (
+        <PhotoLightbox
+          photo={lightboxPhoto}
+          onClose={() => setLightboxPhoto(null)}
+          onLike={() => {
+            handleLike(lightboxPhoto.id);
+            setLightboxPhoto(prev => prev ? {
+              ...prev,
+              hasLiked: !prev.hasLiked,
+              likes: prev.hasLiked ? prev.likes - 1 : prev.likes + 1,
+            } : null);
+          }}
+          formatDate={formatDate}
+        />
+      )}
 
       {/* Upload Modal */}
       {showUpload && (
