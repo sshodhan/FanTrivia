@@ -627,6 +627,97 @@ Debug logging is controlled by the admin setting to prevent performance impact:
 - ✅ `app/api/log-client-debug/route.ts` - Debug log API endpoint
 - ✅ `lib/error-tracking/client-logger.ts` - Contains `logClientDebug()` function
 
+## Daily Categories Screen Logging
+
+The Daily Categories feature uses both error logging and soft error logging throughout its component tree.
+
+### Components & Hooks with Logging
+
+| File | Logger | What's Tracked |
+|------|--------|----------------|
+| `components/daily-categories/DailyCategoriesScreen.tsx` | `logClientDebug`, `logClientError`, `addBreadcrumb` | Screen mount, tab filtering, play/results actions, locked category attempts, empty filter state |
+| `components/daily-categories/CategoryCard.tsx` | `logClientError` | Unexpected card state (fallthrough in switch) |
+| `hooks/useCategoryFilter.ts` | `logClientDebug`, `addBreadcrumb` | Tab switches with from/to context |
+| `hooks/useCategoryState.ts` | `logClientError` | Invalid currentDay, empty categories array |
+| `hooks/useCountdownTimer.ts` | `logClientDebug`, `logClientError` | Invalid time diff, urgent countdown transition, Date errors |
+
+### Error Types
+
+| Error Type | Level | When | Example |
+|------------|-------|------|---------|
+| `DailyCategories Soft Error` | error | User tries to play locked category | `"Attempted to start locked category: seahawks-history (state: locked-far)"` |
+| `DailyCategories Soft Error` | error | Empty filter returns no categories | `"No categories found for tab 'daily' despite 17 total categories"` |
+| `CategoryCard Soft Error` | error | Unexpected state in card switch | `"Unexpected category state: 'unknown' for category 'abc'"` |
+| `CategoryState Soft Error` | error | Invalid day or empty categories | `"Invalid currentDay value: -1"` |
+| `CountdownTimer Soft Error` | error | Negative or >24h time diff | `"Countdown timer computed invalid diff: -500ms"` |
+| `CountdownTimer Error` | error | Date API throws | Caught exception in getTimeUntilNextDay |
+
+### Debug Events
+
+| Component | Event | Data |
+|-----------|-------|------|
+| `DailyCategories` | `Screen mounted` | `currentDay, streak, completedCount, totalCategories, userId` |
+| `DailyCategories` | `Categories filtered` | `activeTab, filteredCount, states {completed, unlocked, lockedSoon, lockedFar}` |
+| `DailyCategories` | `Category started` | `categoryId, categoryTitle, state, currentDay, userId` |
+| `DailyCategories` | `View results` | `categoryId, score, total, points` |
+| `CategoryFilter` | `Tab switched` | `from, to` |
+| `CountdownTimer` | `Countdown became urgent` | `hours, minutes` |
+
+### Breadcrumbs
+
+The following breadcrumbs are added to the circular buffer for error context:
+
+| Category | Message | Data |
+|----------|---------|------|
+| `navigation` | `Opened Daily Categories screen` | `currentDay, completedCount` |
+| `user-action` | `Switched category tab to "{tab}"` | `tab` |
+| `user-action` | `Started category` | `categoryId, categoryTitle, state` |
+| `user-action` | `Viewed category results` | `categoryId, categoryTitle` |
+
+### Searching Vercel Logs for Daily Categories
+
+```bash
+# All Daily Categories errors
+vercel logs --follow | grep "DailyCategories"
+
+# Soft errors only
+vercel logs --follow | grep "Soft Error"
+
+# Category state issues
+vercel logs --follow | grep "CategoryState"
+
+# Countdown timer issues
+vercel logs --follow | grep "CountdownTimer"
+```
+
+### Example: Soft Error Log Output
+
+When a user somehow triggers a locked category (e.g., race condition, stale UI):
+
+```
+═══════════════════════════════════════════════════════
+🚨 CLIENT-SIDE ERROR CAPTURED
+═══════════════════════════════════════════════════════
+Error Type: DailyCategories Soft Error
+Message: Attempted to start locked category: seahawks-history (state: locked-far, unlockDay: 7, currentDay: 1)
+URL: https://fantrivia.vercel.app/
+Timestamp: 2026-02-06T12:34:56.789Z
+Additional Info: {
+  "categoryId": "seahawks-history",
+  "state": "locked-far",
+  "unlockDay": 7,
+  "currentDay": 1,
+  "userId": "player_1234"
+}
+Breadcrumbs:
+  [navigation] Opened Daily Categories screen
+  [user-action] Switched category tab to "heritage"
+  [user-action] Started category {categoryId: "seahawks-history"}
+═══════════════════════════════════════════════════════
+```
+
+---
+
 ## Future Enhancements
 
 - [ ] Add error grouping/deduplication
