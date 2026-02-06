@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAccess'
+import { validateAdminAccess } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
 import { sampleQuestions } from '@/lib/mock-data'
 import { v4 as uuidv4 } from 'uuid'
@@ -8,10 +8,8 @@ import type { TriviaQuestionInsert } from '@/lib/database.types'
 // GET - List all questions
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
@@ -99,10 +97,8 @@ export async function GET(request: NextRequest) {
 // POST - Create new question
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const {
@@ -210,10 +206,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update question
 export async function PUT(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const { id, ...updates } = body
@@ -282,10 +276,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete question
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
