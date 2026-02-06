@@ -124,13 +124,13 @@ export const ALL_CATEGORIES: Category[] = [
     pillFilters: ['heritage'],
   },
 
-  // ========== 2025 SEASON TAB (Day 10-13) ==========
+  // ========== 2025 SEASON TAB (Day 3-13) ==========
   {
     id: '2025-season-stats',
     title: '2025 Season Stats',
     emoji: '📊',
     questionCount: 8,
-    unlockDay: 10,
+    unlockDay: 3,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
   },
@@ -148,7 +148,7 @@ export const ALL_CATEGORIES: Category[] = [
     title: '2025 Comparison QBs',
     emoji: '🏈',
     questionCount: 6,
-    unlockDay: 12,
+    unlockDay: 4,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
   },
