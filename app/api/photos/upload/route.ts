@@ -88,11 +88,11 @@ export async function POST(request: NextRequest) {
         success: true,
         photo: {
           id: uuidv4(),
-          team_id: teamId,
+          username: 'Demo User',
           image_url: '/photos/demo-upload.jpg',
           caption: sanitizedCaption,
-          likes: 0,
-          uploaded_at: new Date().toISOString()
+          like_count: 0,
+          created_at: new Date().toISOString()
         },
         message: 'Demo mode - photo not actually uploaded'
       }, { status: 201 })
@@ -107,15 +107,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify team exists and session is valid
-    const { data: team, error: teamError } = await supabase
-      .from('teams')
-      .select('id')
-      .eq('id', teamId)
-      .eq('session_token', sessionToken)
+    // Verify user exists and get their username
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('user_id, username')
+      .eq('user_id', teamId)
       .single()
 
-    if (teamError || !team) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'Invalid session' },
         { status: 401 }
@@ -168,7 +167,7 @@ export async function POST(request: NextRequest) {
     const { data: photo, error: insertError } = await supabase
       .from('photo_uploads')
       .insert({
-        team_id: teamId,
+        username: user.username,
         image_url: imageUrl,
         caption: sanitizedCaption,
         is_approved: true, // Auto-approve by default

@@ -79,24 +79,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build query
+    // Build query - photo_uploads has username directly
     let query = supabase
       .from('photo_uploads')
-      .select(`
-        *,
-        teams:team_id (
-          name,
-          image_url
-        )
-      `)
+      .select('id, username, image_url, caption, like_count, is_approved, is_hidden, created_at')
       .eq('is_approved', true)
       .eq('is_hidden', false)
-      .order('uploaded_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(limit)
 
     // Apply cursor pagination
     if (cursor) {
-      query = query.lt('uploaded_at', cursor)
+      query = query.lt('created_at', cursor)
     }
 
     const { data: photos, error } = await query
@@ -123,26 +117,56 @@ export async function GET(request: NextRequest) {
       const { data: likes } = await supabase
         .from('photo_likes')
         .select('photo_id')
-        .eq('team_id', teamId)
+        .eq('username', teamId)
         .in('photo_id', photoIds)
 
       likedPhotoIds = new Set(likes?.map(l => l.photo_id) || [])
     }
 
-    // Transform response
+    // Transform response - map actual DB columns to API response format
     const response: PhotoWithTeam[] = (photos || []).map(p => ({
       id: p.id,
-      team_id: p.team_id,
+      team_id: p.username,  // Using username as identifier
       image_url: p.image_url,
       caption: p.caption,
-      likes: p.likes,
+      likes: p.like_count,  // DB uses like_count
       is_approved: p.is_approved,
       is_hidden: p.is_hidden,
-      uploaded_at: p.uploaded_at,
-      team_name: (p.teams as { name: string; image_url: string | null } | null)?.name || 'Unknown',
-      team_image: (p.teams as { name: string; image_url: string | null } | null)?.image_url || null,
+      uploaded_at: p.created_at,  // DB uses created_at
+      team_name: p.username,  // Display username as team name
+      team_image: null,
       has_liked: likedPhotoIds.has(p.id)
     }))
+
+    // If database is empty and this is the first page, show placeholder photos
+    if (response.length === 0 && !cursor) {
+      logServer({
+        level: 'info',
+        component: 'photos-api',
+        event: 'empty_db_showing_placeholders',
+        data: { samplePhotosCount: samplePhotos?.length }
+      })
+
+      const placeholders: PhotoWithTeam[] = samplePhotos.map(p => ({
+        id: p.id,
+        team_id: p.teamId,
+        image_url: p.imageUrl,
+        caption: p.caption,
+        likes: p.likes,
+        is_approved: true,
+        is_hidden: false,
+        uploaded_at: p.createdAt,
+        team_name: p.teamName,
+        team_image: null,
+        has_liked: false
+      }))
+
+      return NextResponse.json({
+        photos: placeholders,
+        next_cursor: null,
+        has_more: false
+      })
+    }
 
     return NextResponse.json({
       photos: response,
