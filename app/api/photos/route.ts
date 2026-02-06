@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
       const { data: likes } = await supabase
         .from('photo_likes')
         .select('photo_id')
-        .eq('user_id', teamId)
+        .eq('username', teamId)
         .in('photo_id', photoIds)
 
       likedPhotoIds = new Set(likes?.map(l => l.photo_id) || [])

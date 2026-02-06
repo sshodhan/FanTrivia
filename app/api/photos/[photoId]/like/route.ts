@@ -50,7 +50,7 @@ export async function POST(
       .from('photo_likes')
       .select('id')
       .eq('photo_id', photoId)
-      .eq('user_id', teamId)
+      .eq('username', teamId)
       .single()
 
     let liked: boolean
@@ -62,7 +62,7 @@ export async function POST(
         .from('photo_likes')
         .delete()
         .eq('photo_id', photoId)
-        .eq('user_id', teamId)
+        .eq('username', teamId)
 
       if (deleteError) {
         console.error('Unlike error:', deleteError)
@@ -79,7 +79,7 @@ export async function POST(
         .from('photo_likes')
         .insert({
           photo_id: photoId,
-          user_id: teamId
+          username: teamId
         })
 
       if (insertError) {
