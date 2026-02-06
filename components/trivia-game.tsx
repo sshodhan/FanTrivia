@@ -238,14 +238,13 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
           setStreak(0);
         }
       } else {
-        // API error - use local fallback logic
+        // API error - don't highlight any answer as correct since we don't know
         logClientError(
           `Answer submission failed: ${JSON.stringify(result)}`,
           'TriviaGame API Error',
           { question_id: currentQuestion.id, status: response.status, result }
         );
-        // For demo, just mark as incorrect
-        setCorrectAnswerIndex(0);
+        setCorrectAnswerIndex(-1);
         setStreak(0);
       }
     } catch (error) {
@@ -254,8 +253,8 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
         'TriviaGame Network Error',
         { question_id: currentQuestion.id }
       );
-      // Fallback for network errors
-      setCorrectAnswerIndex(0);
+      // Fallback for network errors - don't highlight any answer as correct
+      setCorrectAnswerIndex(-1);
       setStreak(0);
     } finally {
       setIsSubmitting(false);
