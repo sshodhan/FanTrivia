@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { User, AvatarId, GameState } from './database.types';
+import { logClientError, logClientDebug } from '@/lib/error-tracking/client-logger';
 
 // Re-export GameState from types.ts for compatibility
 export type { GameState } from './types';
@@ -182,36 +183,90 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [user?.user_id, setUser]);
 
   const resetAccount = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    if (!user?.user_id) {
-      // No server-side user -- just clear local state
+    const resetUserId = user?.user_id;
+    const resetUsername = user?.username;
+
+    logClientDebug('UserContext', 'Reset account initiated', {
+      has_user: !!user,
+      user_id: resetUserId || 'none',
+      username: resetUsername || 'none',
+    }, { force: true });
+
+    if (!resetUserId) {
+      logClientDebug('UserContext', 'Reset: no server-side user, clearing local only', {}, { force: true, level: 'warn' });
       clearUser();
       return { success: true };
     }
 
     setIsLoading(true);
     try {
+      logClientDebug('UserContext', 'Reset: calling /api/user/reset', {
+        user_id: resetUserId,
+        username: resetUsername,
+      }, { force: true });
+
       const response = await fetch('/api/user/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.user_id }),
+        body: JSON.stringify({ user_id: resetUserId }),
       });
 
       const data = await response.json();
 
+      logClientDebug('UserContext', 'Reset: API response received', {
+        status: response.status,
+        ok: response.ok,
+        success: data.success,
+        deleted: data.deleted,
+        soft_errors: data.soft_errors || null,
+        error: data.error || null,
+      }, { force: true, level: response.ok ? 'info' : 'warn' });
+
       if (!response.ok) {
+        logClientError(
+          `Reset account API failed: ${data.error || 'Unknown error'}`,
+          'Account Reset Soft Error',
+          { user_id: resetUserId, username: resetUsername, status: response.status, response_data: data }
+        );
         return { success: false, error: data.error || 'Failed to reset account' };
       }
 
+      // Log soft errors from server if any
+      if (data.soft_errors && data.soft_errors.length > 0) {
+        logClientDebug('UserContext', 'Reset: completed with soft errors from server', {
+          user_id: resetUserId,
+          soft_errors: data.soft_errors,
+          deleted: data.deleted,
+        }, { force: true, level: 'warn' });
+      }
+
       // Server data deleted -- now clear local state
+      logClientDebug('UserContext', 'Reset: clearing local state', {
+        user_id: resetUserId,
+        username: resetUsername,
+      }, { force: true });
+
       clearUser();
+
+      logClientDebug('UserContext', 'Reset: complete', {
+        user_id: resetUserId,
+        username: resetUsername,
+        deleted: data.deleted,
+        outcome: data.soft_errors?.length > 0 ? 'completed_with_soft_errors' : 'completed_clean',
+      }, { force: true });
+
       return { success: true };
     } catch (error) {
-      console.error('Reset account error:', error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        'Account Reset Network Error',
+        { user_id: resetUserId, username: resetUsername }
+      );
       return { success: false, error: 'Network error. Please try again.' };
     } finally {
       setIsLoading(false);
     }
-  }, [user?.user_id, clearUser]);
+  }, [user?.user_id, user?.username, clearUser]);
 
   // Don't render until loaded to prevent hydration mismatch
   if (!isLoaded) {
