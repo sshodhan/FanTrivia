@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     const { data: photo, error: insertError } = await supabase
       .from('photo_uploads')
       .insert({
-        user_id: teamId,
+        username: user.username,
         image_url: imageUrl,
         caption: sanitizedCaption,
         is_approved: true, // Auto-approve by default
