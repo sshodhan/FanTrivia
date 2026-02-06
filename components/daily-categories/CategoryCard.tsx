@@ -2,6 +2,7 @@
 
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
+import { logClientError } from '@/lib/error-tracking/client-logger';
 import type { CategoryWithState } from '@/lib/category-types';
 
 interface CategoryCardProps {
@@ -26,6 +27,12 @@ function CategoryCardComponent({ category, currentDay, onPlay, onViewResults }: 
     case 'locked-far':
       return <LockedFarCard category={category} currentDay={currentDay} />;
     default:
+      // Soft error: unexpected card state
+      logClientError(
+        `Unexpected category state: "${category.state}" for category "${category.id}"`,
+        'CategoryCard Soft Error',
+        { categoryId: category.id, state: category.state, currentDay }
+      );
       return null;
   }
 }
