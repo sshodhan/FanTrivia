@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@/lib/user-context';
+import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
 import { TriviaGame } from '@/components/trivia-game';
@@ -75,12 +76,27 @@ function AppContent() {
   const [isResetting, setIsResetting] = useState(false);
 
   const handleResetFlow = async () => {
+    logClientDebug('AppContent', 'handleResetFlow: user initiated reset', {
+      user_id: user?.user_id || 'none',
+      username: user?.username || 'none',
+      current_screen: currentScreen,
+    }, { force: true });
+
     setIsResetting(true);
     const result = await resetAccount();
     setIsResetting(false);
+
     if (result.success) {
+      logClientDebug('AppContent', 'handleResetFlow: reset succeeded, navigating to entry', {
+        user_id: user?.user_id || 'already_cleared',
+      }, { force: true });
       setCurrentScreen('entry');
     } else {
+      logClientError(
+        `handleResetFlow: reset failed but navigating to entry anyway: ${result.error}`,
+        'Account Reset Flow Soft Error',
+        { user_id: user?.user_id || 'already_cleared', error: result.error }
+      );
       // Still navigate to entry even on error -- local state is cleared
       setCurrentScreen('entry');
     }
