@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAccess'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     if (isDemoMode()) {
       return NextResponse.json({
@@ -50,6 +49,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'game_end',
+      data: { admin: adminUser }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

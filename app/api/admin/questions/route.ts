@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAccess'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 import { sampleQuestions } from '@/lib/mock-data'
 import { v4 as uuidv4 } from 'uuid'
 import type { TriviaQuestionInsert } from '@/lib/database.types'
@@ -8,10 +9,8 @@ import type { TriviaQuestionInsert } from '@/lib/database.types'
 // GET - List all questions
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
@@ -99,10 +98,8 @@ export async function GET(request: NextRequest) {
 // POST - Create new question
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const {
@@ -184,6 +181,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_create',
+      data: { admin: adminUser, question_id: question.id, question_text: question.question_text.slice(0, 100) }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({
@@ -210,10 +215,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update question
 export async function PUT(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const { id, ...updates } = body
@@ -256,6 +259,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUserUpdate = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_update',
+      data: { admin: adminUserUpdate, question_id: id, updated_fields: Object.keys(updates) }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({
@@ -282,10 +293,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete question
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -326,6 +335,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUserDelete = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_delete',
+      data: { admin: adminUserDelete, question_id: id }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

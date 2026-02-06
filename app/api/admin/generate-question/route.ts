@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAccess'
+import { validateAdminAccess } from '@/lib/admin-auth'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const { topic, difficulty, category } = body

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/adminAccess'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 import type { GameSettings, GameMode } from '@/lib/database.types'
 
 // Demo mode game settings
@@ -19,10 +20,8 @@ let demoGameSettings: GameSettings = {
 // GET - Get current game settings
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     if (isDemoMode()) {
       return NextResponse.json({ game_settings: demoGameSettings })
@@ -64,10 +63,8 @@ export async function GET(request: NextRequest) {
 // PATCH - Update game settings
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = requireAdmin(request)
-    if (!auth.authenticated) {
-      return auth.error
-    }
+    const authError = await validateAdminAccess(request)
+    if (authError) return authError
 
     const body = await request.json()
     const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration } = body
@@ -123,6 +120,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'game_settings_update',
+      data: { admin: adminUser, changes: updates }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

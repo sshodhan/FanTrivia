@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
+import { useUser } from '@/lib/user-context';
 
 interface AdminConsoleProps {
   onBack: () => void;
@@ -60,6 +61,7 @@ interface Question {
 }
 
 export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState<AdminTab>('questions');
   const [questions, setQuestions] = useState<Question[]>(sampleQuestions as Question[]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -148,10 +150,9 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
       if (playerFilter) params.set('search', playerFilter);
       params.set('limit', '100');
 
-      const adminToken = localStorage.getItem('adminToken');
       const res = await fetch(`/api/admin/players?${params.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${adminToken}`
+          'x-username': user?.username || ''
         }
       });
       const data = await res.json();
@@ -181,9 +182,8 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     setDayControlLoading(true);
     setDayUpdateError(null);
     try {
-      const adminToken = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/game', {
-        headers: { 'Authorization': `Bearer ${adminToken}` },
+        headers: { 'x-username': user?.username || '' },
       });
       const data = await res.json();
       if (data.game_settings) {
@@ -204,12 +204,11 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     setDayUpdateError(null);
     setDayUpdateSuccess(null);
     try {
-      const adminToken = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/game', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`,
+          'x-username': user?.username || '',
         },
         body: JSON.stringify({ current_day: newDay }),
       });
@@ -241,13 +240,12 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     setPlayerSaving(true);
     setPlayerError(null);
     try {
-      const adminToken = localStorage.getItem('adminToken');
       const isUpdate = !!playerData.id;
       const res = await fetch('/api/admin/players', {
         method: isUpdate ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}`
+          'x-username': user?.username || ''
         },
         body: JSON.stringify(playerData)
       });
@@ -275,11 +273,10 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     if (!confirm('Are you sure you want to delete this player?')) return;
     setPlayerSaving(true);
     try {
-      const adminToken = localStorage.getItem('adminToken');
       const res = await fetch(`/api/admin/players?id=${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${adminToken}`
+          'x-username': user?.username || ''
         }
       });
       const data = await res.json();
