@@ -107,7 +107,7 @@ CREATE TABLE game_day_rounds (
 -- ============================================
 CREATE TABLE daily_answers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES trivia_questions(id) ON DELETE CASCADE,
   day_identifier TEXT NOT NULL,
   selected_answer TEXT NOT NULL CHECK (selected_answer IN ('a', 'b', 'c', 'd')),
@@ -117,10 +117,10 @@ CREATE TABLE daily_answers (
   time_taken_ms INTEGER,
   answered_at TIMESTAMPTZ DEFAULT NOW(),
   -- One answer per user per question per day
-  UNIQUE(user_id, question_id, day_identifier)
+  UNIQUE(username, question_id, day_identifier)
 );
 
-CREATE INDEX idx_answers_user_id ON daily_answers(user_id);
+CREATE INDEX idx_answers_username ON daily_answers(username);
 CREATE INDEX idx_answers_day ON daily_answers(day_identifier);
 CREATE INDEX idx_answers_date ON daily_answers(answered_at);
 
@@ -290,7 +290,7 @@ BEGIN
       ELSE days_played
     END,
     last_played_at = NOW()
-  WHERE user_id = NEW.user_id;
+  WHERE username = NEW.username;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
