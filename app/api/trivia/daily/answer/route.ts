@@ -96,14 +96,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if already answered this question today
-    const today = new Date().toISOString().split('T')[0]
+    // Get current day from settings first (needed for duplicate check and insert)
+    const { data: settings } = await supabase
+      .from('game_settings')
+      .select('current_day')
+      .eq('id', 1)
+      .single()
+
+    const dayIdentifier = settings?.current_day || 'day_1'
+
+    // Check if already answered this question for the current day_identifier
     const { data: existingAnswer } = await supabase
       .from('daily_answers')
       .select('id')
       .eq('username', username)
       .eq('question_id', question_id)
-      .gte('answered_at', `${today}T00:00:00`)
+      .eq('day_identifier', dayIdentifier)
       .single()
 
     if (existingAnswer) {
@@ -151,15 +159,6 @@ export async function POST(request: NextRequest) {
     // Calculate score
     const { points, streakBonus, newStreak } = calculatePoints(isCorrect, time_taken_ms, currentStreak)
 
-    // Get current day from settings
-    const { data: settings } = await supabase
-      .from('game_settings')
-      .select('current_day')
-      .eq('id', 1)
-      .single()
-
-    const dayIdentifier = settings?.current_day || 'day_1'
-
     // Save answer
     const { error: insertError } = await supabase
       .from('daily_answers')
@@ -175,6 +174,13 @@ export async function POST(request: NextRequest) {
       })
 
     if (insertError) {
+      // Handle race condition: if duplicate constraint fires despite the check above
+      if (insertError.code === '23505') {
+        return NextResponse.json(
+          { error: 'You have already answered this question today' },
+          { status: 409 }
+        )
+      }
       console.error('Answer insert error:', insertError)
       return NextResponse.json(
         { error: 'Failed to save answer' },
