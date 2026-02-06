@@ -79,10 +79,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Build query - photo_uploads uses username directly, not team_id
+    // Build query - join with users table to get username
     let query = supabase
       .from('photo_uploads')
-      .select('*')
+      .select('id, user_id, image_url, caption, like_count, is_approved, is_hidden, created_at, users(username)')
       .eq('is_approved', true)
       .eq('is_hidden', false)
       .order('created_at', { ascending: false })
@@ -93,7 +93,13 @@ export async function GET(request: NextRequest) {
       query = query.lt('created_at', cursor)
     }
 
-    const { data: photos, error } = await query
+    const { data: photosData, error } = await query
+    
+    // Transform the data to flatten the joined user info
+    const photos = photosData?.map((p: any) => ({
+      ...p,
+      username: p.users?.username || 'Unknown User'
+    })) || []
 
     if (error) {
       logServerError('photos-api', 'query_failed', error, { cursor, limit, teamId })
