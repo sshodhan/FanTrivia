@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { cn } from '@/lib/utils';
+import { useEffect, useCallback } from 'react';
 import { useUser } from '@/lib/user-context';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import { addBreadcrumb } from '@/lib/error-tracking/event-breadcrumbs';
-import { useCountdownTimer } from '@/hooks/useCountdownTimer';
 import { useCategoryFilter } from '@/hooks/useCategoryFilter';
 import { useCategoryState } from '@/hooks/useCategoryState';
 import { ALL_CATEGORIES } from '@/lib/category-data';
 import { TabNavigation } from './TabNavigation';
 import { CategoryCard } from './CategoryCard';
-import { CategoryListSkeleton } from './CategoryCardSkeleton';
 import type { DailyCategoriesScreenProps, CategoryProgress } from '@/lib/category-types';
 
 // Mock progress for demo (simulates day 1 with Super Bowl XLVIII completed)
@@ -35,7 +32,6 @@ export function DailyCategoriesScreen({
   onBack,
 }: DailyCategoriesScreenProps) {
   const { user } = useUser();
-  const countdown = useCountdownTimer();
   const { activeTab, setActiveTab, filteredCategories, tabsWithProgress } =
     useCategoryFilter(completedCategories);
 

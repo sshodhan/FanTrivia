@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import type { TabFilter, Category, CategoryProgress } from '@/lib/category-types';
+import type { TabFilter, CategoryProgress } from '@/lib/category-types';
 import { ALL_CATEGORIES, CATEGORY_TABS } from '@/lib/category-data';
 import { logClientDebug } from '@/lib/error-tracking/client-logger';
 import { addBreadcrumb } from '@/lib/error-tracking/event-breadcrumbs';

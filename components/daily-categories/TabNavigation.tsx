@@ -40,7 +40,7 @@ export function TabNavigation({ tabs, activeTab, onTabChange }: TabNavigationPro
 
   return (
     <div
-      className="border-b-2 border-[#001B33] sticky top-0 z-15 bg-[#002244]"
+      className="border-b-2 border-[#001B33] sticky top-0 z-[15] bg-[#002244]"
       role="tablist"
       aria-label="Category filters"
       onKeyDown={handleKeyDown}

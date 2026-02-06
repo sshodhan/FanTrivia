@@ -192,7 +192,7 @@ function LockedSoonCard({
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span>{daysUntil > 0 ? `${daysUntil} hours remaining` : 'Unlocking soon'}</span>
+        <span>{daysUntil > 0 ? `Unlocks in ${daysUntil} day${daysUntil > 1 ? 's' : ''}` : 'Unlocking soon'}</span>
       </div>
 
       <div className="mt-3">
