@@ -13,7 +13,29 @@ interface AdminConsoleProps {
   onResetFlow?: () => void;
 }
 
-type AdminTab = 'questions' | 'scores' | 'photos' | 'settings' | 'roster' | 'logs';
+type AdminTab = 'questions' | 'scores' | 'photos' | 'day-control' | 'settings' | 'roster' | 'logs';
+
+type DayIdentifier = 'day_minus_4' | 'day_minus_3' | 'day_minus_2' | 'day_minus_1' | 'game_day';
+
+interface GameSettingsData {
+  id: number;
+  current_mode: string;
+  current_day: DayIdentifier;
+  questions_per_day: number;
+  timer_duration: number;
+  scores_locked: boolean;
+  live_question_index: number;
+  is_paused: boolean;
+  updated_at: string;
+}
+
+const DAY_OPTIONS: { value: DayIdentifier; label: string; description: string }[] = [
+  { value: 'day_minus_4', label: 'Day -4', description: '4 days before game' },
+  { value: 'day_minus_3', label: 'Day -3', description: '3 days before game' },
+  { value: 'day_minus_2', label: 'Day -2', description: '2 days before game' },
+  { value: 'day_minus_1', label: 'Day -1', description: '1 day before game' },
+  { value: 'game_day', label: 'Game Day', description: 'Game day trivia' },
+];
 
 interface DebugLog {
   id: string;
@@ -60,6 +82,12 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [playerSaving, setPlayerSaving] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
+
+  // Day control state
+  const [gameSettings, setGameSettings] = useState<GameSettingsData | null>(null);
+  const [dayControlLoading, setDayControlLoading] = useState(false);
+  const [dayUpdateError, setDayUpdateError] = useState<string | null>(null);
+  const [dayUpdateSuccess, setDayUpdateSuccess] = useState<string | null>(null);
 
   // Initialize verbose logging state from localStorage
   useEffect(() => {
@@ -148,6 +176,66 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     }
   }, [activeTab, fetchPlayers]);
 
+  // Fetch game settings
+  const fetchGameSettings = useCallback(async () => {
+    setDayControlLoading(true);
+    setDayUpdateError(null);
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/game', {
+        headers: { 'Authorization': `Bearer ${adminToken}` },
+      });
+      const data = await res.json();
+      if (data.game_settings) {
+        setGameSettings(data.game_settings);
+      } else if (data.error) {
+        setDayUpdateError(data.error);
+      }
+    } catch {
+      setDayUpdateError('Failed to fetch game settings');
+    } finally {
+      setDayControlLoading(false);
+    }
+  }, []);
+
+  // Update current day
+  const updateCurrentDay = async (newDay: DayIdentifier) => {
+    setDayControlLoading(true);
+    setDayUpdateError(null);
+    setDayUpdateSuccess(null);
+    try {
+      const adminToken = localStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/game', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ current_day: newDay }),
+      });
+      const data = await res.json();
+      if (data.game_settings) {
+        setGameSettings(data.game_settings);
+        const dayLabel = DAY_OPTIONS.find(d => d.value === newDay)?.label || newDay;
+        setDayUpdateSuccess(`Day updated to ${dayLabel}`);
+        setTimeout(() => setDayUpdateSuccess(null), 3000);
+      } else if (data.error) {
+        setDayUpdateError(data.error);
+      }
+    } catch {
+      setDayUpdateError('Failed to update day');
+    } finally {
+      setDayControlLoading(false);
+    }
+  };
+
+  // Auto-fetch game settings when day-control tab is active
+  useEffect(() => {
+    if (activeTab === 'day-control') {
+      fetchGameSettings();
+    }
+  }, [activeTab, fetchGameSettings]);
+
   // Save player (create or update)
   const savePlayer = async (playerData: Partial<Player> & { id?: string }) => {
     setPlayerSaving(true);
@@ -229,6 +317,7 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     { id: 'questions', label: 'Questions' },
     { id: 'scores', label: 'Scores' },
     { id: 'photos', label: 'Photos' },
+    { id: 'day-control', label: 'Day Control' },
     { id: 'settings', label: 'Settings' },
     { id: 'roster', label: 'Roster' },
     { id: 'logs', label: 'Logs' },
@@ -412,6 +501,204 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
               </svg>
               <p>No photos pending approval</p>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'day-control' && (
+          <div className="space-y-4 pb-24">
+            {/* Error Message */}
+            {dayUpdateError && (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-destructive text-sm">
+                {dayUpdateError}
+              </div>
+            )}
+
+            {/* Success Message */}
+            {dayUpdateSuccess && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-500 text-sm">
+                {dayUpdateSuccess}
+              </div>
+            )}
+
+            {/* Current Day Status Card */}
+            <div className="bg-card rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-foreground">Current Day</h3>
+                <button
+                  onClick={() => fetchGameSettings()}
+                  disabled={dayControlLoading}
+                  className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors"
+                  aria-label="Refresh"
+                >
+                  {dayControlLoading ? (
+                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                      <path d="M3 3v5h5"/>
+                      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                      <path d="M16 21h5v-5"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {gameSettings ? (
+                <div className="bg-muted rounded-lg p-4 flex items-center gap-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary flex-shrink-0">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" x2="16" y1="2" y2="6"/>
+                    <line x1="8" x2="8" y1="2" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
+                  </svg>
+                  <div>
+                    <div className="font-bold text-foreground text-lg">
+                      {DAY_OPTIONS.find(d => d.value === gameSettings.current_day)?.label || gameSettings.current_day}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {DAY_OPTIONS.find(d => d.value === gameSettings.current_day)?.description || 'Unknown day'}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-muted rounded-lg p-4 text-center text-muted-foreground">
+                  {dayControlLoading ? 'Loading...' : 'No settings loaded'}
+                </div>
+              )}
+            </div>
+
+            {/* Day Selection List */}
+            <div className="bg-card rounded-xl p-4">
+              <h3 className="font-bold text-foreground mb-3">Select Day</h3>
+              <div className="space-y-2">
+                {DAY_OPTIONS.map((day, index) => {
+                  const currentIndex = DAY_OPTIONS.findIndex(d => d.value === gameSettings?.current_day);
+                  const isCurrent = gameSettings?.current_day === day.value;
+                  const isPast = currentIndex >= 0 && index < currentIndex;
+                  const isNext = currentIndex >= 0 && index === currentIndex + 1;
+
+                  return (
+                    <button
+                      key={day.value}
+                      onClick={() => !isCurrent && updateCurrentDay(day.value)}
+                      disabled={dayControlLoading || isCurrent}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
+                        isCurrent
+                          ? 'bg-primary/20 border border-primary/30'
+                          : isNext
+                          ? 'bg-green-500/10 border border-green-500/30 hover:bg-green-500/20'
+                          : isPast
+                          ? 'bg-muted/50 hover:bg-muted'
+                          : 'bg-muted hover:bg-muted/80'
+                      )}
+                    >
+                      <span className={cn(
+                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
+                        isCurrent
+                          ? 'bg-primary text-primary-foreground'
+                          : isNext
+                          ? 'bg-green-500 text-white'
+                          : isPast
+                          ? 'bg-muted-foreground/30 text-muted-foreground'
+                          : 'bg-muted-foreground/20 text-muted-foreground'
+                      )}>
+                        {isPast ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M20 6 9 17l-5-5"/>
+                          </svg>
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className={cn(
+                          'font-medium',
+                          isCurrent ? 'text-primary' : isPast ? 'text-muted-foreground' : 'text-foreground'
+                        )}>
+                          {day.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{day.description}</div>
+                      </div>
+                      {isCurrent && (
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full font-medium flex-shrink-0">
+                          Current
+                        </span>
+                      )}
+                      {isNext && (
+                        <span className="text-xs bg-green-500/20 text-green-500 px-2 py-1 rounded-full font-medium flex-shrink-0">
+                          Next
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-card rounded-xl p-4">
+              <h3 className="font-bold text-foreground mb-3">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    const currentIndex = DAY_OPTIONS.findIndex(d => d.value === gameSettings?.current_day);
+                    if (currentIndex >= 0 && currentIndex < DAY_OPTIONS.length - 1) {
+                      updateCurrentDay(DAY_OPTIONS[currentIndex + 1].value);
+                    }
+                  }}
+                  disabled={dayControlLoading || !gameSettings || gameSettings.current_day === 'game_day'}
+                  className="bg-green-600 text-white hover:bg-green-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M5 12h14"/>
+                    <path d="m12 5 7 7-7 7"/>
+                  </svg>
+                  Advance Day
+                </Button>
+                <Button
+                  onClick={() => updateCurrentDay('day_minus_4')}
+                  disabled={dayControlLoading || !gameSettings || gameSettings.current_day === 'day_minus_4'}
+                  variant="outline"
+                  className="bg-transparent border-border text-foreground hover:bg-muted"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                  Reset to Day -4
+                </Button>
+              </div>
+            </div>
+
+            {/* Current Settings Info */}
+            {gameSettings && (
+              <div className="bg-card rounded-xl p-4">
+                <h3 className="font-bold text-foreground mb-3">Current Settings</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Game Mode</span>
+                    <span className="text-foreground font-medium">{gameSettings.current_mode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Questions/Day</span>
+                    <span className="text-foreground font-medium">{gameSettings.questions_per_day}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Timer</span>
+                    <span className="text-foreground font-medium">{gameSettings.timer_duration}s</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="text-foreground font-medium">
+                      {new Date(gameSettings.updated_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
