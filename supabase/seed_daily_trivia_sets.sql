@@ -8,7 +8,7 @@
 -- Day 2 (day_minus_3): Legion of Boom (6 questions)
 -- Day 3 (day_minus_2): 2025 Season Stats (8 questions)
 -- Day 4 (day_minus_1): 2025 Comparison QBs (6 questions)
--- Day 5 (game_day):    Players & Numbers (6 questions)
+-- Day 5 (game_day):    2025 Comparison Defense (8 questions)
 -- ============================================
 
 -- Clear existing sets
@@ -54,7 +54,7 @@ SELECT
 FROM trivia_questions
 WHERE category = '2025 Comparison QBs' AND is_active = true;
 
--- Day 5: Players & Numbers
+-- Day 5: 2025 Comparison Defense
 INSERT INTO daily_trivia_sets (day_identifier, display_date, question_ids, is_active)
 SELECT
   'game_day',
@@ -62,7 +62,7 @@ SELECT
   ARRAY_AGG(id ORDER BY difficulty, created_at),
   true
 FROM trivia_questions
-WHERE category = 'Players & Numbers' AND is_active = true;
+WHERE category = '2025 Comparison Defense' AND is_active = true;
 
 -- Verify
 SELECT
