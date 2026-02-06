@@ -53,7 +53,22 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<DisplayPhoto | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Close lightbox on Escape key and lock body scroll
+  useEffect(() => {
+    if (!lightboxPhoto) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxPhoto(null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [lightboxPhoto]);
 
   // Fetcher that includes user_id header
   const fetcher = (url: string) =>
@@ -93,6 +108,18 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
   }, [error, user?.user_id]);
 
   const photos = data?.photos?.map(transformPhoto) || [];
+
+  // Keep lightbox photo in sync with SWR data (e.g. after like/unlike mutate)
+  useEffect(() => {
+    if (lightboxPhoto && photos.length > 0) {
+      const updated = photos.find(p => p.id === lightboxPhoto.id);
+      if (updated) {
+        setLightboxPhoto(updated);
+      }
+    }
+    // Only sync when photos data changes, not lightboxPhoto
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photos]);
 
   // Handle like/unlike
   const handleLike = async (photoId: string) => {
@@ -312,13 +339,22 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
                   </div>
                 </div>
 
-                {/* Photo Image */}
-                <div className="aspect-video bg-muted flex items-center justify-center overflow-hidden">
+                {/* Photo Image - clickable to open lightbox */}
+                <button
+                  type="button"
+                  onClick={() => photo.imageUrl && setLightboxPhoto(photo)}
+                  className={cn(
+                    "aspect-video w-full bg-muted flex items-center justify-center overflow-hidden",
+                    photo.imageUrl && "cursor-pointer"
+                  )}
+                  aria-label={photo.imageUrl ? `View full photo: ${photo.caption || 'Photo'}` : undefined}
+                  disabled={!photo.imageUrl}
+                >
                   {photo.imageUrl ? (
                     <img
                       src={photo.imageUrl}
                       alt={photo.caption || 'Photo'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-200 hover:scale-[1.02]"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
@@ -331,7 +367,7 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
                       <span className="text-sm">Photo</span>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* Caption & Actions */}
                 <div className="p-4">
@@ -383,6 +419,95 @@ export function PhotoWall({ onBack }: PhotoWallProps) {
           </div>
         )}
       </div>
+
+      {/* Photo Lightbox Modal */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setLightboxPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Full view: ${lightboxPhoto.caption || 'Photo'}`}
+        >
+          {/* Top bar with user info and close */}
+          <div
+            className="flex items-center justify-between p-4 safe-top"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
+                <span className="text-lg">{AVATARS[lightboxPhoto.userAvatar]?.emoji || '🦅'}</span>
+              </div>
+              <div>
+                <div className="font-bold text-foreground text-sm">{lightboxPhoto.username}</div>
+                <div className="text-xs text-muted-foreground">{formatDate(lightboxPhoto.uploadedAt)}</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              className="w-10 h-10 bg-muted rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              aria-label="Close full view"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Full-bleed photo area */}
+          <div
+            className="flex-1 flex items-center justify-center px-2 overflow-hidden"
+            onClick={() => setLightboxPhoto(null)}
+          >
+            <img
+              src={lightboxPhoto.imageUrl}
+              alt={lightboxPhoto.caption || 'Photo'}
+              className="max-w-full max-h-full w-auto h-auto rounded-lg object-contain animate-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {/* Bottom bar with caption and actions */}
+          <div
+            className="p-4 safe-bottom"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {lightboxPhoto.caption && (
+              <p className="text-foreground text-sm mb-3 leading-relaxed">{lightboxPhoto.caption}</p>
+            )}
+            <button
+              onClick={() => {
+                handleLike(lightboxPhoto.id);
+                // Optimistically toggle the like state in the lightbox
+                setLightboxPhoto(prev => prev ? {
+                  ...prev,
+                  hasLiked: !prev.hasLiked,
+                  likes: prev.hasLiked ? prev.likes - 1 : prev.likes + 1,
+                } : null);
+              }}
+              className={cn(
+                "flex items-center gap-2 transition-colors",
+                lightboxPhoto.hasLiked ? "text-primary" : "text-muted-foreground hover:text-primary"
+              )}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill={lightboxPhoto.hasLiked ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+              </svg>
+              <span className="font-medium">{lightboxPhoto.likes}</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Upload Modal */}
       {showUpload && (
