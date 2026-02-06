@@ -21,7 +21,7 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { user, todayPlayed, clearUser } = useUser();
+  const { user, todayPlayed, resetAccount } = useUser();
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
@@ -72,9 +72,18 @@ function AppContent() {
     }
   };
 
-  const handleResetFlow = () => {
-    clearUser();
-    setCurrentScreen('entry');
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetFlow = async () => {
+    setIsResetting(true);
+    const result = await resetAccount();
+    setIsResetting(false);
+    if (result.success) {
+      setCurrentScreen('entry');
+    } else {
+      // Still navigate to entry even on error -- local state is cleared
+      setCurrentScreen('entry');
+    }
   };
 
   // Map NavScreen to currentScreen for bottom nav
@@ -147,6 +156,7 @@ function AppContent() {
         <SettingsScreen 
           onBack={() => setCurrentScreen('home')} 
           onResetFlow={handleResetFlow}
+          isResetting={isResetting}
         />
       )}
 

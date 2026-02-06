@@ -17,6 +17,8 @@ interface UserContextType {
   signIn: (userId: string) => Promise<{ success: boolean; error?: string }>;
   // Refresh user data from server
   refreshUser: () => Promise<{ success: boolean; error?: string }>;
+  // Full account reset - deletes DB data then clears local state
+  resetAccount: () => Promise<{ success: boolean; error?: string }>;
   // Game state (kept for compatibility)
   gameState: GameState | null;
   setGameState: (state: GameState | null) => void;
@@ -179,6 +181,38 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.user_id, setUser]);
 
+  const resetAccount = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+    if (!user?.user_id) {
+      // No server-side user -- just clear local state
+      clearUser();
+      return { success: true };
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/user/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.user_id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Failed to reset account' };
+      }
+
+      // Server data deleted -- now clear local state
+      clearUser();
+      return { success: true };
+    } catch (error) {
+      console.error('Reset account error:', error);
+      return { success: false, error: 'Network error. Please try again.' };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.user_id, clearUser]);
+
   // Don't render until loaded to prevent hydration mismatch
   if (!isLoaded) {
     return null;
@@ -193,6 +227,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       registerUser,
       signIn,
       refreshUser,
+      resetAccount,
       gameState,
       setGameState,
       todayPlayed,
