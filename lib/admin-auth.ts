@@ -12,9 +12,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
  */
 export async function isUserAdmin(username: string | null | undefined): Promise<boolean> {
   if (!username) return false;
-  
+
   if (!supabaseUrl || !supabaseServiceKey) {
-    // In demo mode, no one is admin
     return false;
   }
 

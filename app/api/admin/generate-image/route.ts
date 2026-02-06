@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAccess } from '@/lib/admin-auth'
-import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseAdminClient, checkDemoMode } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
@@ -73,7 +73,7 @@ No text or words in the image.`
     }
 
     // Optionally upload to Supabase Storage for persistence
-    if (!isDemoMode()) {
+    if (!(await checkDemoMode())) {
       const supabase = createSupabaseAdminClient()
       if (supabase) {
         try {

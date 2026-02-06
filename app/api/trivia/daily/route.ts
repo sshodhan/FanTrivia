@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import type { TriviaQuestionPublic, DailyTriviaResponse, GameSettings } from '@/lib/database.types'
 import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
 
@@ -123,8 +124,6 @@ export async function GET(request: NextRequest) {
     const username = request.headers.get('x-username') ||
                      request.nextUrl.searchParams.get('username')
 
-    const supabase = getSupabase()
-
     logServer({
       level: 'info',
       component: 'trivia-daily',
@@ -133,13 +132,11 @@ export async function GET(request: NextRequest) {
         username: username || 'anonymous',
         has_supabase_url: !!supabaseUrl,
         has_supabase_key: !!supabaseServiceKey,
-        supabase_client_created: !!supabase,
-        data_source: supabase ? 'supabase' : 'demo',
       }
     })
 
-    // Demo mode
-    if (!supabase) {
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       logServer({
         level: 'info',
         component: 'trivia-daily',
@@ -162,6 +159,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response)
     }
 
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
+
     // Get game settings
     const { data: settings } = await supabase
       .from('game_settings')
@@ -178,6 +184,7 @@ export async function GET(request: NextRequest) {
       current_day: 'day_minus_4',
       live_question_index: 0,
       is_paused: false,
+      demo_mode: false,
       updated_at: new Date().toISOString(),
     }
 

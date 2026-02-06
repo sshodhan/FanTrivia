@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
-import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseAdminClient, checkDemoMode } from '@/lib/supabase'
 import { logServer } from '@/lib/error-tracking/server-logger'
 
 export async function POST(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Toggle pause state (or set explicitly if provided)
     const shouldPause = paused !== undefined ? paused : true
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({
         success: true,
         message: `Demo mode - game ${shouldPause ? 'paused' : 'resumed'}`,

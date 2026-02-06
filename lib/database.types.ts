@@ -265,6 +265,7 @@ export interface GameSettings {
   current_day: string
   live_question_index: number
   is_paused: boolean
+  demo_mode: boolean
   updated_at: string
 }
 
@@ -276,6 +277,7 @@ export interface GameSettingsUpdate {
   current_day?: string
   live_question_index?: number
   is_paused?: boolean
+  demo_mode?: boolean
 }
 
 // ============================================

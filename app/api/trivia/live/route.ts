@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, checkDemoMode } from '@/lib/supabase'
 import type { GameSettings, TriviaQuestionPublic } from '@/lib/database.types'
 
 // GET - Get current live game state and question
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const username = request.headers.get('x-username')
 
     // Demo mode response
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       const demoGameSettings: GameSettings = {
         id: 1,
         current_mode: 'daily', // Not live in demo
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         current_day: 'day_minus_4',
         live_question_index: 0,
         is_paused: false,
+        demo_mode: true,
         updated_at: new Date().toISOString()
       }
 

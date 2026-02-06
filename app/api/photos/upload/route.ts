@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, createSupabaseAdminClient, checkDemoMode } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
 
 // Rate limiting map
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const sanitizedCaption = caption?.trim().slice(0, 100) || null
 
     // Demo mode
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       // In demo mode, we can't actually upload to storage
       // Return a mock response
       return NextResponse.json({

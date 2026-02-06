@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
-import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseAdminClient, checkDemoMode } from '@/lib/supabase'
 import { logServer } from '@/lib/error-tracking/server-logger'
 import { sampleQuestions } from '@/lib/mock-data'
 import { v4 as uuidv4 } from 'uuid'
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500)
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       let questions = sampleQuestions.map(q => ({
         id: q.id,
         question_text: q.question,
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       category: category || null
     }
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({
         success: true,
         question: { ...questionData, created_at: new Date().toISOString() }
@@ -228,7 +228,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({
         success: true,
         message: 'Demo mode - question updated'
@@ -306,7 +306,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({
         success: true,
         message: 'Demo mode - question deleted'

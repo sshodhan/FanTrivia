@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import type { Player } from '@/lib/database.types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -1788,10 +1789,8 @@ export async function GET(request: NextRequest) {
     const position = searchParams.get('position')
     const category = (searchParams.get('category') || 'sb48') as PlayerCategory
 
-    const supabase = getSupabase()
-
-    // Demo mode
-    if (!supabase) {
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       let players = filterByCategory([...DEMO_PLAYERS], category)
 
       if (position && position !== 'all') {
@@ -1800,7 +1799,6 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      // Sort by display_order
       players.sort((a, b) => a.display_order - b.display_order)
 
       return NextResponse.json({
@@ -1808,6 +1806,15 @@ export async function GET(request: NextRequest) {
         total: players.length,
         category,
       })
+    }
+
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
     }
 
     // Build query - get all players (we'll filter by category)

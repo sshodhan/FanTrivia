@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import { sampleLeaderboard } from '@/lib/mock-data'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -46,10 +47,8 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabase()
-
-    // Demo mode
-    if (!supabase) {
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       const mockUser = sampleLeaderboard.find(u => u.username === username)
       const sortedUsers = [...sampleLeaderboard].sort((a, b) => b.total_points - a.total_points)
       const rank = sortedUsers.findIndex(u => u.username === username) + 1
@@ -85,6 +84,15 @@ export async function GET(
       }
 
       return NextResponse.json(stats)
+    }
+
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
     }
 
     // Get user info

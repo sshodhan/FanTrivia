@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,12 +30,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (await checkDemoMode()) {
+      return NextResponse.json(
+        { error: 'Sign in is not available in demo mode' },
+        { status: 503 }
+      )
+    }
+
     const supabase = getSupabase()
 
     if (!supabase) {
-      // Demo mode - can't sign in without database
       return NextResponse.json(
-        { error: 'Sign in is not available in demo mode' },
+        { error: 'Database not available' },
         { status: 503 }
       )
     }

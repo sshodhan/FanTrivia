@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, checkDemoMode } from '@/lib/supabase'
 
 // Demo mode like storage
 const demoLikes = new Map<string, Set<string>>()
@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Demo mode
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       const photoLikes = demoLikes.get(photoId) || new Set()
       const wasLiked = photoLikes.has(teamId)
 

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
-import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseAdminClient, checkDemoMode, invalidateDemoModeCache } from '@/lib/supabase'
 import { logServer } from '@/lib/error-tracking/server-logger'
 import type { GameSettings, GameMode } from '@/lib/database.types'
+import { sampleQuestions } from '@/lib/mock-data'
 
 // Demo mode game settings
 let demoGameSettings: GameSettings = {
@@ -14,6 +15,7 @@ let demoGameSettings: GameSettings = {
   current_day: 'day_minus_4',
   live_question_index: 0,
   is_paused: false,
+  demo_mode: true,
   updated_at: new Date().toISOString()
 }
 
@@ -23,7 +25,7 @@ export async function GET(request: NextRequest) {
     const authError = await validateAdminAccess(request)
     if (authError) return authError
 
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({ game_settings: demoGameSettings })
     }
 
@@ -67,9 +69,63 @@ export async function PATCH(request: NextRequest) {
     if (authError) return authError
 
     const body = await request.json()
-    const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration } = body
+    const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration, demo_mode } = body
 
-    if (isDemoMode()) {
+    // If toggling demo_mode, we always need the real DB (not the demo fallback)
+    if (demo_mode !== undefined) {
+      const supabase = createSupabaseAdminClient()
+      if (!supabase) {
+        return NextResponse.json(
+          { error: 'Database not available' },
+          { status: 503 }
+        )
+      }
+
+      const updates: Record<string, unknown> = {
+        demo_mode,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: gameSettings, error } = await supabase
+        .from('game_settings')
+        .update(updates)
+        .eq('id', 1)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Demo mode update error:', error)
+        return NextResponse.json(
+          { error: 'Failed to update demo mode' },
+          { status: 500 }
+        )
+      }
+
+      // Invalidate the cached demo mode value
+      invalidateDemoModeCache()
+
+      // Log admin action
+      const adminUser = getUsernameFromRequest(request)
+      logServer({
+        level: 'info',
+        component: 'admin',
+        event: 'demo_mode_toggle',
+        data: { admin: adminUser, demo_mode }
+      })
+
+      await supabase
+        .from('admin_action_logs')
+        .insert({
+          action_type: 'demo_mode_toggle',
+          target_type: 'game_settings',
+          target_id: null,
+          details: { demo_mode }
+        })
+
+      return NextResponse.json({ game_settings: gameSettings })
+    }
+
+    if (await checkDemoMode()) {
       // Update demo settings
       if (current_mode !== undefined) demoGameSettings.current_mode = current_mode as GameMode
       if (current_day !== undefined) demoGameSettings.current_day = current_day

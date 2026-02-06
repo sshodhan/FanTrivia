@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import { calculatePoints, type AnswerOption, type AnswerResult } from '@/lib/database.types'
 import { logServer, logTrivia, logServerError } from '@/lib/error-tracking/server-logger'
 
@@ -65,10 +66,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabase()
-
-    // Demo mode
-    if (!supabase) {
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       logServer({
         level: 'info',
         component: 'trivia-answer',
@@ -122,6 +121,15 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json(result)
+    }
+
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
     }
 
     // Verify user exists

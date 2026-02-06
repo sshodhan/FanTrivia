@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import type { LeaderboardEntry, AvatarId } from '@/lib/database.types'
 import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
 
@@ -27,14 +28,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100)
 
-    const supabase = getSupabase()
-
-    // Demo mode
-    if (!supabase) {
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       return NextResponse.json({
         leaderboard: DEMO_LEADERBOARD,
         total: DEMO_LEADERBOARD.length,
       })
+    }
+
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
     }
 
     // Query users directly - skip RPC to ensure we get all users

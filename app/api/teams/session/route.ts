@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, checkDemoMode } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Demo mode
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       // In demo mode, return a mock validation
       if (sessionToken.startsWith('demo_ses_')) {
         return NextResponse.json({
@@ -86,7 +86,7 @@ export async function PATCH(request: NextRequest) {
     const { name, image_url, is_preset_image } = body
 
     // Demo mode
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       return NextResponse.json({
         success: true,
         message: 'Demo mode - changes not persisted'

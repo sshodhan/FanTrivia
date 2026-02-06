@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, checkDemoMode } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
 import type { Team, TeamInsert } from '@/lib/database.types'
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Demo mode - return mock team
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       const sessionToken = `demo_ses_${Date.now()}_${Math.random().toString(36).slice(2)}`
       const mockTeam: Team = {
         id: uuidv4(),

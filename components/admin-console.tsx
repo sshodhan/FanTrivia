@@ -27,6 +27,7 @@ interface GameSettingsData {
   scores_locked: boolean;
   live_question_index: number;
   is_paused: boolean;
+  demo_mode: boolean;
   updated_at: string;
 }
 
@@ -228,12 +229,41 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     }
   };
 
-  // Auto-fetch game settings when day-control tab is active
+  // Auto-fetch game settings when day-control or settings tab is active
   useEffect(() => {
-    if (activeTab === 'day-control') {
+    if (activeTab === 'day-control' || activeTab === 'settings') {
       fetchGameSettings();
     }
   }, [activeTab, fetchGameSettings]);
+
+  // Toggle demo mode
+  const [demoModeLoading, setDemoModeLoading] = useState(false);
+  const [demoModeError, setDemoModeError] = useState<string | null>(null);
+
+  const toggleDemoMode = async (enabled: boolean) => {
+    setDemoModeLoading(true);
+    setDemoModeError(null);
+    try {
+      const res = await fetch('/api/admin/game', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': user?.username || '',
+        },
+        body: JSON.stringify({ demo_mode: enabled }),
+      });
+      const data = await res.json();
+      if (data.game_settings) {
+        setGameSettings(data.game_settings);
+      } else if (data.error) {
+        setDemoModeError(data.error);
+      }
+    } catch {
+      setDemoModeError('Failed to toggle demo mode');
+    } finally {
+      setDemoModeLoading(false);
+    }
+  };
 
   // Save player (create or update)
   const savePlayer = async (playerData: Partial<Player> & { id?: string }) => {
@@ -701,6 +731,33 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
 
         {activeTab === 'settings' && (
           <div className="space-y-4 pb-24">
+            {/* Demo Mode Toggle */}
+            <div className="bg-card rounded-xl p-4 border border-yellow-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-foreground">Demo Mode</h3>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, the app uses mock data instead of the database. Supabase is used by default.
+                  </p>
+                </div>
+                <Switch
+                  checked={gameSettings?.demo_mode ?? false}
+                  onCheckedChange={toggleDemoMode}
+                  disabled={demoModeLoading}
+                />
+              </div>
+              {gameSettings?.demo_mode && (
+                <div className="mt-3 bg-yellow-500/10 rounded-lg p-3 text-sm text-yellow-600 dark:text-yellow-400">
+                  Demo mode is active. All data operations use mock data and are not persisted.
+                </div>
+              )}
+              {demoModeError && (
+                <div className="mt-3 bg-destructive/10 rounded-lg p-3 text-sm text-destructive">
+                  {demoModeError}
+                </div>
+              )}
+            </div>
+
             {/* Game Day Mode */}
             <div className="bg-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">

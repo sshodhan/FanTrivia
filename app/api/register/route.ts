@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkDemoMode } from '@/lib/supabase'
 import { AVATARS, type AvatarId, type User } from '@/lib/database.types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -45,10 +46,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabase()
-
-    if (!supabase) {
-      // Demo mode - return mock user
+    // Check if demo mode is enabled via admin setting
+    if (await checkDemoMode()) {
       const mockUser: User = {
         user_id: generateUserId(trimmedUsername),
         username: trimmedUsername,
@@ -63,6 +62,15 @@ export async function POST(request: NextRequest) {
         is_admin: false,
       }
       return NextResponse.json({ user: mockUser, isNew: true })
+    }
+
+    const supabase = getSupabase()
+
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
     }
 
     // Check if username already exists
@@ -129,11 +137,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Username is required' }, { status: 400 })
   }
 
+  if (await checkDemoMode()) {
+    return NextResponse.json({ exists: false, user: null })
+  }
+
   const supabase = getSupabase()
 
   if (!supabase) {
-    // Demo mode
-    return NextResponse.json({ exists: false, user: null })
+    return NextResponse.json(
+      { error: 'Database not available' },
+      { status: 503 }
+    )
   }
 
   const { data: user } = await supabase

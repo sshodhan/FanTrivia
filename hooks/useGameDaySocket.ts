@@ -109,9 +109,9 @@ export function useGameDaySocket(): GameDaySocketState & GameDaySocketActions {
   const connect = useCallback((teamId: string, teamName: string) => {
     if (socketRef.current?.connected) return
 
-    // If no socket URL configured, use demo mode
+    // If no socket URL configured, live game is unavailable
     if (!SOCKET_URL) {
-      console.warn('Socket URL not configured, using demo mode')
+      console.warn('Socket URL not configured, live game unavailable')
       setState(prev => ({
         ...prev,
         isConnected: false,

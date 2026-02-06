@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, isDemoMode } from '@/lib/supabase'
+import { createSupabaseServerClient, checkDemoMode } from '@/lib/supabase'
 import { samplePhotos } from '@/lib/mock-data'
 import type { PhotoWithTeam } from '@/lib/database.types'
 import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
@@ -15,11 +15,11 @@ export async function GET(request: NextRequest) {
       level: 'info',
       component: 'photos-api',
       event: 'request_received',
-      data: { cursor, limit, teamId, isDemoMode: isDemoMode() }
+      data: { cursor, limit, teamId, isDemoMode: await checkDemoMode() }
     })
 
     // Demo mode
-    if (isDemoMode()) {
+    if (await checkDemoMode()) {
       logServer({
         level: 'info',
         component: 'photos-api',
