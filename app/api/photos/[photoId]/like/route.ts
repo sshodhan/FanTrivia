@@ -50,7 +50,7 @@ export async function POST(
       .from('photo_likes')
       .select('id')
       .eq('photo_id', photoId)
-      .eq('team_id', teamId)
+      .eq('user_id', teamId)
       .single()
 
     let liked: boolean
@@ -62,7 +62,7 @@ export async function POST(
         .from('photo_likes')
         .delete()
         .eq('photo_id', photoId)
-        .eq('team_id', teamId)
+        .eq('user_id', teamId)
 
       if (deleteError) {
         console.error('Unlike error:', deleteError)
@@ -79,7 +79,7 @@ export async function POST(
         .from('photo_likes')
         .insert({
           photo_id: photoId,
-          team_id: teamId
+          user_id: teamId
         })
 
       if (insertError) {
@@ -96,11 +96,11 @@ export async function POST(
     // Get updated like count
     const { data: photo } = await supabase
       .from('photo_uploads')
-      .select('likes')
+      .select('like_count')
       .eq('id', photoId)
       .single()
 
-    newLikeCount = photo?.likes || 0
+    newLikeCount = photo?.like_count || 0
 
     return NextResponse.json({
       liked,
