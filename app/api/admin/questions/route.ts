@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminAccess } from '@/lib/admin-auth'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 import { sampleQuestions } from '@/lib/mock-data'
 import { v4 as uuidv4 } from 'uuid'
 import type { TriviaQuestionInsert } from '@/lib/database.types'
@@ -180,6 +181,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_create',
+      data: { admin: adminUser, question_id: question.id, question_text: question.question_text.slice(0, 100) }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({
@@ -250,6 +259,14 @@ export async function PUT(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUserUpdate = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_update',
+      data: { admin: adminUserUpdate, question_id: id, updated_fields: Object.keys(updates) }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({
@@ -318,6 +335,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUserDelete = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'question_delete',
+      data: { admin: adminUserDelete, question_id: id }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

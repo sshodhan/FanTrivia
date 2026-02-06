@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminAccess } from '@/lib/admin-auth'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 import type { GameSettings, GameMode } from '@/lib/database.types'
 
 // Demo mode game settings
@@ -119,6 +120,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'game_settings_update',
+      data: { admin: adminUser, changes: updates }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

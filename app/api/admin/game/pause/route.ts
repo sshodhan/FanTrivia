@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminAccess } from '@/lib/admin-auth'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,6 +58,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Log admin action
+      const adminUser = getUsernameFromRequest(request)
+      logServer({
+        level: 'info',
+        component: 'admin',
+        event: newPausedState ? 'game_pause' : 'game_resume',
+        data: { admin: adminUser, is_paused: newPausedState }
+      })
+
       await supabase
         .from('admin_action_logs')
         .insert({
@@ -91,6 +100,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser2 = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: shouldPause ? 'game_pause' : 'game_resume',
+      data: { admin: adminUser2, is_paused: shouldPause }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({

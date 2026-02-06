@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateAdminAccess } from '@/lib/admin-auth'
+import { validateAdminAccess, getUsernameFromRequest } from '@/lib/admin-auth'
 import { createSupabaseAdminClient, isDemoMode } from '@/lib/supabase'
+import { logServer } from '@/lib/error-tracking/server-logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +68,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
+    const adminUser = getUsernameFromRequest(request)
+    logServer({
+      level: 'info',
+      component: 'admin',
+      event: 'next_question',
+      data: { admin: adminUser, previous_index: currentSettings.live_question_index, new_index: newIndex }
+    })
+
     await supabase
       .from('admin_action_logs')
       .insert({
