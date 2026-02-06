@@ -171,17 +171,51 @@ export async function GET(request: NextRequest) {
       alreadyAnsweredIds = answers?.map(a => a.question_id) || []
     }
 
-    // Get active questions (limit to questions_per_day)
-    const { data: questions, error } = await supabase
-      .from('trivia_questions')
-      .select('*')
-      .eq('is_active', true)
-      .limit(gameSettings.questions_per_day)
+    // Try to get questions from daily_trivia_sets for the current day
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let questions: any[] = []
+    let fetchError: string | null = null
 
-    if (error) {
-      console.error('Error fetching questions:', error)
+    const { data: dailySet } = await supabase
+      .from('daily_trivia_sets')
+      .select('question_ids')
+      .eq('day_identifier', gameSettings.current_day)
+      .eq('is_active', true)
+      .single()
+
+    if (dailySet?.question_ids && dailySet.question_ids.length > 0) {
+      // Fetch specific questions for this day's trivia set
+      const { data: dayQuestions, error } = await supabase
+        .from('trivia_questions')
+        .select('*')
+        .in('id', dailySet.question_ids)
+        .eq('is_active', true)
+
+      if (error) {
+        console.error('Error fetching day questions:', error)
+        fetchError = 'Failed to load questions'
+      } else {
+        questions = dayQuestions || []
+      }
+    } else {
+      // Fallback: get any active questions (no trivia set defined for this day)
+      const { data: fallbackQuestions, error } = await supabase
+        .from('trivia_questions')
+        .select('*')
+        .eq('is_active', true)
+        .limit(gameSettings.questions_per_day)
+
+      if (error) {
+        console.error('Error fetching questions:', error)
+        fetchError = 'Failed to load questions'
+      } else {
+        questions = fallbackQuestions || []
+      }
+    }
+
+    if (fetchError) {
       return NextResponse.json(
-        { error: 'Failed to load questions' },
+        { error: fetchError },
         { status: 500 }
       )
     }
