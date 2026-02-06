@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
+import { logClientError, logClientDebug } from '@/lib/error-tracking/client-logger';
 
 interface TriviaGameProps {
   onComplete: (score: number, correctAnswers: number) => void;
@@ -99,6 +100,19 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
         .filter((q: TriviaQuestionPublic) => !alreadyAnswered.has(q.id))
         .map(transformApiQuestion);
 
+      logClientDebug('TriviaGame', 'Questions loaded from API', {
+        total_from_api: apiData.questions.length,
+        already_answered: apiData.already_answered_ids?.length || 0,
+        available: availableQuestions.length,
+        day_identifier: apiData.day_identifier,
+        questions: availableQuestions.map((q: DisplayQuestion) => ({
+          id: q.id,
+          question: q.question.substring(0, 60),
+          options: q.options,
+          category: q.category,
+        })),
+      }, { force: true });
+
       if (availableQuestions.length > 0) {
         setQuestions(availableQuestions);
       } else {
@@ -162,6 +176,17 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
     const timeTakenMs = Date.now() - questionStartTime.current;
     const answerLetter = index >= 0 ? indexToLetter[index] : 'a'; // Default if time up
 
+    logClientDebug('TriviaGame', 'Answer selected', {
+      question_id: currentQuestion.id,
+      question_text: currentQuestion.question,
+      selected_index: index,
+      selected_letter: answerLetter,
+      selected_option_text: index >= 0 ? currentQuestion.options[index] : 'TIME_UP',
+      all_options: currentQuestion.options,
+      index_to_letter_mapping: indexToLetter,
+      time_taken_ms: timeTakenMs,
+    }, { force: true });
+
     try {
       // Submit answer to API
       const response = await fetch('/api/trivia/daily/answer', {
@@ -178,8 +203,25 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
       const result: AnswerResult = await response.json();
 
       if (response.ok) {
+        const correctIdx = indexToLetter.indexOf(result.correct_answer);
+
+        logClientDebug('TriviaGame', 'Answer result received', {
+          question_id: currentQuestion.id,
+          question_text: currentQuestion.question,
+          api_is_correct: result.is_correct,
+          api_correct_answer_letter: result.correct_answer,
+          api_correct_answer_index: correctIdx,
+          api_correct_answer_text: correctIdx >= 0 ? currentQuestion.options[correctIdx] : 'INVALID_INDEX',
+          user_selected_index: index,
+          user_selected_letter: answerLetter,
+          user_selected_text: index >= 0 ? currentQuestion.options[index] : 'TIME_UP',
+          all_options: currentQuestion.options,
+          points_earned: result.points_earned,
+          indexToLetter_array: indexToLetter,
+        }, { force: true });
+
         setLastResult(result);
-        setCorrectAnswerIndex(indexToLetter.indexOf(result.correct_answer));
+        setCorrectAnswerIndex(correctIdx);
 
         if (result.is_correct) {
           setScore((prev) => prev + result.points_earned + result.streak_bonus);
@@ -190,13 +232,21 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
         }
       } else {
         // API error - use local fallback logic
-        console.error('Answer submission failed:', result);
+        logClientError(
+          `Answer submission failed: ${JSON.stringify(result)}`,
+          'TriviaGame API Error',
+          { question_id: currentQuestion.id, status: response.status, result }
+        );
         // For demo, just mark as incorrect
         setCorrectAnswerIndex(0);
         setStreak(0);
       }
     } catch (error) {
-      console.error('Network error submitting answer:', error);
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        'TriviaGame Network Error',
+        { question_id: currentQuestion.id }
+      );
       // Fallback for network errors
       setCorrectAnswerIndex(0);
       setStreak(0);

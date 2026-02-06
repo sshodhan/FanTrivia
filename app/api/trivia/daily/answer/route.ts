@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculatePoints, type AnswerOption, type AnswerResult } from '@/lib/database.types'
+import { logServer, logTrivia, logServerError } from '@/lib/error-tracking/server-logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -36,6 +37,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as AnswerRequest
     const { username, question_id, selected_answer, time_taken_ms } = body
 
+    logServer({
+      level: 'info',
+      component: 'trivia-answer',
+      event: 'answer_request_received',
+      data: {
+        username,
+        question_id,
+        selected_answer,
+        time_taken_ms,
+        has_supabase: !!(supabaseUrl && supabaseServiceKey),
+      }
+    })
+
     // Validate input
     if (!username || !question_id || !selected_answer || time_taken_ms === undefined) {
       return NextResponse.json(
@@ -55,8 +69,21 @@ export async function POST(request: NextRequest) {
 
     // Demo mode
     if (!supabase) {
+      logServer({
+        level: 'info',
+        component: 'trivia-answer',
+        event: 'demo_mode_active',
+        data: { question_id, selected_answer }
+      })
+
       const correctAnswer = DEMO_ANSWERS[question_id]
       if (!correctAnswer) {
+        logServer({
+          level: 'warn',
+          component: 'trivia-answer',
+          event: 'demo_question_not_found',
+          data: { question_id, available_demo_ids: Object.keys(DEMO_ANSWERS) }
+        })
         return NextResponse.json(
           { error: 'Question not found' },
           { status: 404 }
@@ -64,6 +91,21 @@ export async function POST(request: NextRequest) {
       }
 
       const isCorrect = selected_answer === correctAnswer
+
+      logTrivia({
+        level: isCorrect ? 'info' : 'warn',
+        event: 'answer_submitted',
+        userId: username,
+        questionId: question_id,
+        userAnswer: selected_answer,
+        correct: isCorrect,
+        data: {
+          mode: 'demo',
+          correct_answer_from_demo: correctAnswer,
+          selected_answer,
+          match: selected_answer === correctAnswer,
+        }
+      })
       const currentStreak = demoStreaks.get(username) || 0
       const { points, streakBonus, newStreak } = calculatePoints(isCorrect, time_taken_ms, currentStreak)
 
@@ -124,11 +166,17 @@ export async function POST(request: NextRequest) {
     // Get the question to check answer
     const { data: question, error: questionError } = await supabase
       .from('trivia_questions')
-      .select('correct_answer, hint_text')
+      .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint_text')
       .eq('id', question_id)
       .single()
 
     if (questionError || !question) {
+      logServer({
+        level: 'error',
+        component: 'trivia-answer',
+        event: 'question_not_found_in_db',
+        data: { question_id, error: questionError?.message || 'No data returned' }
+      })
       return NextResponse.json(
         { error: 'Question not found' },
         { status: 404 }
@@ -136,6 +184,29 @@ export async function POST(request: NextRequest) {
     }
 
     const isCorrect = selected_answer === question.correct_answer
+
+    // Detailed logging for answer grading
+    logTrivia({
+      level: isCorrect ? 'info' : 'warn',
+      event: 'answer_submitted',
+      userId: username,
+      questionId: question_id,
+      questionText: question.question_text,
+      userAnswer: selected_answer,
+      correct: isCorrect,
+      data: {
+        mode: 'supabase',
+        db_correct_answer: question.correct_answer,
+        selected_answer,
+        match: selected_answer === question.correct_answer,
+        option_a: question.option_a,
+        option_b: question.option_b,
+        option_c: question.option_c,
+        option_d: question.option_d,
+        correct_answer_text: question[`option_${question.correct_answer}` as keyof typeof question],
+        selected_answer_text: question[`option_${selected_answer}` as keyof typeof question],
+      }
+    })
 
     // Get current streak from recent answers
     const { data: recentAnswers } = await supabase
@@ -225,10 +296,27 @@ export async function POST(request: NextRequest) {
       total_points: updatedUser?.total_points || 0,
     }
 
+    logServer({
+      level: 'info',
+      component: 'trivia-answer',
+      event: 'answer_result_sent',
+      data: {
+        username,
+        question_id,
+        result_is_correct: result.is_correct,
+        result_correct_answer: result.correct_answer,
+        selected_answer,
+        points_earned: result.points_earned,
+        streak_bonus: result.streak_bonus,
+      }
+    })
+
     return NextResponse.json(result)
 
   } catch (error) {
-    console.error('Answer submission error:', error)
+    logServerError('trivia-answer', 'answer_submission_error', error, {
+      body: 'Unable to parse - error during processing'
+    })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
