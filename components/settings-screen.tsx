@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 interface SettingsScreenProps {
   onBack: () => void;
   onResetFlow: () => void;
+  isResetting?: boolean;
 }
 
 type SettingsTab = 'profile' | 'preferences' | 'logs' | 'admin';
@@ -26,10 +27,11 @@ interface DebugLog {
   url?: string;
 }
 
-export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
+export function SettingsScreen({ onBack, onResetFlow, isResetting }: SettingsScreenProps) {
   const { user, refreshUser, isLoading } = useUser();
   const [refreshStatus, setRefreshStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   
   // Logs state
   const [logs, setLogs] = useState<DebugLog[]>([]);
@@ -290,15 +292,57 @@ export function SettingsScreen({ onBack, onResetFlow }: SettingsScreenProps) {
             <div className="bg-card rounded-xl p-4 border border-destructive/30">
               <h3 className="font-bold text-foreground mb-2">Account</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Reset your account to start fresh with a new username and avatar.
+                Permanently delete your account and all associated data (scores, answers, photos) to start fresh.
               </p>
-              <Button
-                variant="outline"
-                onClick={onResetFlow}
-                className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                Reset Account
-              </Button>
+
+              {!showResetConfirm ? (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowResetConfirm(true)}
+                  disabled={isResetting}
+                  className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  Reset Account
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/30">
+                    <p className="text-sm font-medium text-destructive">
+                      This will permanently delete:
+                    </p>
+                    <ul className="text-sm text-destructive/80 mt-1 list-disc list-inside space-y-0.5">
+                      <li>Your user profile ({user?.username})</li>
+                      <li>All trivia answers and scores</li>
+                      <li>Photos and likes</li>
+                      <li>Streak and points history</li>
+                    </ul>
+                    <p className="text-sm font-medium text-destructive mt-2">
+                      This action cannot be undone.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResetConfirm(false)}
+                      disabled={isResetting}
+                      className="flex-1 border-border text-foreground hover:bg-muted"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowResetConfirm(false);
+                        onResetFlow();
+                      }}
+                      disabled={isResetting}
+                      className="flex-1 border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isResetting ? 'Deleting...' : 'Confirm Delete'}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
