@@ -78,7 +78,7 @@ The database consists of **10 tables** organized into these categories:
 ### Entity Relationship Diagram
 
 ```
-users (user_id PK, username UNIQUE)
+users (username PK, user_id UNIQUE)
   │
   ├── daily_answers ──► trivia_questions
   │
@@ -112,8 +112,8 @@ Stores user profiles with secure user ID authentication.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `user_id` | TEXT (PK) | Unique identifier (e.g., `MyName_1234`) |
-| `username` | TEXT (UNIQUE) | Display name (2-30 chars) |
+| `username` | TEXT (PK) | Display name (2-30 chars) |
+| `user_id` | TEXT (UNIQUE) | Unique identifier (e.g., `MyName_1234`) |
 | `avatar` | TEXT | Selected avatar preset |
 | `is_preset_image` | BOOLEAN | Using preset vs custom image |
 | `image_url` | TEXT | Custom avatar URL |
@@ -197,7 +197,7 @@ Tracks individual user responses to trivia questions.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Answer ID |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `question_id` | UUID (FK) | Question answered |
 | `day_identifier` | TEXT (NOT NULL) | Day context (e.g., 'day_minus_4') |
 | `selected_answer` | TEXT | User's choice (`a`, `b`, `c`, `d`) |
@@ -207,7 +207,7 @@ Tracks individual user responses to trivia questions.
 | `time_taken_ms` | INTEGER | Response time in milliseconds |
 | `answered_at` | TIMESTAMPTZ | Answer timestamp |
 
-**Unique Constraint**: `UNIQUE(user_id, question_id, day_identifier)` - One answer per user per question per day.
+**Unique Constraint**: `UNIQUE(username, question_id, day_identifier)` - One answer per user per question per day.
 
 ---
 
@@ -290,7 +290,7 @@ User-submitted fan photos for the photo gallery.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Photo ID |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `image_url` | TEXT | Storage URL |
 | `caption` | TEXT | User caption |
 | `like_count` | INTEGER | Number of likes |
@@ -310,7 +310,7 @@ Tracks which users liked which photos.
 |--------|------|-------------|
 | `id` | UUID (PK) | Like ID |
 | `photo_id` | UUID (FK) | Photo that was liked |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `created_at` | TIMESTAMPTZ | Like timestamp |
 
 **Unique Constraint**: One like per user per photo.
@@ -543,7 +543,7 @@ Returns: rank, user_id, username, avatar, total_points, current_streak, days_pla
 ### `update_user_stats()`
 
 Trigger function that runs after INSERT on `daily_answers`:
-- Looks up user by `user_id` (FK from daily_answers)
+- Looks up user by `username` (FK from daily_answers)
 - Adds `points_earned + streak_bonus` to user's `total_points`
 - Increments `days_played` if it's a new day
 - Updates `last_played_at` timestamp
@@ -552,6 +552,14 @@ Trigger function that runs after INSERT on `daily_answers`:
 
 Trigger function that runs after INSERT/DELETE on `photo_likes`:
 - Increments/decrements `like_count` on the associated photo
+
+### `update_photo_likes()` (legacy)
+
+Older version of photo like count function, still present in database.
+
+### `get_team_total_points(team_id UUID)` (legacy)
+
+Legacy function from team-based schema. Still present in database but not used by current API routes.
 
 ---
 
@@ -564,7 +572,7 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 | `supabase/seed_2025_rosters.sql` | Full 2025 rosters: Seahawks (53 players + 5 coaches) + Patriots (51 players + 4 coaches) |
 | `supabase/seed_daily_trivia_sets.sql` | Maps day identifiers to question sets (5 days) |
 | `supabase/test_schema.sql` | Validation queries to verify schema setup |
-| `supabase/migrations/20260204_add_user_id_and_admin.sql` | Adds user_id PK and is_admin flag |
+| `supabase/migrations/20260204_add_user_id_and_admin.sql` | Adds user_id UNIQUE column and is_admin flag |
 | `supabase/migrations/20260205_update_patriots_roster.sql` | Updates Patriots stats + adds 24 additional roster players |
 | `supabase/migrations/20260205_add_image_validated.sql` | Adds image_validated column to players table |
 | `lib/database.types.ts` | TypeScript type definitions |
@@ -573,20 +581,20 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 
 ---
 
-## Known Code/Schema Discrepancies
+## Known Schema File vs Live Database Discrepancy
 
-The following TypeScript types and API routes still reference `username` as a foreign key, but the SQL schema (`schema_complete.sql`) defines these columns as `user_id`:
+The live database uses `username` as the FK column in `daily_answers`, `photo_uploads`, and `photo_likes`. The TypeScript types and API routes correctly use `username`. However, `supabase/schema_complete.sql` defines these columns as `user_id` instead.
 
-| File | Issue |
-|------|-------|
-| `lib/database.types.ts` | `DailyAnswer.username`, `DailyAnswerInsert.username`, `AnswerSubmission.username` should be `user_id` |
-| `lib/database.types.ts` | `PhotoUpload.username`, `PhotoUploadInsert.username`, `PhotoLike.username` should be `user_id` |
-| `app/api/trivia/daily/answer/route.ts` | Queries/inserts using `username` instead of `user_id` |
-| `app/api/photos/route.ts` | Queries using `username` instead of `user_id` |
-| `app/api/photos/upload/route.ts` | Inserts using `username` instead of `user_id` |
-| `app/api/photos/[photoId]/like/route.ts` | Queries/inserts using `username` instead of `user_id` |
+| What | FK Column | Status |
+|------|-----------|--------|
+| **Live database** | `username` | Correct (source of truth) |
+| **TypeScript types** (`lib/database.types.ts`) | `username` | Correct |
+| **API routes** | `username` | Correct |
+| **`schema_complete.sql`** | `user_id` | Out of sync - needs update |
 
-**Note**: If the live database was set up before the `user_id` migration and the FK migration steps in `20260204_add_user_id_and_admin.sql` were not applied (they are commented out), the tables may still have `username` columns and these routes would work. For any fresh setup using `schema_complete.sql`, these routes need to be updated to use `user_id`.
+**Background**: The live database was set up before `schema_complete.sql` was written. The `user_id` column was added to the `users` table via migration (`20260204_add_user_id_and_admin.sql`) as a UNIQUE column, but the FK migration steps for `daily_answers`, `photo_uploads`, and `photo_likes` were never applied (they are commented out in that migration). The `username` column remains the PK of `users` and the FK reference for all related tables.
+
+**If doing a fresh setup**: Run `schema_complete.sql` but be aware it uses `user_id` FKs which won't match the API routes. Either update the schema file or update the API routes after setup.
 
 ---
 

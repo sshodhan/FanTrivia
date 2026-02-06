@@ -30,8 +30,8 @@ Stores registered users with secure user ID authentication.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `user_id` | TEXT (PK) | Unique identifier (e.g., `MyName_1234`) |
-| `username` | TEXT (UNIQUE) | Display name (2-30 chars) |
+| `username` | TEXT (PK) | Display name (2-30 chars) |
+| `user_id` | TEXT (UNIQUE) | Unique identifier (e.g., `MyName_1234`) |
 | `avatar` | TEXT | Selected avatar preset |
 | `is_preset_image` | BOOLEAN | Whether using preset avatar |
 | `image_url` | TEXT | Custom avatar URL |
@@ -110,7 +110,7 @@ Individual answer records for each user/question.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Answer ID |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `question_id` | UUID (FK) | References trivia_questions.id |
 | `day_identifier` | TEXT | Which day this was answered |
 | `selected_answer` | TEXT | User's choice (`a`, `b`, `c`, `d`) |
@@ -120,7 +120,7 @@ Individual answer records for each user/question.
 | `time_taken_ms` | INTEGER | Response time in milliseconds |
 | `answered_at` | TIMESTAMPTZ | When answered |
 
-**Unique constraint:** `(user_id, question_id, day_identifier)` - one answer per user per question per day
+**Unique constraint:** `(username, question_id, day_identifier)` - one answer per user per question per day
 
 ---
 
@@ -130,7 +130,7 @@ User-uploaded fan photos.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | UUID (PK) | Photo ID |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `image_url` | TEXT | Supabase Storage URL |
 | `caption` | TEXT | Optional caption |
 | `like_count` | INTEGER | Like count (auto-updated by trigger) |
@@ -147,10 +147,10 @@ Tracks which users liked which photos.
 |--------|------|-------------|
 | `id` | UUID (PK) | Like ID |
 | `photo_id` | UUID (FK) | References photo_uploads.id |
-| `user_id` | TEXT (FK) | References users.user_id |
+| `username` | TEXT (FK) | References users.username |
 | `created_at` | TIMESTAMPTZ | When liked |
 
-**Unique constraint:** `(photo_id, user_id)` - one like per user per photo
+**Unique constraint:** `(photo_id, username)` - one like per user per photo
 
 **Trigger:** Automatically updates `photo_uploads.like_count` on insert/delete
 
@@ -284,7 +284,7 @@ Streak Multipliers:
 ## Entity Relationship Diagram
 
 ```
-users (user_id PK, username UNIQUE)
+users (username PK, user_id UNIQUE)
   |
   |-- daily_answers --> trivia_questions
   |
@@ -322,10 +322,10 @@ admin_action_logs (standalone audit trail)
 | trivia_questions | idx_questions_active | is_active |
 | daily_trivia_sets | idx_daily_sets_day | day_identifier |
 | daily_trivia_sets | idx_daily_sets_active | is_active |
-| daily_answers | idx_answers_user_id | user_id |
+| daily_answers | idx_answers_username | username |
 | daily_answers | idx_answers_day | day_identifier |
 | daily_answers | idx_answers_date | answered_at |
-| photo_uploads | idx_photos_user_id | user_id |
+| photo_uploads | idx_photos_username | username |
 | photo_uploads | idx_photos_approved | (is_approved, is_hidden, created_at DESC) |
 | photo_likes | idx_photo_likes_photo | photo_id |
 | players | idx_players_active | (is_active, display_order) |
@@ -351,7 +351,7 @@ The full schema is in `supabase/schema_complete.sql`. Applied migrations:
 
 | Migration | Description |
 |-----------|-------------|
-| `20260204_add_user_id_and_admin.sql` | Adds user_id PK and is_admin flag |
+| `20260204_add_user_id_and_admin.sql` | Adds user_id UNIQUE column and is_admin flag |
 | `20260205_update_patriots_roster.sql` | Updates Patriots stats + adds 24 roster players |
 | `20260205_add_image_validated.sql` | Adds image_validated column to players |
 
