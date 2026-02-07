@@ -727,20 +727,49 @@ Breadcrumbs:
 ═══════════════════════════════════════════════════════
 ```
 
-### Idempotent Answer -- Client Error Change
+### Answer Endpoint Logging
 
-Previously, a duplicate answer submission (same user + question + day) returned a **409 error**, which triggered `logClientError('TriviaGame API Error', ...)` and appeared in the Client Error logs. This has been changed:
+The answer endpoint (`POST /api/trivia/daily/answer`) produces server-side logs for every answer submission:
 
-- **Old behavior:** 409 -> `CLIENT-SIDE ERROR CAPTURED` with `"error": "You have already answered this question today"`
-- **New behavior:** 200 with `already_answered: true` -> handled gracefully, **no client error logged**
+| Event | Level | When | Data |
+|-------|-------|------|------|
+| `ANSWER_SUBMITTED` | `info` | Correct answer | `username, questionId, isCorrect, points, streakBonus, streak` |
+| `ANSWER_SUBMITTED` | `warn` | Wrong answer | Same fields (warn level for visibility in Vercel logs) |
+| `duplicate_answer_idempotent` | `info` | User re-submits same answer (app-level check) | `username, questionId, originalAnswer` |
+| `duplicate_answer_race_condition` | `info` | Concurrent duplicate caught by DB unique constraint (23505) | `username, questionId` |
 
-If you see old 409 client errors in logs, they are from sessions before this fix was deployed.
+**Idempotent Duplicate Handling:** When a user submits an answer to a question they've already answered (same `username + question_id + day_identifier`), the endpoint returns the **original result** with `already_answered: true` (status 200) instead of a 409 error. The client checks `already_answered` and skips adding duplicate points. Both the app-level duplicate check and the `23505` race-condition handler return the same format.
+
+**Why wrong answers log at `warn` level:** This is intentional to make incorrect answers more visible in Vercel Runtime Logs for debugging question difficulty and answer patterns. They are NOT errors and do not indicate a problem. If you see a stream of `ANSWER_SUBMITTED` warnings on load, they are from a prior play session, not triggered by page load.
 
 ### Example: Category Retake Flow Log Output
 
-When a user clicks "Play Again" on a completed category and the reset **fails**, a soft error is logged:
+When a user clicks "Play Again" on a completed category, the following logs are produced:
 
-**Category Retake Soft Error (via `logClientSoftError`):**
+**Client-side (via logClientDebug, visible in Vercel Runtime Logs):**
+```
+ℹ️ [CLIENT][AppContent] Category retake initiated
+   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "dbCategory": "Super Bowl XLVIII", "username": "player_1234" }
+
+ℹ️ [CLIENT][AppContent] Category retake reset successful
+   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "username": "player_1234", "deleted": 10, "points_deducted": 950, "new_total_points": 200 }
+```
+
+**Server-side (via logServer in reset-category route):**
+```
+ℹ️ [RESET-CATEGORY] RESET_STARTED
+  username: player_1234
+  category_id: super-bowl-xlviii
+  dbCategory: Super Bowl XLVIII
+
+ℹ️ [RESET-CATEGORY] RESET_COMPLETE
+  username: player_1234
+  answers_deleted: 10
+  points_deducted: 950
+  new_total_points: 200
+```
+
+**If reset fails (Category Retake Soft Error):**
 ```
 ═══════════════════════════════════════════════════════
 CLIENT-SIDE ERROR CAPTURED
