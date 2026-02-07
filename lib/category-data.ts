@@ -71,7 +71,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 2,
     groupId: 'lob-era',
     pillFilters: ['lob-era'],
-    dbCategory: 'Legion of Boom',
+    dbCategory: 'LOB Secondary',
   },
 
   // ========== HERITAGE TAB (Day 4-9) ==========
@@ -113,7 +113,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 4,
     groupId: 'heritage',
     pillFilters: ['heritage'],
-    dbCategory: 'Seahawks Legends',
+    dbCategory: 'Seahawks Legends Heritage',
   },
   {
     id: 'hall-of-fame',
