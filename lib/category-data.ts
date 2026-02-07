@@ -178,13 +178,13 @@ export const ALL_CATEGORIES: Category[] = [
     dbCategory: '2025 Comparison Defense',
   },
 
-  // ========== FINALE (Day 14) ==========
+  // ========== FINALE (Game Day) ==========
   {
     id: 'super-bowl-connections',
     title: 'Super Bowl Connections',
     emoji: '🏈',
     questionCount: 6,
-    unlockDay: 14,
+    unlockDay: 5,
     groupId: 'daily',
     pillFilters: ['daily'],
     isFinale: true,
