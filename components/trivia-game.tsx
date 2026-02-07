@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
-import { sampleQuestions } from '@/lib/mock-data';
 import type { TriviaQuestionPublic, AnswerResult, AnswerOption } from '@/lib/database.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -53,18 +52,6 @@ function transformApiQuestion(q: TriviaQuestionPublic): DisplayQuestion {
   };
 }
 
-// Transform mock question for fallback
-function transformMockQuestion(q: typeof sampleQuestions[number]): DisplayQuestion {
-  return {
-    id: q.id,
-    question: q.question_text,
-    imageUrl: null,
-    options: [q.option_a, q.option_b, q.option_c, q.option_d],
-    difficulty: q.difficulty,
-    category: q.category,
-    hint: q.hint_text,
-  };
-}
 
 export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: TriviaGameProps) {
   const { user, setTodayPlayed, refreshUser } = useUser();
@@ -139,27 +126,25 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
       if (availableQuestions.length > 0) {
         setQuestions(availableQuestions);
       } else {
-        // All questions answered, use mock for demo
-        const mockQuestions = [...sampleQuestions]
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 5)
-          .map(transformMockQuestion);
-        setQuestions(mockQuestions);
+        // All real questions already answered — leave questions empty so
+        // the "All Done!" screen renders.  Mock/demo IDs (e.g. "demo-15")
+        // can't be graded by the Supabase answer API (UUID mismatch).
+        logClientDebug('TriviaGame', 'All questions already answered', {
+          total_from_api: apiData.questions.length,
+          already_answered: apiData.already_answered_ids?.length || 0,
+        }, { force: true });
+        setQuestions([]);
       }
       setQuestionsReady(true);
     } else if (apiError || (apiData && (!apiData.questions || apiData.questions.length === 0))) {
-      // Fallback to mock questions
-      logClientDebug('TriviaGame', 'FALLING BACK TO CLIENT MOCK DATA', {
+      // No questions returned from API at all — show "All Done!" screen
+      logClientDebug('TriviaGame', 'No questions available from API', {
         reason: apiError ? 'api_error' : 'empty_api_response',
         api_error: apiError?.message || null,
         api_data: apiData ? { questions_count: apiData.questions?.length, data_source: apiData.data_source } : null,
       }, { force: true, level: 'warn' });
 
-      const mockQuestions = [...sampleQuestions]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 5)
-        .map(transformMockQuestion);
-      setQuestions(mockQuestions);
+      setQuestions([]);
       setQuestionsReady(true);
     }
   }, [apiData, apiError]);
