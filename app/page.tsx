@@ -191,7 +191,7 @@ function AppContent() {
       )}
 
       {currentScreen === 'party' && (
-        <PartyPlanScreen onBack={() => setCurrentScreen('home')} />
+        <PartyPlanScreen onBack={() => setCurrentScreen('home')} onViewScoreboard={() => setCurrentScreen('scoreboard')} />
       )}
 
       {currentScreen === 'settings' && (

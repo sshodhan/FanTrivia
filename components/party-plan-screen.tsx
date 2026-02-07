@@ -7,6 +7,7 @@ type PartyTab = 'welcome' | 'menu' | 'info';
 
 interface PartyPlanScreenProps {
   onBack: () => void;
+  onViewScoreboard: () => void;
 }
 
 const TABS: { id: PartyTab; label: string; emoji: string }[] = [
@@ -15,7 +16,7 @@ const TABS: { id: PartyTab; label: string; emoji: string }[] = [
   { id: 'info', label: 'Venue & Parking', emoji: '📍' },
 ];
 
-export function PartyPlanScreen({ onBack }: PartyPlanScreenProps) {
+export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenProps) {
   const [activeTab, setActiveTab] = useState<PartyTab>('welcome');
 
   return (
@@ -76,7 +77,7 @@ export function PartyPlanScreen({ onBack }: PartyPlanScreenProps) {
 
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'welcome' && <WelcomeTab />}
+        {activeTab === 'welcome' && <WelcomeTab onViewScoreboard={onViewScoreboard} />}
         {activeTab === 'menu' && <MenuTab />}
         {activeTab === 'info' && <InfoTab />}
       </div>
@@ -85,7 +86,7 @@ export function PartyPlanScreen({ onBack }: PartyPlanScreenProps) {
 }
 
 /* ───────── Welcome Tab ───────── */
-function WelcomeTab() {
+function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
   return (
     <div className="p-6 space-y-6">
       {/* Hero welcome & what to expect */}
@@ -123,11 +124,14 @@ function WelcomeTab() {
           <div className="font-bold text-foreground text-sm">Raffles</div>
           <div className="text-xs text-muted-foreground">Throughout</div>
         </div>
-        <div className="bg-card rounded-xl p-4 text-center">
+        <button
+          onClick={onViewScoreboard}
+          className="bg-card rounded-xl p-4 text-center transition-all hover:bg-card/80 active:scale-[0.98]"
+        >
           <div className="text-2xl mb-1">🏆</div>
           <div className="font-bold text-foreground text-sm">Trivia</div>
           <div className="text-xs text-muted-foreground">Champions</div>
-        </div>
+        </button>
       </div>
 
       {/* Board games */}
