@@ -112,7 +112,7 @@ function WelcomeTab() {
       </div>
 
       {/* Quick info cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-card rounded-xl p-4 text-center">
           <div className="text-2xl mb-1">🎶</div>
           <div className="font-bold text-foreground text-sm">DJ</div>
@@ -121,7 +121,12 @@ function WelcomeTab() {
         <div className="bg-card rounded-xl p-4 text-center">
           <div className="text-2xl mb-1">🎟️</div>
           <div className="font-bold text-foreground text-sm">Raffles</div>
-          <div className="text-xs text-muted-foreground">Throughout the game</div>
+          <div className="text-xs text-muted-foreground">Throughout</div>
+        </div>
+        <div className="bg-card rounded-xl p-4 text-center">
+          <div className="text-2xl mb-1">🏆</div>
+          <div className="font-bold text-foreground text-sm">Trivia</div>
+          <div className="text-xs text-muted-foreground">Champions</div>
         </div>
       </div>
 
