@@ -72,6 +72,38 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Backward compatibility: if any answers have NULL category (pre-migration
+    // data or backfill gaps), resolve them from trivia_questions so they aren't
+    // silently dropped from progress.
+    const nullCategoryIds = uniqueAnswers
+      .filter(a => !a.category)
+      .map(a => a.question_id)
+
+    let categoryLookup = new Map<string, string>()
+    if (nullCategoryIds.length > 0) {
+      const { data: questions } = await supabase
+        .from('trivia_questions')
+        .select('id, category')
+        .in('id', nullCategoryIds)
+
+      if (questions) {
+        for (const q of questions) {
+          if (q.category) categoryLookup.set(q.id, q.category)
+        }
+      }
+
+      logServer({
+        level: 'warn',
+        component: 'trivia-progress',
+        event: 'null_category_fallback',
+        data: {
+          username,
+          null_count: nullCategoryIds.length,
+          resolved_count: categoryLookup.size,
+        }
+      })
+    }
+
     // Build a map of dbCategory -> { correctAnswers, totalAnswered, totalPoints }
     const categoryStats = new Map<string, {
       correctAnswers: number
@@ -80,7 +112,9 @@ export async function GET(request: NextRequest) {
     }>()
 
     for (const answer of uniqueAnswers) {
-      const dbCategory = answer.category || 'Unknown'
+      // Use denormalized category, fall back to trivia_questions lookup
+      const dbCategory = answer.category || categoryLookup.get(answer.question_id)
+      if (!dbCategory) continue // truly unknown — skip rather than pollute stats
 
       const existing = categoryStats.get(dbCategory) || {
         correctAnswers: 0,

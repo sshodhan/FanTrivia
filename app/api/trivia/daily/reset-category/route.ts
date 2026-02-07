@@ -66,8 +66,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the answers to delete using the denormalized category column.
-    // No need to look up question IDs from trivia_questions first.
-    const { data: answersToDelete, error: answersLookupError } = await supabase
+    const { data: answersWithCategory, error: answersLookupError } = await supabase
       .from('daily_answers')
       .select('id, points_earned, streak_bonus')
       .eq('username', username)
@@ -82,6 +81,41 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Backward compatibility: also find answers with NULL category whose
+    // question_id belongs to this category (pre-migration data or backfill gaps).
+    // SQL `eq('category', value)` won't match NULLs, so we need a separate query.
+    const { data: nullCategoryAnswers } = await supabase
+      .from('daily_answers')
+      .select('id, points_earned, streak_bonus, question_id')
+      .eq('username', username)
+      .is('category', null)
+
+    let resolvedNullAnswers: typeof answersWithCategory = []
+    if (nullCategoryAnswers && nullCategoryAnswers.length > 0) {
+      const questionIds = nullCategoryAnswers.map(a => a.question_id)
+      const { data: questions } = await supabase
+        .from('trivia_questions')
+        .select('id')
+        .in('id', questionIds)
+        .eq('category', category.dbCategory)
+
+      if (questions && questions.length > 0) {
+        const matchingIds = new Set(questions.map(q => q.id))
+        resolvedNullAnswers = nullCategoryAnswers
+          .filter(a => matchingIds.has(a.question_id))
+          .map(({ id, points_earned, streak_bonus }) => ({ id, points_earned, streak_bonus }))
+
+        logServer({
+          level: 'warn',
+          component: 'reset-category',
+          event: 'null_category_answers_found',
+          data: { username, category_id, null_count: resolvedNullAnswers.length }
+        })
+      }
+    }
+
+    const answersToDelete = [...(answersWithCategory || []), ...resolvedNullAnswers]
 
     if (!answersToDelete || answersToDelete.length === 0) {
       logServer({
