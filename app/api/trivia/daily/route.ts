@@ -181,6 +181,7 @@ export async function GET(request: NextRequest) {
       current_day: 'day_minus_4',
       live_question_index: 0,
       is_paused: false,
+      unlocked_categories: [],
       updated_at: new Date().toISOString(),
     }
 
@@ -392,6 +393,7 @@ export async function GET(request: NextRequest) {
           questions_per_day: gameSettings.questions_per_day,
           timer_duration: gameSettings.timer_duration,
         },
+        unlocked_categories: gameSettings.unlocked_categories ?? [],
       }
       return NextResponse.json(response)
     }
@@ -427,6 +429,7 @@ export async function GET(request: NextRequest) {
         questions_per_day: gameSettings.questions_per_day,
         timer_duration: gameSettings.timer_duration,
       },
+      unlocked_categories: gameSettings.unlocked_categories ?? [],
     }
 
     return NextResponse.json(response)

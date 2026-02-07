@@ -267,6 +267,7 @@ export interface GameSettings {
   current_day: string
   live_question_index: number
   is_paused: boolean
+  unlocked_categories: string[]
   updated_at: string
 }
 
@@ -278,6 +279,7 @@ export interface GameSettingsUpdate {
   current_day?: string
   live_question_index?: number
   is_paused?: boolean
+  unlocked_categories?: string[]
 }
 
 // ============================================
@@ -322,6 +324,7 @@ export interface DailyTriviaResponse {
     questions_per_day: number
     timer_duration: number
   }
+  unlocked_categories?: string[]
 }
 
 // ============================================

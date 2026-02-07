@@ -27,6 +27,7 @@ export function DailyCategoriesScreen({
   currentDay = 1,
   completedCategories = MOCK_PROGRESS,
   streak = 1,
+  unlockedCategories = [],
   onStartCategory,
   onViewResults,
   onRetakeCategory,
@@ -39,7 +40,8 @@ export function DailyCategoriesScreen({
   const categoriesWithState = useCategoryState(
     filteredCategories,
     currentDay,
-    completedCategories
+    completedCategories,
+    unlockedCategories
   );
 
   // Overall progress

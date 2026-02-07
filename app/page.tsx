@@ -32,6 +32,7 @@ interface GameResult {
 function AppContent() {
   const { user, todayPlayed, resetAccount, refreshUser } = useUser();
   const [currentDay, setCurrentDay] = useState(1);
+  const [unlockedCategories, setUnlockedCategories] = useState<string[]>([]);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
 
   // Fetch real category progress from DB
@@ -67,15 +68,20 @@ function AppContent() {
     }
   }, [user]);
 
-  // Fetch current game day from existing trivia API
+  // Fetch current game day and unlocked categories from existing trivia API
   useEffect(() => {
     let isMounted = true;
 
     fetch('/api/trivia/daily')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (isMounted && data?.day_identifier) {
-          setCurrentDay(dayIdentifierToNumber(data.day_identifier));
+        if (isMounted) {
+          if (data?.day_identifier) {
+            setCurrentDay(dayIdentifierToNumber(data.day_identifier));
+          }
+          if (data?.unlocked_categories) {
+            setUnlockedCategories(data.unlocked_categories);
+          }
         }
       })
       .catch(() => {});
@@ -282,6 +288,7 @@ function AppContent() {
           currentDay={currentDay}
           completedCategories={completedCategories}
           streak={user?.current_streak ?? 0}
+          unlockedCategories={unlockedCategories}
           onStartCategory={handleStartCategory}
           onViewResults={handleViewCategoryResults}
           onRetakeCategory={handleRetakeCategory}
