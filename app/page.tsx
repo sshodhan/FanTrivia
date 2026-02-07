@@ -91,6 +91,15 @@ function AppContent() {
   const handleRetakeCategory = useCallback(async (categoryId: string) => {
     if (!user?.username) return;
 
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId);
+
+    logClientDebug('AppContent', 'Category retake initiated', {
+      categoryId,
+      categoryTitle: category?.title,
+      dbCategory: category?.dbCategory,
+      username: user.username,
+    }, { force: true });
+
     try {
       const response = await fetch('/api/trivia/daily/reset-category', {
         method: 'POST',
@@ -102,29 +111,40 @@ function AppContent() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+
         // Refresh progress data so the card goes back to "unlocked"
         await mutateProgress();
         // Refresh user data so header points/streak are updated
         await refreshUser();
+
         logClientDebug('AppContent', 'Category retake reset successful', {
-          categoryId, username: user.username,
+          categoryId,
+          categoryTitle: category?.title,
+          username: user.username,
+          deleted: result.deleted,
+          points_deducted: result.points_deducted,
+          new_total_points: result.new_total_points,
         }, { force: true });
+
+        // Automatically open the trivia game for this category
+        handleStartCategory(categoryId);
       } else {
         const result = await response.json();
         logClientError(
           `Category retake failed: ${result.error}`,
-          'Category Retake Error',
-          { categoryId, status: response.status }
+          'Category Retake Soft Error',
+          { categoryId, categoryTitle: category?.title, status: response.status, username: user.username }
         );
       }
     } catch (error) {
       logClientError(
         error instanceof Error ? error : new Error(String(error)),
-        'Category Retake Network Error',
-        { categoryId }
+        'Category Retake Soft Error',
+        { categoryId, categoryTitle: category?.title, username: user.username }
       );
     }
-  }, [user?.username, mutateProgress, refreshUser]);
+  }, [user?.username, mutateProgress, refreshUser, handleStartCategory]);
 
   const handleStartTrivia = () => {
     if (todayPlayed) return;
