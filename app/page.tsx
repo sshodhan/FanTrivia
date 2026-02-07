@@ -12,10 +12,11 @@ import { PlayerCards } from '@/components/player-cards';
 import { PhotoWall } from '@/components/photo-wall';
 import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
+import { PartyPlanScreen } from '@/components/party-plan-screen';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings';
 
 interface GameResult {
   score: number;
@@ -58,7 +59,7 @@ function AppContent() {
 
   // Hide nav on certain screens
   useEffect(() => {
-    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results'];
+    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party'];
     setShowNav(!hideNavScreens.includes(currentScreen));
   }, [currentScreen]);
 
@@ -142,6 +143,7 @@ function AppContent() {
           onViewScoreboard={() => setCurrentScreen('scoreboard')}
           onViewPlayers={() => setCurrentScreen('players')}
           onViewPhotos={() => setCurrentScreen('photos')}
+          onViewParty={() => setCurrentScreen('party')}
         />
       )}
 
@@ -186,6 +188,10 @@ function AppContent() {
           onViewResults={handleViewCategoryResults}
           onBack={() => setCurrentScreen('home')}
         />
+      )}
+
+      {currentScreen === 'party' && (
+        <PartyPlanScreen onBack={() => setCurrentScreen('home')} />
       )}
 
       {currentScreen === 'settings' && (
