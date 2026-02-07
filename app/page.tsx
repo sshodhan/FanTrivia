@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
 import type { Category, CategoryProgress } from '@/lib/category-types';
@@ -41,14 +41,27 @@ function AppContent() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
+  const hasInitializedScreen = useRef(false);
 
-  // Determine initial screen based on user registration
+  // Determine initial screen based on user registration (runs only on login/logout, not on data refresh)
   useEffect(() => {
-    if (user) {
+    const isLoggedIn = !!user;
+    const wasLoggedIn = hasInitializedScreen.current;
+
+    if (!wasLoggedIn && isLoggedIn) {
+      // First time user is available (login or page load with existing session)
+      hasInitializedScreen.current = true;
       setCurrentScreen('home');
-    } else {
+      logClientDebug('AppContent', 'Initial screen set to home (user logged in)', {
+        username: user?.username,
+      }, { force: true });
+    } else if (wasLoggedIn && !isLoggedIn) {
+      // User logged out or account reset
+      hasInitializedScreen.current = false;
       setCurrentScreen('entry');
+      logClientDebug('AppContent', 'Screen reset to entry (user logged out)', {}, { force: true });
     }
+    // Deliberately skip: wasLoggedIn && isLoggedIn (data refresh -- don't override navigation)
   }, [user]);
 
   // Fetch current game day from existing trivia API
@@ -69,14 +82,24 @@ function AppContent() {
     };
   }, []);
 
-  // Hide nav on certain screens
+  // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
     const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results'];
     setShowNav(!hideNavScreens.includes(currentScreen));
+    logClientDebug('AppContent', 'Screen changed', {
+      currentScreen,
+      showNav: !hideNavScreens.includes(currentScreen),
+    }, { force: true });
   }, [currentScreen]);
 
   const handleStartCategory = useCallback((categoryId: string) => {
     const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
+    logClientDebug('AppContent', 'handleStartCategory called', {
+      categoryId,
+      categoryTitle: category?.title,
+      dbCategory: category?.dbCategory,
+      categoryFound: !!category,
+    }, { force: true });
     setSelectedCategory(category);
     setCurrentScreen('trivia');
   }, []);
