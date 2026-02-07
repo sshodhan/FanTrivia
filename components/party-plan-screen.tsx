@@ -88,6 +88,20 @@ export function PartyPlanScreen({ onBack }: PartyPlanScreenProps) {
 function WelcomeTab() {
   return (
     <div className="p-6 space-y-6">
+      {/* Hero welcome & what to expect */}
+      <div className="bg-card rounded-xl p-6 text-center border border-primary/30">
+        <div className="text-4xl mb-3">🎉🏈🎉</div>
+        <h2 className="font-[var(--font-heading)] text-xl font-bold text-foreground mb-4">
+          Welcome, Friends!
+        </h2>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+          So glad you&apos;re here! Get ready for a high-energy game-day experience — DJ-led kickoff hour, chef-curated food stations refreshed all game long, drink specials, raffles, and TVs everywhere you look. Whether you&apos;re here for the plays, the commercials, or the halftime show, we&apos;ve got you covered.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Grab a drink, load up a plate, challenge someone to a board game, and make yourself at home. Let me know if you need anything at all!
+        </p>
+      </div>
+
       {/* Venue hero image */}
       <div className="rounded-xl overflow-hidden">
         <img
@@ -95,26 +109,6 @@ function WelcomeTab() {
           alt="Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
-      </div>
-
-      {/* Hero welcome */}
-      <div className="bg-card rounded-xl p-6 text-center border border-primary/30">
-        <h2 className="font-[var(--font-heading)] text-xl font-bold text-foreground mb-4">
-          Welcome to the Party!
-        </h2>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Welcome! You are always welcome to get food from the buffet downstairs too. We have board games available and plenty of entertainment lined up. Please let me know if you have any other questions.
-        </p>
-      </div>
-
-      {/* Event highlights */}
-      <div className="bg-card rounded-xl p-5">
-        <h3 className="font-[var(--font-heading)] text-lg font-bold text-primary mb-3">
-          What to Expect
-        </h3>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Expect a high-energy game-day experience with a DJ-led kickoff hour, chef-curated action stations refreshed throughout the game, drink specials, raffles, and TVs throughout the space. Perfect whether you&apos;re here for the plays, the commercials, or the halftime show.
-        </p>
       </div>
 
       {/* Quick info cards */}
