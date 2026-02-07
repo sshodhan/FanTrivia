@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
+import type { Category, CategoryProgress } from '@/lib/category-types';
+import { ALL_CATEGORIES } from '@/lib/category-data';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
@@ -15,6 +18,8 @@ import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
 interface GameResult {
@@ -23,9 +28,17 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { user, todayPlayed, resetAccount } = useUser();
+  const { user, todayPlayed, resetAccount, refreshUser } = useUser();
   const [currentDay, setCurrentDay] = useState(1);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
+
+  // Fetch real category progress from DB
+  const { data: progressData, mutate: mutateProgress } = useSWR(
+    user?.username ? `/api/trivia/daily/progress?username=${encodeURIComponent(user.username)}` : null,
+    fetcher
+  );
+  const completedCategories: CategoryProgress[] = progressData?.progress ?? [];
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
 
@@ -63,8 +76,8 @@ function AppContent() {
   }, [currentScreen]);
 
   const handleStartCategory = (categoryId: string) => {
-    // For now, start the general trivia game
-    // Future: pass categoryId to load category-specific questions
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
+    setSelectedCategory(category);
     setCurrentScreen('trivia');
   };
 
@@ -75,6 +88,64 @@ function AppContent() {
     }
   };
 
+  const handleRetakeCategory = useCallback(async (categoryId: string) => {
+    if (!user?.username) return;
+
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId);
+
+    logClientDebug('AppContent', 'Category retake initiated', {
+      categoryId,
+      categoryTitle: category?.title,
+      dbCategory: category?.dbCategory,
+      username: user.username,
+    }, { force: true });
+
+    try {
+      const response = await fetch('/api/trivia/daily/reset-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          category_id: categoryId,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // Refresh progress data so the card goes back to "unlocked"
+        await mutateProgress();
+        // Refresh user data so header points/streak are updated
+        await refreshUser();
+
+        logClientDebug('AppContent', 'Category retake reset successful', {
+          categoryId,
+          categoryTitle: category?.title,
+          username: user.username,
+          deleted: result.deleted,
+          points_deducted: result.points_deducted,
+          new_total_points: result.new_total_points,
+        }, { force: true });
+
+        // Automatically open the trivia game for this category
+        handleStartCategory(categoryId);
+      } else {
+        const result = await response.json();
+        logClientError(
+          `Category retake failed: ${result.error}`,
+          'Category Retake Soft Error',
+          { categoryId, categoryTitle: category?.title, status: response.status, username: user.username }
+        );
+      }
+    } catch (error) {
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        'Category Retake Soft Error',
+        { categoryId, categoryTitle: category?.title, username: user.username }
+      );
+    }
+  }, [user?.username, mutateProgress, refreshUser, handleStartCategory]);
+
   const handleStartTrivia = () => {
     if (todayPlayed) return;
     setCurrentScreen('trivia');
@@ -83,6 +154,8 @@ function AppContent() {
   const handleTriviaComplete = (score: number, correctAnswers: number) => {
     setGameResult({ score, correctAnswers });
     setCurrentScreen('results');
+    // Refresh category progress after completing a trivia session
+    mutateProgress();
   };
 
   const handleNavigation = (screen: NavScreen) => {
@@ -147,6 +220,8 @@ function AppContent() {
 
       {currentScreen === 'trivia' && (
         <TriviaGame
+          categoryId={selectedCategory?.id}
+          dbCategory={selectedCategory?.dbCategory}
           onComplete={handleTriviaComplete}
           onExit={() => setCurrentScreen('home')}
         />
@@ -180,10 +255,11 @@ function AppContent() {
       {currentScreen === 'categories' && (
         <DailyCategoriesScreen
           currentDay={currentDay}
-          completedCategories={[]}
+          completedCategories={completedCategories}
           streak={user?.current_streak ?? 0}
           onStartCategory={handleStartCategory}
           onViewResults={handleViewCategoryResults}
+          onRetakeCategory={handleRetakeCategory}
           onBack={() => setCurrentScreen('home')}
         />
       )}

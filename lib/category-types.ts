@@ -19,6 +19,8 @@ export interface Category {
   groupId: string;
   pillFilters: TabFilter[];
   isFinale?: boolean;
+  /** The category value in the trivia_questions.category DB column */
+  dbCategory?: string;
 }
 
 export interface CategoryProgress {
@@ -41,5 +43,6 @@ export interface DailyCategoriesScreenProps {
   streak: number;
   onStartCategory: (id: string) => void;
   onViewResults: (id: string) => void;
+  onRetakeCategory?: (id: string) => Promise<void>;
   onBack: () => void;
 }

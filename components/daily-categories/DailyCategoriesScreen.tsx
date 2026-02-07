@@ -29,6 +29,7 @@ export function DailyCategoriesScreen({
   streak = 1,
   onStartCategory,
   onViewResults,
+  onRetakeCategory,
   onBack,
 }: DailyCategoriesScreenProps) {
   const { user } = useUser();
@@ -188,6 +189,7 @@ export function DailyCategoriesScreen({
                 currentDay={currentDay}
                 onPlay={handleStartCategory}
                 onViewResults={handleViewResults}
+                onRetake={onRetakeCategory}
               />
             </div>
           ))

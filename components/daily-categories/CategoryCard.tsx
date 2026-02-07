@@ -1,8 +1,9 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logClientError } from '@/lib/error-tracking/client-logger';
+import { addBreadcrumb } from '@/lib/error-tracking/event-breadcrumbs';
 import type { CategoryWithState } from '@/lib/category-types';
 
 interface CategoryCardProps {
@@ -10,16 +11,17 @@ interface CategoryCardProps {
   currentDay: number;
   onPlay: (id: string) => void;
   onViewResults: (id: string) => void;
+  onRetake?: (id: string) => Promise<void>;
 }
 
-function CategoryCardComponent({ category, currentDay, onPlay, onViewResults }: CategoryCardProps) {
+function CategoryCardComponent({ category, currentDay, onPlay, onViewResults, onRetake }: CategoryCardProps) {
   if (category.isFinale) {
     return <FinaleCard category={category} onPlay={onPlay} />;
   }
 
   switch (category.state) {
     case 'completed':
-      return <CompletedCard category={category} onViewResults={onViewResults} />;
+      return <CompletedCard category={category} onViewResults={onViewResults} onRetake={onRetake} />;
     case 'unlocked':
       return <UnlockedCard category={category} onPlay={onPlay} />;
     case 'locked-soon':
@@ -51,14 +53,33 @@ export const CategoryCard = memo(CategoryCardComponent, (prev, next) => {
 function CompletedCard({
   category,
   onViewResults,
+  onRetake,
 }: {
   category: CategoryWithState;
   onViewResults: (id: string) => void;
+  onRetake?: (id: string) => Promise<void>;
 }) {
+  const [isResetting, setIsResetting] = useState(false);
   const score = category.progress?.correctAnswers ?? 0;
   const total = category.progress?.totalQuestions ?? category.questionCount;
   const points = category.progress?.totalPoints ?? 0;
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+
+  const handleRetake = async () => {
+    if (!onRetake || isResetting) return;
+    addBreadcrumb('user-action', 'Play Again clicked', {
+      categoryId: category.id,
+      categoryTitle: category.title,
+      previousScore: score,
+      previousTotal: total,
+    });
+    setIsResetting(true);
+    try {
+      await onRetake(category.id);
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <div className="category-card bg-[#001B33] border-2 border-primary rounded-2xl p-5 mb-4 shadow-[0_4px_12px_rgba(105,190,40,0.2)]">
@@ -94,13 +115,44 @@ function CompletedCard({
         Your score: {score}/{total} &middot; {points} points
       </p>
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={() => onViewResults(category.id)}
-          className="px-5 py-2.5 border border-primary text-primary rounded-lg text-sm font-bold transition-colors hover:bg-primary/10"
-        >
-          VIEW RESULTS
-        </button>
+      <div className="flex items-center justify-between mt-4">
+        {onRetake && (
+          <button
+            onClick={handleRetake}
+            disabled={isResetting}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-2 text-[#A5ACAF] text-sm font-medium rounded-lg transition-colors',
+              'hover:text-white hover:bg-white/5',
+              isResetting && 'opacity-50 cursor-wait'
+            )}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 16h5v5" />
+            </svg>
+            {isResetting ? 'Resetting...' : 'Play Again'}
+          </button>
+        )}
+        <div className={cn(!onRetake && 'ml-auto')}>
+          <button
+            onClick={() => onViewResults(category.id)}
+            className="px-5 py-2.5 border border-primary text-primary rounded-lg text-sm font-bold transition-colors hover:bg-primary/10"
+          >
+            VIEW RESULTS
+          </button>
+        </div>
       </div>
     </div>
   );
