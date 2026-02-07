@@ -58,14 +58,14 @@ export async function GET(request: NextRequest) {
     const { data: photos, error: photosError } = await supabase
       .from('photo_uploads')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('username', user.username)
       .order('created_at', { ascending: false })
 
     // Step 4: Get all photo_likes
     const { data: likes, error: likesError } = await supabase
       .from('photo_likes')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('username', user.username)
 
     return NextResponse.json({
       user_id,
