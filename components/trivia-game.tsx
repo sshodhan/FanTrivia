@@ -207,38 +207,46 @@ export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
         }),
       });
 
-      const result: AnswerResult = await response.json();
+      const result = await response.json();
 
       if (response.ok) {
-        const correctIdx = indexToLetter.indexOf(result.correct_answer);
+        const answerResult = result as AnswerResult & { already_answered?: boolean };
+        const correctIdx = indexToLetter.indexOf(answerResult.correct_answer);
 
         logClientDebug('TriviaGame', 'Answer result received', {
           question_id: currentQuestion.id,
           question_text: currentQuestion.question,
-          api_is_correct: result.is_correct,
-          api_correct_answer_letter: result.correct_answer,
+          api_is_correct: answerResult.is_correct,
+          api_correct_answer_letter: answerResult.correct_answer,
           api_correct_answer_index: correctIdx,
           api_correct_answer_text: correctIdx >= 0 ? currentQuestion.options[correctIdx] : 'INVALID_INDEX',
           user_selected_index: index,
           user_selected_letter: answerLetter,
           user_selected_text: index >= 0 ? currentQuestion.options[index] : 'TIME_UP',
           all_options: currentQuestion.options,
-          points_earned: result.points_earned,
+          points_earned: answerResult.points_earned,
+          already_answered: answerResult.already_answered || false,
           indexToLetter_array: indexToLetter,
         }, { force: true });
 
-        setLastResult(result);
+        setLastResult(answerResult);
         setCorrectAnswerIndex(correctIdx);
 
-        if (result.is_correct) {
-          setScore((prev) => prev + result.points_earned + result.streak_bonus);
+        // If this was an idempotent re-submission, don't add points again
+        if (answerResult.already_answered) {
+          logClientDebug('TriviaGame', 'Already answered - showing original result', {
+            question_id: currentQuestion.id,
+          }, { force: true });
+          setStreak(answerResult.current_streak);
+        } else if (answerResult.is_correct) {
+          setScore((prev) => prev + answerResult.points_earned + answerResult.streak_bonus);
           setCorrectCount((prev) => prev + 1);
-          setStreak(result.current_streak);
+          setStreak(answerResult.current_streak);
         } else {
           setStreak(0);
         }
       } else {
-        // API error - don't highlight any answer as correct since we don't know
+        // Real API error (not a duplicate) - don't highlight any answer as correct
         logClientError(
           `Answer submission failed: ${JSON.stringify(result)}`,
           'TriviaGame API Error',

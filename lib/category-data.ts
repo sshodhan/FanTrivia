@@ -19,6 +19,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 1,
     groupId: 'daily',
     pillFilters: ['daily'],
+    dbCategory: 'Super Bowl XLVIII',
   },
   {
     id: 'legion-of-boom-defense',
@@ -28,6 +29,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 2,
     groupId: 'daily',
     pillFilters: ['daily', 'lob-era'],
+    dbCategory: 'Legion of Boom',
   },
   {
     id: 'russell-wilson-era',
@@ -37,6 +39,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 3,
     groupId: 'daily',
     pillFilters: ['daily'],
+    dbCategory: 'Russell Wilson Era',
   },
   {
     id: 'seahawks-legends',
@@ -46,6 +49,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 4,
     groupId: 'daily',
     pillFilters: ['daily', 'heritage'],
+    dbCategory: 'Seahawks Legends',
   },
   {
     id: 'players-and-numbers',
@@ -55,6 +59,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 5,
     groupId: 'daily',
     pillFilters: ['daily'],
+    dbCategory: 'Players & Numbers',
   },
 
   // ========== LOB ERA TAB ==========
@@ -66,6 +71,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 2,
     groupId: 'lob-era',
     pillFilters: ['lob-era'],
+    dbCategory: 'Legion of Boom',
   },
 
   // ========== HERITAGE TAB (Day 4-9) ==========
@@ -77,6 +83,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 7,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Seahawks History',
   },
   {
     id: 'memorable-moments',
@@ -86,6 +93,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 5,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Memorable Moments',
   },
   {
     id: 'stadium-and-12s',
@@ -95,6 +103,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 6,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Stadium & 12s',
   },
   {
     id: 'seahawks-legends-heritage',
@@ -104,6 +113,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 4,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Seahawks Legends',
   },
   {
     id: 'hall-of-fame',
@@ -113,6 +123,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 8,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Hall of Fame',
   },
   {
     id: 'franchise-firsts',
@@ -122,6 +133,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 9,
     groupId: 'heritage',
     pillFilters: ['heritage'],
+    dbCategory: 'Franchise Firsts',
   },
 
   // ========== 2025 SEASON TAB (Day 3-13) ==========
@@ -133,6 +145,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 3,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
+    dbCategory: '2025 Season Stats',
   },
   {
     id: '2025-seahawks-stars',
@@ -142,6 +155,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 11,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
+    dbCategory: '2025 Seahawks Stars',
   },
   {
     id: '2025-comparison-qbs',
@@ -151,6 +165,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 4,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
+    dbCategory: '2025 Comparison QBs',
   },
   {
     id: '2025-defense',
@@ -160,6 +175,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 13,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
+    dbCategory: '2025 Defense',
   },
 
   // ========== FINALE (Day 14) ==========
@@ -172,6 +188,7 @@ export const ALL_CATEGORIES: Category[] = [
     groupId: 'daily',
     pillFilters: ['daily'],
     isFinale: true,
+    dbCategory: 'Super Bowl Connections',
   },
 ];
 
