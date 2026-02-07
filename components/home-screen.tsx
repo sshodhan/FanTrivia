@@ -49,7 +49,7 @@ export function HomeScreen({
             </svg>
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
           </span>
-          <span className="text-[10px] font-semibold text-primary tracking-wide">PARTY</span>
+          <span className="text-[10px] font-semibold text-primary tracking-wide leading-tight text-center">PARTY<br />Info</span>
         </button>
         <div className="text-5xl mb-2">🦅</div>
         <h1 className="font-[var(--font-heading)] text-3xl font-bold text-primary tracking-tight">
