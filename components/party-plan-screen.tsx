@@ -20,7 +20,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
   const [activeTab, setActiveTab] = useState<PartyTab>('welcome');
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <header className="p-6 pb-3 text-center relative">
         <button
@@ -291,14 +291,16 @@ function MenuTab() {
     setActivePill(0);
   }, []);
 
-  // Scroll the active pill into view within the pill bar
+  // Scroll the active pill into view within the pill bar (without affecting ancestors)
   useEffect(() => {
-    if (activePillRef.current && pillBarRef.current) {
-      activePillRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      });
+    const pill = activePillRef.current;
+    const bar = pillBarRef.current;
+    if (pill && bar) {
+      const pillLeft = pill.offsetLeft;
+      const pillWidth = pill.offsetWidth;
+      const barWidth = bar.offsetWidth;
+      const targetScroll = pillLeft - barWidth / 2 + pillWidth / 2;
+      bar.scrollTo({ left: targetScroll, behavior: 'smooth' });
     }
   }, [activePill]);
 
