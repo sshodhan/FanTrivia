@@ -40,12 +40,20 @@ function AppContent() {
 
   // Fetch current game day from existing trivia API
   useEffect(() => {
+    let isMounted = true;
+
     fetch('/api/trivia/daily')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data?.day_identifier) setCurrentDay(dayIdentifierToNumber(data.day_identifier));
+        if (isMounted && data?.day_identifier) {
+          setCurrentDay(dayIdentifierToNumber(data.day_identifier));
+        }
       })
       .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Hide nav on certain screens
