@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { logClientError } from '@/lib/error-tracking/client-logger';
+import { addBreadcrumb } from '@/lib/error-tracking/event-breadcrumbs';
 import type { CategoryWithState } from '@/lib/category-types';
 
 interface CategoryCardProps {
@@ -66,6 +67,12 @@ function CompletedCard({
 
   const handleRetake = async () => {
     if (!onRetake || isResetting) return;
+    addBreadcrumb('user-action', 'Play Again clicked', {
+      categoryId: category.id,
+      categoryTitle: category.title,
+      previousScore: score,
+      previousTotal: total,
+    });
     setIsResetting(true);
     try {
       await onRetake(category.id);

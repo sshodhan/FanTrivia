@@ -332,13 +332,25 @@ Tracks which users liked which photos.
 ### Daily Trivia Flow
 
 ```
-1. Frontend calls GET /api/trivia/daily (with x-username header)
-2. API reads `game_settings.current_day` to get day_identifier
-3. API fetches questions from `trivia_questions` (is_active = true)
-4. API strips `correct_answer` before returning to frontend
-5. User answers → Frontend calls POST /api/trivia/daily/answer
-6. API inserts into `daily_answers` with is_correct, points_earned
-7. Trigger auto-updates `users.total_points`
+1. User picks a category from DailyCategoriesScreen
+2. Frontend navigates to TriviaGame with categoryId + dbCategory
+3. TriviaGame calls GET /api/trivia/daily?category=<dbCategory>
+4. API fetches questions WHERE category = '<dbCategory>' AND is_active = true
+5. API strips `correct_answer` before returning to frontend
+6. User answers → Frontend calls POST /api/trivia/daily/answer
+7. API inserts into `daily_answers` with is_correct, points_earned
+8. Trigger auto-updates `users.total_points`
+9. On completion, frontend refreshes user data & category progress
+```
+
+### Category Retake Flow
+
+```
+1. User clicks "Play Again" on a completed CategoryCard
+2. Frontend calls POST /api/trivia/daily/reset-category
+3. API deletes matching daily_answers rows, deducts points from user
+4. Frontend refreshes progress (mutateProgress) + user data (refreshUser)
+5. CategoryCard returns to "unlocked" state, user can replay
 ```
 
 ### Live Game Flow (Admin Controlled)
@@ -376,8 +388,10 @@ Tracks which users liked which photos.
 | `/api/signin` | POST | Sign in with user_id |
 | `/api/user?user_id=X` | GET | Get user by user_id |
 | `/api/user?username=X` | GET | Get user by username |
-| `/api/trivia/daily` | GET | Get today's questions |
-| `/api/trivia/daily/answer` | POST | Submit answer |
+| `/api/trivia/daily` | GET | Get today's questions (supports `?category=` filter) |
+| `/api/trivia/daily/answer` | POST | Submit answer (idempotent on duplicates) |
+| `/api/trivia/daily/progress` | GET | Get per-category completion stats |
+| `/api/trivia/daily/reset-category` | POST | Reset a category's answers for retake |
 | `/api/trivia/live` | GET | Get live game state |
 | `/api/scoreboard` | GET | Get leaderboard |
 | `/api/players` | GET | Get player profiles |
@@ -396,6 +410,135 @@ Tracks which users liked which photos.
 
 ---
 
+## Category Identification System
+
+### Overview
+
+Categories are identified via a **static application-level mapping** between client-side slugs and the `trivia_questions.category` column in the database. **No database schema changes were needed** -- the mapping is maintained in `lib/category-data.ts` via the `dbCategory` field on each `Category` object.
+
+### Mapping Table
+
+| Client Slug | DB `category` Value | Tab(s) |
+|---|---|---|
+| `super-bowl-xlviii` | `Super Bowl XLVIII` | Daily |
+| `legion-of-boom-defense` | `Legion of Boom` | Daily, LOB Era |
+| `russell-wilson-era` | `Russell Wilson Era` | Daily |
+| `seahawks-legends` | `Seahawks Legends` | Daily, Heritage |
+| `players-and-numbers` | `Players & Numbers` | Daily |
+| `lob-secondary` | `Legion of Boom` | LOB Era |
+| `seahawks-history` | `Seahawks History` | Heritage |
+| `memorable-moments` | `Memorable Moments` | Heritage |
+| `stadium-and-12s` | `Stadium & 12s` | Heritage |
+| `seahawks-legends-heritage` | `Seahawks Legends` | Heritage |
+| `hall-of-fame` | `Hall of Fame` | Heritage |
+| `franchise-firsts` | `Franchise Firsts` | Heritage |
+| `2025-season-stats` | `2025 Season Stats` | 2025 Season |
+| `2025-seahawks-stars` | `2025 Seahawks Stars` | 2025 Season |
+| `2025-comparison-qbs` | `2025 Comparison QBs` | 2025 Season |
+| `2025-defense` | `2025 Defense` | 2025 Season |
+| `super-bowl-connections` | `Super Bowl Connections` | Daily (Finale) |
+
+### Shared DB Categories
+
+Two pairs of client categories share the same `dbCategory`:
+- `legion-of-boom-defense` and `lob-secondary` both map to `Legion of Boom`
+- `seahawks-legends` and `seahawks-legends-heritage` both map to `Seahawks Legends`
+
+**Implication**: Resetting one of these categories also clears answers for the other since they share the same question pool. To make them independent, a `sub_category` column would need to be added to `trivia_questions`.
+
+### How the Mapping is Used
+
+1. **Question Fetch**: `GET /api/trivia/daily?category=Super+Bowl+XLVIII` queries `trivia_questions WHERE category = 'Super Bowl XLVIII'`
+2. **Progress Tracking**: `GET /api/trivia/daily/progress` joins `daily_answers` with `trivia_questions` via `question_id`, groups by `category`, then maps back to client slugs
+3. **Category Reset**: `POST /api/trivia/daily/reset-category` resolves slug to `dbCategory`, finds matching question IDs, deletes those `daily_answers` rows
+
+---
+
+## New API Endpoint Details
+
+### `GET /api/trivia/daily` (Updated)
+
+**New query parameter**: `?category=<DB category name>`
+
+When `category` is provided, the endpoint bypasses `daily_trivia_sets` entirely and fetches all active questions matching that category from `trivia_questions`. When absent, the original behavior is preserved (daily sets with fallback).
+
+### `POST /api/trivia/daily/answer` (Updated -- Idempotent)
+
+If a user submits an answer to a question they've already answered (same `username + question_id + day_identifier`), the endpoint now returns the **original result** instead of a bare 409 error:
+
+```json
+{
+  "is_correct": true,
+  "correct_answer": "b",
+  "points_earned": 100,
+  "streak_bonus": 25,
+  "current_streak": 3,
+  "total_points": 1250,
+  "already_answered": true
+}
+```
+
+The `already_answered: true` flag tells the client not to add duplicate points. Both the application-level duplicate check and the `23505` race-condition handler are idempotent.
+
+### `GET /api/trivia/daily/progress`
+
+Returns per-category completion stats for a user.
+
+**Query params**: `?username=<username>`
+
+**Response**:
+```json
+{
+  "progress": [
+    {
+      "categoryId": "super-bowl-xlviii",
+      "isCompleted": true,
+      "score": 9,
+      "correctAnswers": 9,
+      "totalQuestions": 11,
+      "totalPoints": 1050
+    }
+  ],
+  "day_identifier": "day_minus_4"
+}
+```
+
+**How it works**: Joins `daily_answers` with `trivia_questions` via `question_id` (using Supabase `!inner` join), groups by `trivia_questions.category`, maps back to client category slugs using `ALL_CATEGORIES[].dbCategory`.
+
+### `POST /api/trivia/daily/reset-category`
+
+Resets all answers for a specific category so the user can retake it.
+
+**Request body**:
+```json
+{
+  "username": "sven",
+  "category_id": "super-bowl-xlviii"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "deleted": 11,
+  "points_deducted": 1050,
+  "new_total_points": 200
+}
+```
+
+**What it does**:
+1. Resolves `category_id` slug to `dbCategory` via `ALL_CATEGORIES`
+2. Finds all `trivia_questions.id` WHERE `category = dbCategory AND is_active = true`
+3. Finds matching `daily_answers` WHERE `username AND day_identifier AND question_id IN (...)`
+4. Sums `points_earned + streak_bonus` from those rows
+5. Deletes the answer rows
+6. Deducts summed points from `users.total_points` and sets `current_streak = 0`
+
+**Security**: Uses Supabase service role key (bypasses RLS). Validation ensures both `username` and `category_id` are provided and valid.
+
+---
+
 ## Frontend Integration
 
 ### Key Components and Their Data Sources
@@ -403,7 +546,9 @@ Tracks which users liked which photos.
 | Component | API Endpoint | Data Used |
 |-----------|-------------|-----------|
 | `ScoreBoard` | `/api/leaderboard` | Users ranked by total_points |
-| `TriviaGame` | `/api/trivia/daily` | Questions without answers |
+| `TriviaGame` | `/api/trivia/daily` or `/api/trivia/daily?category=X` | Questions without correct answers |
+| `DailyCategoriesScreen` | `/api/trivia/daily/progress` | Per-category completion stats |
+| `CategoryCard (Play Again)` | `/api/trivia/daily/reset-category` | Resets answers & deducts points |
 | `LiveGame` | `/api/trivia/live` | Current question, game state |
 | `PlayerCards` | `/api/players` | Player stats, trivia, highlights |
 | `PhotoGallery` | `/api/photos` | Approved photos with like counts |
@@ -531,6 +676,12 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 | `supabase/test_schema.sql` | Validation queries to verify schema setup |
 | `lib/database.types.ts` | TypeScript type definitions |
 | `lib/supabase.ts` | Supabase client initialization |
+| `lib/category-data.ts` | Client slug to DB category mapping + day unlock config |
+| `lib/category-types.ts` | TypeScript types for Category, CategoryProgress, etc. |
+| `app/api/trivia/daily/route.ts` | Daily questions API (supports `?category=` filter) |
+| `app/api/trivia/daily/answer/route.ts` | Answer submission API (idempotent on duplicates) |
+| `app/api/trivia/daily/progress/route.ts` | Per-category progress tracking API |
+| `app/api/trivia/daily/reset-category/route.ts` | Category retake (deletes answers, deducts points) |
 | `FRONTEND_GUIDE.md` | Frontend integration guide with code examples |
 
 ---

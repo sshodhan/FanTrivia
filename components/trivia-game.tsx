@@ -12,6 +12,10 @@ import { Loader2 } from 'lucide-react';
 import { logClientError, logClientDebug } from '@/lib/error-tracking/client-logger';
 
 interface TriviaGameProps {
+  /** Client-side category slug (e.g. 'super-bowl-xlviii') */
+  categoryId?: string;
+  /** DB category name for API filtering (e.g. 'Super Bowl XLVIII') */
+  dbCategory?: string;
   onComplete: (score: number, correctAnswers: number) => void;
   onExit: () => void;
 }
@@ -61,12 +65,17 @@ function transformMockQuestion(q: typeof sampleQuestions[number]): DisplayQuesti
   };
 }
 
-export function TriviaGame({ onComplete, onExit }: TriviaGameProps) {
+export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: TriviaGameProps) {
   const { user, setTodayPlayed, refreshUser } = useUser();
+
+  // Build the API URL with optional category filter
+  const apiUrl = dbCategory
+    ? `/api/trivia/daily?category=${encodeURIComponent(dbCategory)}`
+    : '/api/trivia/daily';
 
   // Fetch questions from API
   const { data: apiData, error: apiError, isLoading: isLoadingQuestions } = useSWR(
-    '/api/trivia/daily',
+    apiUrl,
     fetcher
   );
 

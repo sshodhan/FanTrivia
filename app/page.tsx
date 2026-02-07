@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
-import type { CategoryProgress } from '@/lib/category-types';
+import type { Category, CategoryProgress } from '@/lib/category-types';
+import { ALL_CATEGORIES } from '@/lib/category-data';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
@@ -37,6 +38,7 @@ function AppContent() {
     fetcher
   );
   const completedCategories: CategoryProgress[] = progressData?.progress ?? [];
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
 
@@ -74,8 +76,8 @@ function AppContent() {
   }, [currentScreen]);
 
   const handleStartCategory = (categoryId: string) => {
-    // For now, start the general trivia game
-    // Future: pass categoryId to load category-specific questions
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
+    setSelectedCategory(category);
     setCurrentScreen('trivia');
   };
 
@@ -102,6 +104,8 @@ function AppContent() {
       if (response.ok) {
         // Refresh progress data so the card goes back to "unlocked"
         await mutateProgress();
+        // Refresh user data so header points/streak are updated
+        await refreshUser();
         logClientDebug('AppContent', 'Category retake reset successful', {
           categoryId, username: user.username,
         }, { force: true });
@@ -120,7 +124,7 @@ function AppContent() {
         { categoryId }
       );
     }
-  }, [user?.username, mutateProgress]);
+  }, [user?.username, mutateProgress, refreshUser]);
 
   const handleStartTrivia = () => {
     if (todayPlayed) return;
@@ -196,6 +200,8 @@ function AppContent() {
 
       {currentScreen === 'trivia' && (
         <TriviaGame
+          categoryId={selectedCategory?.id}
+          dbCategory={selectedCategory?.dbCategory}
           onComplete={handleTriviaComplete}
           onExit={() => setCurrentScreen('home')}
         />
