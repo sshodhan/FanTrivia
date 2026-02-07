@@ -28,7 +28,7 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { user, todayPlayed, resetAccount } = useUser();
+  const { user, todayPlayed, resetAccount, refreshUser } = useUser();
   const [currentDay, setCurrentDay] = useState(1);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
 
