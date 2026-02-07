@@ -16,7 +16,7 @@ interface TriviaGameProps {
   categoryId?: string;
   /** DB category name for API filtering (e.g. 'Super Bowl XLVIII') */
   dbCategory?: string;
-  onComplete: (score: number, correctAnswers: number) => void;
+  onComplete: (score: number, correctAnswers: number, totalQuestions: number) => void;
   onExit: () => void;
 }
 
@@ -374,7 +374,7 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
       setTodayPlayed(true);
       // Refresh user data to get updated points
       await refreshUser();
-      onComplete(score, correctCount);
+      onComplete(score, correctCount, questions.length);
       return;
     }
 
