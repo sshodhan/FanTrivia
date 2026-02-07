@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
 import type { Category, CategoryProgress } from '@/lib/category-types';
@@ -41,13 +41,27 @@ function AppContent() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
+  const hasInitializedScreen = useRef(false);
 
-  // Determine initial screen based on user registration
+  // Determine initial screen based on user registration (runs only on login/logout, not on data refresh)
   useEffect(() => {
-    if (user) {
+    const isLoggedIn = !!user;
+    const wasLoggedIn = hasInitializedScreen.current;
+
+    console.log("[v0] useEffect[user] fired", { isLoggedIn, wasLoggedIn, username: user?.username, currentScreen });
+
+    if (!wasLoggedIn && isLoggedIn) {
+      // First time user is available (login or page load with existing session)
+      hasInitializedScreen.current = true;
+      console.log("[v0] Setting screen to HOME (initial login)");
       setCurrentScreen('home');
-    } else {
+    } else if (wasLoggedIn && !isLoggedIn) {
+      // User logged out or account reset
+      hasInitializedScreen.current = false;
+      console.log("[v0] Setting screen to ENTRY (logged out)");
       setCurrentScreen('entry');
+    } else {
+      console.log("[v0] SKIPPING screen override (data refresh, wasLoggedIn && isLoggedIn)");
     }
   }, [user]);
 
@@ -69,17 +83,20 @@ function AppContent() {
     };
   }, []);
 
-  // Hide nav on certain screens
+  // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
     const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results'];
     setShowNav(!hideNavScreens.includes(currentScreen));
+    console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
 
-  const handleStartCategory = (categoryId: string) => {
+  const handleStartCategory = useCallback((categoryId: string) => {
     const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
+    console.log("[v0] handleStartCategory called", { categoryId, dbCategory: category?.dbCategory, found: !!category });
     setSelectedCategory(category);
     setCurrentScreen('trivia');
-  };
+    console.log("[v0] setCurrentScreen('trivia') called from handleStartCategory");
+  }, []);
 
   const handleViewCategoryResults = (categoryId: string) => {
     // Future: navigate to category-specific results
@@ -113,10 +130,13 @@ function AppContent() {
       if (response.ok) {
         const result = await response.json();
 
+        console.log("[v0] retake: about to mutateProgress");
         // Refresh progress data so the card goes back to "unlocked"
         await mutateProgress();
+        console.log("[v0] retake: mutateProgress done, about to refreshUser");
         // Refresh user data so header points/streak are updated
         await refreshUser();
+        console.log("[v0] retake: refreshUser done, hasInitializedScreen =", hasInitializedScreen.current);
 
         logClientDebug('AppContent', 'Category retake reset successful', {
           categoryId,
@@ -128,7 +148,9 @@ function AppContent() {
         }, { force: true });
 
         // Automatically open the trivia game for this category
+        console.log("[v0] retake: about to call handleStartCategory", categoryId);
         handleStartCategory(categoryId);
+        console.log("[v0] retake: handleStartCategory returned");
       } else {
         const result = await response.json();
         logClientError(
