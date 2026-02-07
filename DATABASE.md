@@ -145,7 +145,9 @@ Central question bank for all trivia content.
 | `is_active` | BOOLEAN | Whether question is available |
 | `created_at` | TIMESTAMPTZ | Creation timestamp |
 
-**Categories in seed data**: Super Bowl XLVIII, Legion of Boom, Russell Wilson Era, Seahawks Legends, Stadium & 12s, Memorable Moments, Players & Numbers, Seahawks History
+**Categories in `schema_complete.sql`**: Super Bowl XLVIII, Legion of Boom, Russell Wilson Era, Seahawks Legends, Stadium & 12s, Memorable Moments, Players & Numbers, Seahawks History
+
+**Additional categories from seeds**: 2025 Season Stats, 2025 Seahawks Stars, Seahawks Hall of Fame, Super Bowl Connections, 2025 Comparison QBs, 2025 Comparison Defense (from `seed_2025_data.sql`), Franchise Firsts (from `scripts/seed-franchise-firsts.sql`). See [Question Counts](#question-counts-verified-against-db) for the full verified list.
 
 ---
 
@@ -517,8 +519,8 @@ Returns per-category completion stats for a user.
       "isCompleted": true,
       "score": 9,
       "correctAnswers": 9,
-      "totalQuestions": 11,
-      "totalPoints": 1050
+      "totalQuestions": 10,
+      "totalPoints": 950
     }
   ],
   "day_identifier": "day_minus_4"
@@ -543,8 +545,8 @@ Resets all answers for a specific category so the user can retake it.
 ```json
 {
   "success": true,
-  "deleted": 11,
-  "points_deducted": 1050,
+  "deleted": 10,
+  "points_deducted": 950,
   "new_total_points": 200
 }
 ```
@@ -695,6 +697,7 @@ Trigger function that runs after INSERT/DELETE on `photo_likes`:
 |------|---------|
 | `supabase/schema_complete.sql` | Complete schema + 51 questions (run this first) |
 | `supabase/seed_2025_data.sql` | Extended 2025 data + 40 more questions (optional) |
+| `scripts/seed-franchise-firsts.sql` | 6 Franchise Firsts questions (seeded via supabase_execute_sql) |
 | `supabase/test_schema.sql` | Validation queries to verify schema setup |
 | `lib/database.types.ts` | TypeScript type definitions |
 | `lib/supabase.ts` | Supabase client initialization |

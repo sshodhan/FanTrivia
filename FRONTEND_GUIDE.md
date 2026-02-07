@@ -227,14 +227,22 @@ Get user data by user_id or username.
 
 #### `GET /api/trivia/daily`
 
-Get today's trivia questions.
+Get trivia questions. Supports two modes:
+- **Without `?category=`**: Uses `daily_trivia_sets` (legacy daily set behavior)
+- **With `?category=`**: Fetches all active questions for a specific DB category
 
 **Request:**
 ```typescript
-const response = await fetch('/api/trivia/daily', {
+// Category-based fetch (preferred - used by DailyCategoriesScreen)
+const response = await fetch('/api/trivia/daily?category=Super+Bowl+XLVIII', {
   headers: {
     'x-username': 'HawkFan12'  // Optional: to get already-answered status
   }
+})
+
+// Legacy daily set fetch (no category param)
+const response = await fetch('/api/trivia/daily', {
+  headers: { 'x-username': 'HawkFan12' }
 })
 
 const data: DailyTriviaResponse = await response.json()
@@ -253,9 +261,11 @@ interface DailyTriviaResponse {
 }
 ```
 
+> **Note:** When `?category=` is used, the endpoint bypasses `daily_trivia_sets` entirely and queries `trivia_questions WHERE category = ? AND is_active = true`. The `dbCategory` values are mapped from client slugs via `lib/category-data.ts`. See [DATABASE.md](DATABASE.md#category-identification-system) for the full mapping table.
+
 #### `POST /api/trivia/daily/answer`
 
-Submit an answer.
+Submit an answer. **Idempotent on duplicates:** if a user submits the same `username + question_id + day_identifier` twice, the endpoint returns the original result with `already_answered: true` (status 200) instead of an error.
 
 **Request:**
 ```typescript
@@ -282,8 +292,65 @@ interface AnswerResult {
   streak_bonus: number          // Bonus from streak
   current_streak: number        // New streak count
   total_points: number          // User's updated total
+  already_answered?: boolean    // True if this was an idempotent duplicate (no new points added)
 }
 ```
+
+#### `GET /api/trivia/daily/progress`
+
+Get per-category completion stats for a user.
+
+**Request:**
+```typescript
+const response = await fetch(`/api/trivia/daily/progress?username=${username}`)
+const data = await response.json()
+```
+
+**Response:**
+```typescript
+interface CategoryProgress {
+  categoryId: string         // Client slug (e.g., 'super-bowl-xlviii')
+  isCompleted: boolean       // All questions answered
+  score: number              // Number correct
+  correctAnswers: number     // Same as score
+  totalQuestions: number     // Total questions in category
+  totalPoints: number        // Sum of points_earned + streak_bonus
+}
+
+{
+  progress: CategoryProgress[]
+  day_identifier: string     // e.g., 'day_minus_4'
+}
+```
+
+#### `POST /api/trivia/daily/reset-category`
+
+Reset all answers for a specific category so the user can retake it. Deletes matching `daily_answers` rows and deducts points from `users.total_points`.
+
+**Request:**
+```typescript
+const response = await fetch('/api/trivia/daily/reset-category', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'HawkFan12',
+    category_id: 'super-bowl-xlviii'  // Client slug, not DB category name
+  })
+})
+const result = await response.json()
+```
+
+**Response:**
+```typescript
+{
+  success: boolean
+  deleted: number          // Number of answer rows deleted
+  points_deducted: number  // Points removed from total
+  new_total_points: number // User's updated total
+}
+```
+
+> **Note:** Uses Supabase service role key to bypass RLS. Also resets `current_streak` to 0.
 
 ---
 
@@ -544,7 +611,16 @@ import type {
   AnswerResult
 } from '@/lib/database.types'
 
-export function TriviaGame({ username }: { username: string }) {
+// Props include optional category for category-based fetching
+export function TriviaGame({ 
+  username, 
+  categoryId, 
+  dbCategory 
+}: { 
+  username: string
+  categoryId?: string    // Client slug (e.g., 'super-bowl-xlviii')
+  dbCategory?: string    // DB category (e.g., 'Super Bowl XLVIII')
+}) {
   const [questions, setQuestions] = useState<TriviaQuestionPublic[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<AnswerOption | null>(null)
@@ -552,17 +628,22 @@ export function TriviaGame({ username }: { username: string }) {
   const [startTime, setStartTime] = useState<number>(0)
   const [timeLeft, setTimeLeft] = useState(15)
 
-  // Fetch questions
+  // Build URL with category param when available
+  const apiUrl = dbCategory
+    ? `/api/trivia/daily?category=${encodeURIComponent(dbCategory)}`
+    : '/api/trivia/daily'
+
+  // Fetch questions (uses SWR in actual implementation)
   useEffect(() => {
     async function loadQuestions() {
-      const response = await fetch('/api/trivia/daily', {
+      const response = await fetch(apiUrl, {
         headers: { 'x-username': username }
       })
       const data = await response.json()
       setQuestions(data.questions)
     }
     loadQuestions()
-  }, [username])
+  }, [username, apiUrl])
 
   // Timer
   useEffect(() => {
@@ -750,12 +831,14 @@ All API endpoints return errors in this format:
 
 | Code | Meaning |
 |------|---------|
-| 200 | Success |
+| 200 | Success (including idempotent duplicate answers -- check `already_answered` flag) |
 | 201 | Created (new user registered) |
 | 400 | Bad request (invalid input) |
 | 404 | Not found |
-| 409 | Conflict (username taken) |
+| 409 | Conflict (username taken on registration only) |
 | 500 | Server error |
+
+> **Note:** The answer endpoint (`POST /api/trivia/daily/answer`) no longer returns 409 for duplicate answers. It returns 200 with `already_answered: true` instead.
 
 ### Error Handling Pattern
 
@@ -913,7 +996,13 @@ Users should save their User ID for account recovery (shown in Settings > Profil
 |------|---------|
 | `lib/supabase.ts` | Supabase client initialization |
 | `lib/database.types.ts` | All TypeScript type definitions |
-| `app/api/**/route.ts` | API endpoint implementations |
+| `lib/category-data.ts` | Client slug to DB category mapping + day unlock config |
+| `lib/category-types.ts` | TypeScript types for Category, CategoryProgress, CategoryState |
+| `app/api/trivia/daily/route.ts` | Daily questions API (supports `?category=` filter) |
+| `app/api/trivia/daily/answer/route.ts` | Answer submission API (idempotent on duplicates) |
+| `app/api/trivia/daily/progress/route.ts` | Per-category progress tracking API |
+| `app/api/trivia/daily/reset-category/route.ts` | Category retake (deletes answers, deducts points) |
+| `app/api/**/route.ts` | Other API endpoint implementations |
 | `DATABASE.md` | Full database schema documentation |
 
 ---

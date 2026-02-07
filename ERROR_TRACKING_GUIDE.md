@@ -148,7 +148,7 @@ OpenAI Request:
 ═══════════════════════════════════════════════════════
 Timestamp: 2026-02-01T12:34:57.123Z
 Question ID: fraction-001
-───────────────────────────────────────────────────────
+─────────────────────────────────��─────────────────────
 Server Grade:
   Correct: false
 ───────────────────────────────────────────────────────
@@ -727,6 +727,21 @@ Breadcrumbs:
 ═══════════════════════════════════════════════════════
 ```
 
+### Answer Endpoint Logging
+
+The answer endpoint (`POST /api/trivia/daily/answer`) produces server-side logs for every answer submission:
+
+| Event | Level | When | Data |
+|-------|-------|------|------|
+| `ANSWER_SUBMITTED` | `info` | Correct answer | `username, questionId, isCorrect, points, streakBonus, streak` |
+| `ANSWER_SUBMITTED` | `warn` | Wrong answer | Same fields (warn level for visibility in Vercel logs) |
+| `duplicate_answer_idempotent` | `info` | User re-submits same answer (app-level check) | `username, questionId, originalAnswer` |
+| `duplicate_answer_race_condition` | `info` | Concurrent duplicate caught by DB unique constraint (23505) | `username, questionId` |
+
+**Idempotent Duplicate Handling:** When a user submits an answer to a question they've already answered (same `username + question_id + day_identifier`), the endpoint returns the **original result** with `already_answered: true` (status 200) instead of a 409 error. The client checks `already_answered` and skips adding duplicate points. Both the app-level duplicate check and the `23505` race-condition handler return the same format.
+
+**Why wrong answers log at `warn` level:** This is intentional to make incorrect answers more visible in Vercel Runtime Logs for debugging question difficulty and answer patterns. They are NOT errors and do not indicate a problem. If you see a stream of `ANSWER_SUBMITTED` warnings on load, they are from a prior play session, not triggered by page load.
+
 ### Example: Category Retake Flow Log Output
 
 When a user clicks "Play Again" on a completed category, the following logs are produced:
@@ -737,7 +752,7 @@ When a user clicks "Play Again" on a completed category, the following logs are 
    └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "dbCategory": "Super Bowl XLVIII", "username": "player_1234" }
 
 ℹ️ [CLIENT][AppContent] Category retake reset successful
-   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "username": "player_1234", "deleted": 11, "points_deducted": 550, "new_total_points": 200 }
+   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "username": "player_1234", "deleted": 10, "points_deducted": 950, "new_total_points": 200 }
 ```
 
 **Server-side (via logServer in reset-category route):**
@@ -749,8 +764,8 @@ When a user clicks "Play Again" on a completed category, the following logs are 
 
 ℹ️ [RESET-CATEGORY] RESET_COMPLETE
   username: player_1234
-  answers_deleted: 11
-  points_deducted: 550
+  answers_deleted: 10
+  points_deducted: 950
   new_total_points: 200
 ```
 
@@ -769,7 +784,7 @@ Additional Info: {
 }
 Breadcrumbs:
   [navigation] Opened Daily Categories screen
-  [user-action] Play Again clicked {categoryId: "super-bowl-xlviii", previousScore: 11}
+  [user-action] Play Again clicked {categoryId: "super-bowl-xlviii", previousScore: 10}
 ═══════════════════════════════════════════════════════
 ```
 
