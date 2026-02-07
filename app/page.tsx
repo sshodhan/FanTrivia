@@ -22,8 +22,6 @@ import { dayIdentifierToNumber } from '@/lib/category-data';
 type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
-
 interface GameResult {
   score: number;
   correctAnswers: number;
