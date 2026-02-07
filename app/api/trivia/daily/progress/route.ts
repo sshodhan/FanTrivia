@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ progress: [] })
     }
 
-    // Get current day identifier
+    // Get current day identifier (used for response metadata)
     const { data: settings } = await supabase
       .from('game_settings')
       .select('current_day')
@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
 
     const dayIdentifier = settings?.current_day || 'day_1'
 
-    // Fetch all answers by this user for the current day, joined with question category
+    // Fetch all answers by this user across ALL days, joined with question category.
+    // Categories are cumulative (once unlocked, they stay), so progress must persist
+    // across day transitions. We deduplicate by question_id below.
     const { data: answers, error: answersError } = await supabase
       .from('daily_answers')
       .select(`
@@ -47,10 +49,11 @@ export async function GET(request: NextRequest) {
         is_correct,
         points_earned,
         streak_bonus,
+        answered_at,
         trivia_questions!inner(category)
       `)
       .eq('username', username)
-      .eq('day_identifier', dayIdentifier)
+      .order('answered_at', { ascending: false })
 
     if (answersError) {
       logServerError('trivia-progress', 'fetch_answers_error', answersError, { username, dayIdentifier })
@@ -64,6 +67,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ progress: [], day_identifier: dayIdentifier })
     }
 
+    // Deduplicate by question_id: keep the most recent answer per question
+    // (answers are ordered by answered_at DESC, so first occurrence is latest)
+    const seenQuestions = new Set<string>()
+    const uniqueAnswers = []
+    for (const answer of answers) {
+      if (!seenQuestions.has(answer.question_id)) {
+        seenQuestions.add(answer.question_id)
+        uniqueAnswers.push(answer)
+      }
+    }
+
     // Build a map of dbCategory -> { correctAnswers, totalAnswered, totalPoints }
     const categoryStats = new Map<string, {
       correctAnswers: number
@@ -71,7 +85,7 @@ export async function GET(request: NextRequest) {
       totalPoints: number
     }>()
 
-    for (const answer of answers) {
+    for (const answer of uniqueAnswers) {
       // trivia_questions is the joined row
       const questionData = answer.trivia_questions as unknown as { category: string | null }
       const dbCategory = questionData?.category || 'Unknown'
@@ -118,6 +132,7 @@ export async function GET(request: NextRequest) {
         username,
         dayIdentifier,
         total_answers: answers.length,
+        unique_answers: uniqueAnswers.length,
         categories_with_progress: progress.length,
       }
     })

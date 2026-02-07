@@ -65,15 +65,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current day from settings
-    const { data: settings } = await supabase
-      .from('game_settings')
-      .select('current_day')
-      .eq('id', 1)
-      .single()
-
-    const dayIdentifier = settings?.current_day || 'day_1'
-
     // Find all question IDs in this category
     const { data: categoryQuestions, error: questionsError } = await supabase
       .from('trivia_questions')
@@ -96,17 +87,17 @@ export async function POST(request: NextRequest) {
 
     const questionIds = categoryQuestions.map(q => q.id)
 
-    // Get the answers to delete so we can calculate the points to subtract
+    // Get the answers to delete across ALL days so we can calculate points to subtract.
+    // Categories persist across day transitions, so reset must clear all days' answers.
     const { data: answersToDelete, error: answersLookupError } = await supabase
       .from('daily_answers')
       .select('id, points_earned, streak_bonus')
       .eq('username', username)
-      .eq('day_identifier', dayIdentifier)
       .in('question_id', questionIds)
 
     if (answersLookupError) {
       logServerError('reset-category', 'answers_lookup_error', answersLookupError, {
-        username, category_id, dayIdentifier
+        username, category_id
       })
       return NextResponse.json(
         { error: 'Failed to look up answers' },
@@ -119,7 +110,7 @@ export async function POST(request: NextRequest) {
         level: 'info',
         component: 'reset-category',
         event: 'no_answers_to_reset',
-        data: { username, category_id, dayIdentifier }
+        data: { username, category_id }
       })
       return NextResponse.json({ success: true, deleted: 0, points_deducted: 0 })
     }
@@ -173,7 +164,6 @@ export async function POST(request: NextRequest) {
         username,
         category_id,
         dbCategory: category.dbCategory,
-        dayIdentifier,
         answers_deleted: deletedCount ?? 0,
         points_deducted: pointsToDeduct,
         new_total_points: newTotalPoints,
