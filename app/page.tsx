@@ -75,11 +75,11 @@ function AppContent() {
     setShowNav(!hideNavScreens.includes(currentScreen));
   }, [currentScreen]);
 
-  const handleStartCategory = (categoryId: string) => {
+  const handleStartCategory = useCallback((categoryId: string) => {
     const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
     setSelectedCategory(category);
     setCurrentScreen('trivia');
-  };
+  }, []);
 
   const handleViewCategoryResults = (categoryId: string) => {
     // Future: navigate to category-specific results
