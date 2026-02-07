@@ -22,16 +22,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="p-6 pb-3 text-center relative">
-        <button
-          onClick={onBack}
-          className="absolute right-4 top-6 p-1 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Close party info"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
+      <header className="p-6 pb-3 text-center">
         <div className="text-4xl mb-1">🏈</div>
         <h1 className="font-[var(--font-heading)] text-2xl font-bold text-primary tracking-tight">
           GAME DAY PARTY
@@ -45,7 +36,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
         role="tablist"
         aria-label="Party plan sections"
       >
-        <div className="flex">
+        <div className="flex items-center">
           {TABS.map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -72,6 +63,15 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
               </button>
             );
           })}
+          <button
+            onClick={onBack}
+            className="px-3 py-3 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            aria-label="Close party info"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
         </div>
       </div>
 
