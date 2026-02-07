@@ -158,19 +158,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingAnswer) {
-      // Strategy 6: Idempotent response — return the original answer result
-      // instead of a bare error, so the client can render correctly on re-entry
+      // Duplicate answer — grade the CURRENT selection so UI feedback is
+      // accurate, but award zero additional points to prevent point farming.
       const { data: existingQuestion } = await supabase
         .from('trivia_questions')
         .select('correct_answer')
         .eq('id', question_id)
         .single()
 
+      const correctAnswer = (existingQuestion?.correct_answer || existingAnswer.selected_answer) as AnswerOption
+      const currentIsCorrect = selected_answer === correctAnswer
+
       const result: AnswerResult = {
-        is_correct: existingAnswer.is_correct,
-        correct_answer: (existingQuestion?.correct_answer || existingAnswer.selected_answer) as AnswerOption,
-        points_earned: existingAnswer.points_earned,
-        streak_bonus: existingAnswer.streak_bonus,
+        is_correct: currentIsCorrect,
+        correct_answer: correctAnswer,
+        points_earned: 0,
+        streak_bonus: 0,
         current_streak: user.current_streak,
         total_points: user.total_points,
       }
@@ -185,6 +188,7 @@ export async function POST(request: NextRequest) {
           original_answer: existingAnswer.selected_answer,
           new_attempt: selected_answer,
           same_answer: existingAnswer.selected_answer === selected_answer,
+          current_is_correct: currentIsCorrect,
         }
       })
 
