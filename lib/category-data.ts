@@ -15,7 +15,7 @@ export const ALL_CATEGORIES: Category[] = [
     id: 'super-bowl-xlviii',
     title: 'Super Bowl XLVIII',
     emoji: '🏆',
-    questionCount: 11,
+    questionCount: 10,
     unlockDay: 1,
     groupId: 'daily',
     pillFilters: ['daily'],
@@ -123,7 +123,7 @@ export const ALL_CATEGORIES: Category[] = [
     unlockDay: 8,
     groupId: 'heritage',
     pillFilters: ['heritage'],
-    dbCategory: 'Hall of Fame',
+    dbCategory: 'Seahawks Hall of Fame',
   },
   {
     id: 'franchise-firsts',
@@ -171,11 +171,11 @@ export const ALL_CATEGORIES: Category[] = [
     id: '2025-defense',
     title: '2025 Defense',
     emoji: '🛡️',
-    questionCount: 6,
+    questionCount: 8,
     unlockDay: 13,
     groupId: 'modern-era',
     pillFilters: ['modern-era'],
-    dbCategory: '2025 Defense',
+    dbCategory: '2025 Comparison Defense',
   },
 
   // ========== FINALE (Day 14) ==========
