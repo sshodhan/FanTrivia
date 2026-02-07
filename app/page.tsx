@@ -25,6 +25,7 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 interface GameResult {
   score: number;
   correctAnswers: number;
+  totalQuestions: number;
 }
 
 function AppContent() {
@@ -179,8 +180,8 @@ function AppContent() {
     setCurrentScreen('trivia');
   };
 
-  const handleTriviaComplete = (score: number, correctAnswers: number) => {
-    setGameResult({ score, correctAnswers });
+  const handleTriviaComplete = (score: number, correctAnswers: number, totalQuestions: number) => {
+    setGameResult({ score, correctAnswers, totalQuestions });
     setCurrentScreen('results');
     // Refresh category progress after completing a trivia session
     mutateProgress();
@@ -260,7 +261,7 @@ function AppContent() {
         <ResultsScreen
           score={gameResult.score}
           correctAnswers={gameResult.correctAnswers}
-          totalQuestions={5}
+          totalQuestions={gameResult.totalQuestions}
           onViewScoreboard={() => setCurrentScreen('scoreboard')}
           onGoHome={() => setCurrentScreen('home')}
         />
