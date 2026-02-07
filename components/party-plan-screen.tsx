@@ -106,7 +106,7 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
       {/* Venue hero image */}
       <div className="rounded-xl overflow-hidden">
         <img
-          src="/party/venue-sign.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/venue-sign.jpg"
           alt="Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
@@ -154,7 +154,7 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
       {/* Champagne branding image */}
       <div className="rounded-xl overflow-hidden">
         <img
-          src="/party/champagne.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/champagne.jpg"
           alt="Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
@@ -342,7 +342,7 @@ function InfoTab() {
       {/* Views / nearby */}
       <div className="bg-card rounded-xl overflow-hidden">
         <img
-          src="/party/lumen-field.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/lumen-field.png"
           alt="Aerial view of Lumen Field from Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
