@@ -13,6 +13,7 @@ import { PhotoWall } from '@/components/photo-wall';
 import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
+import { dayIdentifierToNumber } from '@/lib/category-data';
 
 type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
@@ -23,6 +24,7 @@ interface GameResult {
 
 function AppContent() {
   const { user, todayPlayed, resetAccount } = useUser();
+  const [currentDay, setCurrentDay] = useState(1);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
@@ -35,6 +37,24 @@ function AppContent() {
       setCurrentScreen('entry');
     }
   }, [user]);
+
+  // Fetch current game day from existing trivia API
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/trivia/daily')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (isMounted && data?.day_identifier) {
+          setCurrentDay(dayIdentifierToNumber(data.day_identifier));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Hide nav on certain screens
   useEffect(() => {
@@ -159,7 +179,7 @@ function AppContent() {
 
       {currentScreen === 'categories' && (
         <DailyCategoriesScreen
-          currentDay={1}
+          currentDay={currentDay}
           completedCategories={[]}
           streak={user?.current_streak ?? 0}
           onStartCategory={handleStartCategory}

@@ -120,7 +120,7 @@ function UnlockedCard({
     <div className="category-card card-unlocked bg-gradient-to-br from-[#002244] to-[#003355] border-2 border-primary rounded-2xl p-5 mb-4">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-xl">🔓</span>
+          <span className="text-xl">{category.emoji}</span>
           <h3 className="text-lg font-bold text-white">{category.title}</h3>
         </div>
         <span className="inline-flex items-center gap-1 bg-[#FF8904] text-[#002244] text-xs font-black px-3 py-1 rounded-xl">
