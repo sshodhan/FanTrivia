@@ -173,15 +173,6 @@ interface MenuStation {
 
 const MENU_STATIONS: MenuStation[] = [
   {
-    name: 'Drinks',
-    emoji: '🍹',
-    items: [
-      { title: 'Sodas', description: 'Included' },
-      { title: 'Rainier', description: '$4' },
-      { title: 'Bartender', description: 'In your room' },
-    ],
-  },
-  {
     name: 'Welcoming Spread',
     emoji: '🧀',
     items: [
@@ -253,6 +244,15 @@ const MENU_STATIONS: MenuStation[] = [
       { title: 'Chocolate & Berry Beignets' },
       { title: 'Eclairs' },
       { title: 'Macarons' },
+    ],
+  },
+  {
+    name: 'Drinks',
+    emoji: '🍹',
+    items: [
+      { title: 'Sodas', description: 'Included' },
+      { title: 'Rainier', description: '$4' },
+      { title: 'Bartender', description: 'In your room' },
     ],
   },
 ];
