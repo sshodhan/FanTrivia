@@ -96,10 +96,13 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
           Welcome, Friends!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor. Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look. Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
+          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching every moment from the 75th floor of Columbia Tower. The energy is electric, the views are unmatched, and this is the ultimate spot to celebrate with the 12s.
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+          Expect a DJ-powered pregame to get the party started, chef-curated food stations refreshed all game long, drink specials flowing from kickoff to the final whistle, raffles with great prizes, and screens everywhere you look.
         </p>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
+          Whether you&apos;re here to cheer on every play, catch the commercials, or vibe through halftime &mdash; this is your spot. Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
         </p>
       </div>
 
