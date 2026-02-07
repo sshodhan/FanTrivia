@@ -96,10 +96,10 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
           Welcome, Friends!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          So glad you&apos;re here! Get ready for a high-energy game-day experience — DJ-led kickoff hour, chef-curated food stations refreshed all game long, drink specials, raffles, and TVs everywhere you look. Whether you&apos;re here for the plays, the commercials, or the halftime show, we&apos;ve got you covered.
+          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor. Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look. Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
         </p>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Grab a drink, load up a plate, challenge someone to a board game, and make yourself at home. Let me know if you need anything at all!
+          Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
         </p>
       </div>
 
