@@ -90,23 +90,33 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
   return (
     <div className="p-6 space-y-6">
       {/* Hero welcome & what to expect */}
-      <div className="bg-card rounded-xl p-6 text-center border border-primary/30">
-        <div className="text-4xl mb-3">🎉🏈🎉</div>
-        <h2 className="font-[var(--font-heading)] text-xl font-bold text-foreground mb-4">
-          Welcome, Friends!
-        </h2>
-        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor. Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look. Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
-        </p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
-        </p>
+      <div className="bg-card rounded-xl p-6 border border-primary/30">
+        <div className="text-center mb-4">
+          <div className="text-4xl mb-3">🎉🏈🎉</div>
+          <h2 className="font-[var(--font-heading)] text-xl font-bold text-foreground">
+            Welcome, Friends!
+          </h2>
+        </div>
+        <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+          <p>
+            Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor.
+          </p>
+          <p>
+            Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look.
+          </p>
+          <p>
+            Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
+          </p>
+          <p className="text-foreground font-medium pt-1">
+            Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
+          </p>
+        </div>
       </div>
 
       {/* Venue hero image */}
       <div className="rounded-xl overflow-hidden">
         <img
-          src="/party/venue-sign.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/venue-sign.jpg"
           alt="Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
@@ -154,7 +164,7 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
       {/* Champagne branding image */}
       <div className="rounded-xl overflow-hidden">
         <img
-          src="/party/champagne.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/champagne.jpg"
           alt="Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
@@ -342,7 +352,7 @@ function InfoTab() {
       {/* Views / nearby */}
       <div className="bg-card rounded-xl overflow-hidden">
         <img
-          src="/party/lumen-field.jpg"
+          src="https://exgvqiqvzwvzklqxwbnf.supabase.co/storage/v1/object/public/photos/lumen-field.png"
           alt="Aerial view of Lumen Field from Columbia Tower Club"
           className="w-full h-44 object-cover"
         />
