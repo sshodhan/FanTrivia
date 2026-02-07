@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import { logClientError, logClientDebug } from '@/lib/error-tracking/client-logger';
+import { addBreadcrumb } from '@/lib/error-tracking/event-breadcrumbs';
 
 interface TriviaGameProps {
   /** Client-side category slug (e.g. 'super-bowl-xlviii') */
@@ -68,10 +69,14 @@ function transformMockQuestion(q: typeof sampleQuestions[number]): DisplayQuesti
 export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: TriviaGameProps) {
   const { user, setTodayPlayed, refreshUser } = useUser();
 
-  // Build the API URL with optional category filter
-  const apiUrl = dbCategory
-    ? `/api/trivia/daily?category=${encodeURIComponent(dbCategory)}`
-    : '/api/trivia/daily';
+  // Build the API URL with optional category filter and username for already-answered filtering
+  const apiUrl = (() => {
+    const params = new URLSearchParams();
+    if (dbCategory) params.set('category', dbCategory);
+    if (user?.username) params.set('username', user.username);
+    const qs = params.toString();
+    return qs ? `/api/trivia/daily?${qs}` : '/api/trivia/daily';
+  })();
 
   // Fetch questions from API
   const { data: apiData, error: apiError, isLoading: isLoadingQuestions } = useSWR(
@@ -93,6 +98,14 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
   const [streak, setStreak] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Profile sync state
+  const [isSyncingProfile, setIsSyncingProfile] = useState(false);
+  const [syncStatusMessage, setSyncStatusMessage] = useState('');
+  // Pending answer index to retry after profile sync completes
+  const pendingAnswerIndex = useRef<number | null>(null);
+  // Guard: only attempt one sync per question to prevent infinite loops
+  const hasSyncedForQuestion = useRef(false);
 
   // API result state
   const [lastResult, setLastResult] = useState<AnswerResult | null>(null);
@@ -151,9 +164,10 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
     }
   }, [apiData, apiError]);
 
-  // Reset start time when moving to next question
+  // Reset start time and sync guard when moving to next question
   useEffect(() => {
     questionStartTime.current = Date.now();
+    hasSyncedForQuestion.current = false;
   }, [currentIndex]);
 
   const currentQuestion = questions[currentIndex];
@@ -166,9 +180,9 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
     }
   }, [showResult, selectedAnswer, isSubmitting]);
 
-  // Timer effect
+  // Timer effect — pauses during sync and submission
   useEffect(() => {
-    if (showResult || isTransitioning || !questionsReady || isSubmitting) return;
+    if (showResult || isTransitioning || !questionsReady || isSubmitting || isSyncingProfile) return;
 
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
@@ -181,10 +195,101 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [showResult, isTransitioning, questionsReady, isSubmitting, handleTimeUp]);
+  }, [showResult, isTransitioning, questionsReady, isSubmitting, isSyncingProfile, handleTimeUp]);
+
+  // After profile sync, user state updates trigger this effect to retry the pending answer
+  useEffect(() => {
+    if (pendingAnswerIndex.current !== null && user?.username && !isSyncingProfile) {
+      const idx = pendingAnswerIndex.current;
+      pendingAnswerIndex.current = null;
+      logClientDebug('TriviaGame', 'retrying_pending_answer_after_sync', {
+        question_id: currentQuestion?.id,
+        selected_index: idx,
+        username: user.username,
+      }, { force: true });
+      handleSelectAnswer(idx);
+    }
+  }, [user?.username, isSyncingProfile]);
 
   const handleSelectAnswer = async (index: number) => {
-    if (showResult || selectedAnswer !== null || isSubmitting) return;
+    if (showResult || selectedAnswer !== null || isSubmitting || isSyncingProfile) return;
+
+    // If user profile isn't loaded, trigger a sync before submitting.
+    // We store the pending answer and return — a useEffect picks it up
+    // once refreshUser() updates the user state (avoids stale closure).
+    // Guard: only attempt one sync per question to prevent infinite loops
+    // (e.g. if refreshUser returns success but username is still missing).
+    if (!user?.username) {
+      if (hasSyncedForQuestion.current) {
+        logClientError(
+          'Profile still missing after sync — not retrying to avoid loop',
+          'TriviaGame Profile Sync Loop Blocked',
+          {
+            question_id: currentQuestion?.id,
+            has_user: !!user,
+            user_id: user?.user_id || 'none',
+            username: user?.username || 'none',
+          }
+        );
+        addBreadcrumb('error', 'Profile sync loop blocked', {
+          question_id: currentQuestion?.id,
+          user_id: user?.user_id || 'none',
+        });
+        return;
+      }
+
+      hasSyncedForQuestion.current = true;
+
+      logClientError(
+        'Profile not loaded when answer attempted — triggering sync',
+        'TriviaGame Soft Error',
+        { question_id: currentQuestion?.id, has_user: !!user, user_id: user?.user_id || 'none' }
+      );
+      logClientDebug('TriviaGame', 'profile_sync_triggered', {
+        question_id: currentQuestion?.id,
+        selected_index: index,
+        has_user: !!user,
+        user_id: user?.user_id || 'none',
+      }, { force: true });
+      addBreadcrumb('user-action', 'Profile sync triggered before answer', {
+        question_id: currentQuestion?.id,
+        selected_index: index,
+      });
+
+      pendingAnswerIndex.current = index;
+      setIsSyncingProfile(true);
+      setSyncStatusMessage('Syncing your profile...');
+
+      const refreshResult = await refreshUser();
+
+      if (refreshResult.success) {
+        logClientDebug('TriviaGame', 'profile_sync_success', {
+          question_id: currentQuestion?.id,
+        }, { force: true });
+        setSyncStatusMessage('Profile synced! Submitting answer...');
+        // Brief pause so user sees the success message, then useEffect handles retry
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setIsSyncingProfile(false);
+        setSyncStatusMessage('');
+        // Don't fall through — user ref is stale. useEffect on user will retry.
+      } else {
+        logClientError(
+          `Profile sync failed: ${refreshResult.error || 'Unknown error'}`,
+          'TriviaGame Soft Error',
+          { question_id: currentQuestion?.id, error: refreshResult.error, user_id: user?.user_id || 'none' }
+        );
+        logClientDebug('TriviaGame', 'profile_sync_failed', {
+          question_id: currentQuestion?.id,
+          error: refreshResult.error,
+        }, { force: true, level: 'warn' });
+        setSyncStatusMessage('Could not sync profile. Please try again.');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        pendingAnswerIndex.current = null;
+        setIsSyncingProfile(false);
+        setSyncStatusMessage('');
+      }
+      return;
+    }
 
     setSelectedAnswer(index);
     setIsSubmitting(true);
@@ -209,7 +314,7 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: user?.username || 'anonymous',
+          username: user.username,
           question_id: currentQuestion.id,
           selected_answer: answerLetter,
           time_taken_ms: timeTakenMs,
@@ -422,7 +527,7 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
               <button
                 key={index}
                 onClick={() => handleSelectAnswer(index)}
-                disabled={showResult || isSubmitting}
+                disabled={showResult || isSubmitting || isSyncingProfile}
                 className={cn(
                   'w-full p-4 rounded-xl border-2 text-left transition-all',
                   'flex items-center gap-3',
@@ -455,6 +560,14 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
             );
           })}
         </div>
+
+        {/* Profile sync overlay */}
+        {isSyncingProfile && (
+          <div className="mt-4 flex flex-col items-center justify-center gap-3 rounded-xl bg-primary/10 border border-primary/30 p-6">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm font-medium text-primary">{syncStatusMessage}</p>
+          </div>
+        )}
 
         {/* Submitting indicator */}
         {isSubmitting && (

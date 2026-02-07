@@ -147,13 +147,15 @@ export async function POST(request: NextRequest) {
 
     const dayIdentifier = settings?.current_day || 'day_1'
 
-    // Check if already answered this question for the current day_identifier
+    // Check if already answered this question (across all days, not just current)
+    // to prevent earning duplicate points by replaying on a different day
     const { data: existingAnswer } = await supabase
       .from('daily_answers')
       .select('id, selected_answer, is_correct, points_earned, streak_bonus')
       .eq('username', username)
       .eq('question_id', question_id)
-      .eq('day_identifier', dayIdentifier)
+      .order('answered_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (existingAnswer) {
@@ -193,7 +195,7 @@ export async function POST(request: NextRequest) {
     // Get the question to check answer
     const { data: question, error: questionError } = await supabase
       .from('trivia_questions')
-      .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint_text')
+      .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint_text, category')
       .eq('id', question_id)
       .single()
 
@@ -264,6 +266,7 @@ export async function POST(request: NextRequest) {
         username,
         question_id,
         day_identifier: dayIdentifier,
+        category: question.category,
         selected_answer,
         is_correct: isCorrect,
         points_earned: points,

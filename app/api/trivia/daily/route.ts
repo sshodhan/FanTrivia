@@ -197,16 +197,18 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get questions user has already answered today
+    // Get ALL questions this user has already answered (across all days).
+    // Categories are cumulative — once answered, an answer persists until
+    // explicitly reset via the reset-category API.  Filtering by today's
+    // date alone would miss answers from previous days, causing the client
+    // to re-show already-answered questions and hit the duplicate-answer
+    // idempotent handler.
     let alreadyAnsweredIds: string[] = []
     if (username) {
-      const today = new Date().toISOString().split('T')[0]
       const { data: answers } = await supabase
         .from('daily_answers')
         .select('question_id')
         .eq('username', username)
-        .gte('answered_at', `${today}T00:00:00`)
-        .lt('answered_at', `${today}T23:59:59`)
 
       alreadyAnsweredIds = answers?.map(a => a.question_id) || []
     }

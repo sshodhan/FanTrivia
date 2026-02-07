@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ progress: [] })
     }
 
-    // Get current day identifier
+    // Get current day identifier (used for response metadata)
     const { data: settings } = await supabase
       .from('game_settings')
       .select('current_day')
@@ -39,18 +39,15 @@ export async function GET(request: NextRequest) {
 
     const dayIdentifier = settings?.current_day || 'day_1'
 
-    // Fetch all answers by this user for the current day, joined with question category
+    // Fetch all answers by this user across ALL days, reading category directly
+    // from the denormalized column. Categories are cumulative (once unlocked, they
+    // stay), so progress must persist across day transitions.
+    // We deduplicate by question_id below.
     const { data: answers, error: answersError } = await supabase
       .from('daily_answers')
-      .select(`
-        question_id,
-        is_correct,
-        points_earned,
-        streak_bonus,
-        trivia_questions!inner(category)
-      `)
+      .select('question_id, is_correct, points_earned, streak_bonus, category, answered_at')
       .eq('username', username)
-      .eq('day_identifier', dayIdentifier)
+      .order('answered_at', { ascending: false })
 
     if (answersError) {
       logServerError('trivia-progress', 'fetch_answers_error', answersError, { username, dayIdentifier })
@@ -64,6 +61,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ progress: [], day_identifier: dayIdentifier })
     }
 
+    // Deduplicate by question_id: keep the most recent answer per question
+    // (answers are ordered by answered_at DESC, so first occurrence is latest)
+    const seenQuestions = new Set<string>()
+    const uniqueAnswers = []
+    for (const answer of answers) {
+      if (!seenQuestions.has(answer.question_id)) {
+        seenQuestions.add(answer.question_id)
+        uniqueAnswers.push(answer)
+      }
+    }
+
+    // Backward compatibility: if any answers have NULL category (pre-migration
+    // data or backfill gaps), resolve them from trivia_questions so they aren't
+    // silently dropped from progress.
+    const nullCategoryIds = uniqueAnswers
+      .filter(a => !a.category)
+      .map(a => a.question_id)
+
+    let categoryLookup = new Map<string, string>()
+    if (nullCategoryIds.length > 0) {
+      const { data: questions } = await supabase
+        .from('trivia_questions')
+        .select('id, category')
+        .in('id', nullCategoryIds)
+
+      if (questions) {
+        for (const q of questions) {
+          if (q.category) categoryLookup.set(q.id, q.category)
+        }
+      }
+
+      logServer({
+        level: 'warn',
+        component: 'trivia-progress',
+        event: 'null_category_fallback',
+        data: {
+          username,
+          null_count: nullCategoryIds.length,
+          resolved_count: categoryLookup.size,
+        }
+      })
+    }
+
     // Build a map of dbCategory -> { correctAnswers, totalAnswered, totalPoints }
     const categoryStats = new Map<string, {
       correctAnswers: number
@@ -71,10 +111,10 @@ export async function GET(request: NextRequest) {
       totalPoints: number
     }>()
 
-    for (const answer of answers) {
-      // trivia_questions is the joined row
-      const questionData = answer.trivia_questions as unknown as { category: string | null }
-      const dbCategory = questionData?.category || 'Unknown'
+    for (const answer of uniqueAnswers) {
+      // Use denormalized category, fall back to trivia_questions lookup
+      const dbCategory = answer.category || categoryLookup.get(answer.question_id)
+      if (!dbCategory) continue // truly unknown — skip rather than pollute stats
 
       const existing = categoryStats.get(dbCategory) || {
         correctAnswers: 0,
@@ -118,6 +158,7 @@ export async function GET(request: NextRequest) {
         username,
         dayIdentifier,
         total_answers: answers.length,
+        unique_answers: uniqueAnswers.length,
         categories_with_progress: progress.length,
       }
     })
