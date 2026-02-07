@@ -22,16 +22,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="p-6 pb-3 text-center relative">
-        <button
-          onClick={onBack}
-          className="absolute right-4 top-6 p-1 text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Close party info"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
+      <header className="p-6 pb-3 text-center">
         <div className="text-4xl mb-1">🏈</div>
         <h1 className="font-[var(--font-heading)] text-2xl font-bold text-primary tracking-tight">
           GAME DAY PARTY
@@ -45,7 +36,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
         role="tablist"
         aria-label="Party plan sections"
       >
-        <div className="flex">
+        <div className="flex items-center">
           {TABS.map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -72,6 +63,15 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
               </button>
             );
           })}
+          <button
+            onClick={onBack}
+            className="px-3 py-3 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+            aria-label="Close party info"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -96,10 +96,10 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
           Welcome, Friends!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          So glad you&apos;re here! Get ready for a high-energy game-day experience — DJ-led kickoff hour, chef-curated food stations refreshed all game long, drink specials, raffles, and TVs everywhere you look. Whether you&apos;re here for the plays, the commercials, or the halftime show, we&apos;ve got you covered.
+          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor. Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look. Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
         </p>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Grab a drink, load up a plate, challenge someone to a board game, and make yourself at home. Let me know if you need anything at all!
+          Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
         </p>
       </div>
 
@@ -173,15 +173,6 @@ interface MenuStation {
 
 const MENU_STATIONS: MenuStation[] = [
   {
-    name: 'Drinks',
-    emoji: '🍹',
-    items: [
-      { title: 'Sodas', description: 'Included' },
-      { title: 'Rainier', description: '$4' },
-      { title: 'Bartender', description: 'In your room' },
-    ],
-  },
-  {
     name: 'Welcoming Spread',
     emoji: '🧀',
     items: [
@@ -253,6 +244,15 @@ const MENU_STATIONS: MenuStation[] = [
       { title: 'Chocolate & Berry Beignets' },
       { title: 'Eclairs' },
       { title: 'Macarons' },
+    ],
+  },
+  {
+    name: 'Drinks',
+    emoji: '🍹',
+    items: [
+      { title: 'Sodas', description: 'Included' },
+      { title: 'Rainier', description: '$4' },
+      { title: 'Bartender', description: 'In your room' },
     ],
   },
 ];
