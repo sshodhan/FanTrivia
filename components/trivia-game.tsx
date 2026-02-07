@@ -100,6 +100,8 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
   const [syncStatusMessage, setSyncStatusMessage] = useState('');
   // Pending answer index to retry after profile sync completes
   const pendingAnswerIndex = useRef<number | null>(null);
+  // Guard: only attempt one sync per question to prevent infinite loops
+  const hasSyncedForQuestion = useRef(false);
 
   // API result state
   const [lastResult, setLastResult] = useState<AnswerResult | null>(null);
@@ -158,9 +160,10 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
     }
   }, [apiData, apiError]);
 
-  // Reset start time when moving to next question
+  // Reset start time and sync guard when moving to next question
   useEffect(() => {
     questionStartTime.current = Date.now();
+    hasSyncedForQuestion.current = false;
   }, [currentIndex]);
 
   const currentQuestion = questions[currentIndex];
@@ -210,7 +213,20 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
     // If user profile isn't loaded, trigger a sync before submitting.
     // We store the pending answer and return — a useEffect picks it up
     // once refreshUser() updates the user state (avoids stale closure).
+    // Guard: only attempt one sync per question to prevent infinite loops
+    // (e.g. if refreshUser returns success but username is still missing).
     if (!user?.username) {
+      if (hasSyncedForQuestion.current) {
+        logClientError(
+          'Profile still missing after sync — not retrying to avoid loop',
+          'TriviaGame Soft Error',
+          { question_id: currentQuestion?.id, has_user: !!user, user_id: user?.user_id || 'none' }
+        );
+        return;
+      }
+
+      hasSyncedForQuestion.current = true;
+
       logClientError(
         'Profile not loaded when answer attempted — triggering sync',
         'TriviaGame Soft Error',
