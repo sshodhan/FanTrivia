@@ -150,17 +150,44 @@ export async function POST(request: NextRequest) {
     // Check if already answered this question for the current day_identifier
     const { data: existingAnswer } = await supabase
       .from('daily_answers')
-      .select('id')
+      .select('id, selected_answer, is_correct, points_earned, streak_bonus')
       .eq('username', username)
       .eq('question_id', question_id)
       .eq('day_identifier', dayIdentifier)
       .single()
 
     if (existingAnswer) {
-      return NextResponse.json(
-        { error: 'You have already answered this question today' },
-        { status: 409 }
-      )
+      // Strategy 6: Idempotent response — return the original answer result
+      // instead of a bare error, so the client can render correctly on re-entry
+      const { data: existingQuestion } = await supabase
+        .from('trivia_questions')
+        .select('correct_answer')
+        .eq('id', question_id)
+        .single()
+
+      const result: AnswerResult = {
+        is_correct: existingAnswer.is_correct,
+        correct_answer: (existingQuestion?.correct_answer || existingAnswer.selected_answer) as AnswerOption,
+        points_earned: existingAnswer.points_earned,
+        streak_bonus: existingAnswer.streak_bonus,
+        current_streak: user.current_streak,
+        total_points: user.total_points,
+      }
+
+      logServer({
+        level: 'info',
+        component: 'trivia-answer',
+        event: 'duplicate_answer_idempotent',
+        data: {
+          username,
+          question_id,
+          original_answer: existingAnswer.selected_answer,
+          new_attempt: selected_answer,
+          same_answer: existingAnswer.selected_answer === selected_answer,
+        }
+      })
+
+      return NextResponse.json({ ...result, already_answered: true }, { status: 200 })
     }
 
     // Get the question to check answer
@@ -247,10 +274,22 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       // Handle race condition: if duplicate constraint fires despite the check above
       if (insertError.code === '23505') {
-        return NextResponse.json(
-          { error: 'You have already answered this question today' },
-          { status: 409 }
-        )
+        // Return idempotent result even on race condition
+        const raceResult: AnswerResult = {
+          is_correct: isCorrect,
+          correct_answer: question.correct_answer as AnswerOption,
+          points_earned: points,
+          streak_bonus: streakBonus,
+          current_streak: newStreak,
+          total_points: user.total_points,
+        }
+        logServer({
+          level: 'info',
+          component: 'trivia-answer',
+          event: 'duplicate_answer_race_condition',
+          data: { username, question_id }
+        })
+        return NextResponse.json({ ...raceResult, already_answered: true }, { status: 200 })
       }
       console.error('Answer insert error:', insertError)
       return NextResponse.json(

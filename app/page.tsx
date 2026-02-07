@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
+import type { Category, CategoryProgress } from '@/lib/category-types';
+import { ALL_CATEGORIES } from '@/lib/category-data';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import { EntryScreen } from '@/components/entry-screen';
 import { HomeScreen } from '@/components/home-screen';
@@ -17,6 +20,9 @@ import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
 type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings';
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
 interface GameResult {
   score: number;
@@ -24,18 +30,40 @@ interface GameResult {
 }
 
 function AppContent() {
-  const { user, todayPlayed, resetAccount } = useUser();
+  const { user, todayPlayed, resetAccount, refreshUser } = useUser();
   const [currentDay, setCurrentDay] = useState(1);
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('entry');
+
+  // Fetch real category progress from DB
+  const { data: progressData, mutate: mutateProgress } = useSWR(
+    user?.username ? `/api/trivia/daily/progress?username=${encodeURIComponent(user.username)}` : null,
+    fetcher
+  );
+  const completedCategories: CategoryProgress[] = progressData?.progress ?? [];
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
+  const hasInitializedScreen = useRef(false);
 
-  // Determine initial screen based on user registration
+  // Determine initial screen based on user registration (runs only on login/logout, not on data refresh)
   useEffect(() => {
-    if (user) {
+    const isLoggedIn = !!user;
+    const wasLoggedIn = hasInitializedScreen.current;
+
+    console.log("[v0] useEffect[user] fired", { isLoggedIn, wasLoggedIn, username: user?.username, currentScreen });
+
+    if (!wasLoggedIn && isLoggedIn) {
+      // First time user is available (login or page load with existing session)
+      hasInitializedScreen.current = true;
+      console.log("[v0] Setting screen to HOME (initial login)");
       setCurrentScreen('home');
-    } else {
+    } else if (wasLoggedIn && !isLoggedIn) {
+      // User logged out or account reset
+      hasInitializedScreen.current = false;
+      console.log("[v0] Setting screen to ENTRY (logged out)");
       setCurrentScreen('entry');
+    } else {
+      console.log("[v0] SKIPPING screen override (data refresh, wasLoggedIn && isLoggedIn)");
     }
   }, [user]);
 
@@ -57,17 +85,20 @@ function AppContent() {
     };
   }, []);
 
-  // Hide nav on certain screens
+  // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
     const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party'];
     setShowNav(!hideNavScreens.includes(currentScreen));
+    console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
 
-  const handleStartCategory = (categoryId: string) => {
-    // For now, start the general trivia game
-    // Future: pass categoryId to load category-specific questions
+  const handleStartCategory = useCallback((categoryId: string) => {
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
+    console.log("[v0] handleStartCategory called", { categoryId, dbCategory: category?.dbCategory, found: !!category });
+    setSelectedCategory(category);
     setCurrentScreen('trivia');
-  };
+    console.log("[v0] setCurrentScreen('trivia') called from handleStartCategory");
+  }, []);
 
   const handleViewCategoryResults = (categoryId: string) => {
     // Future: navigate to category-specific results
@@ -75,6 +106,69 @@ function AppContent() {
       setCurrentScreen('results');
     }
   };
+
+  const handleRetakeCategory = useCallback(async (categoryId: string) => {
+    if (!user?.username) return;
+
+    const category = ALL_CATEGORIES.find(c => c.id === categoryId);
+
+    logClientDebug('AppContent', 'Category retake initiated', {
+      categoryId,
+      categoryTitle: category?.title,
+      dbCategory: category?.dbCategory,
+      username: user.username,
+    }, { force: true });
+
+    try {
+      const response = await fetch('/api/trivia/daily/reset-category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: user.username,
+          category_id: categoryId,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        console.log("[v0] retake: about to mutateProgress");
+        // Refresh progress data so the card goes back to "unlocked"
+        await mutateProgress();
+        console.log("[v0] retake: mutateProgress done, about to refreshUser");
+        // Refresh user data so header points/streak are updated
+        await refreshUser();
+        console.log("[v0] retake: refreshUser done, hasInitializedScreen =", hasInitializedScreen.current);
+
+        logClientDebug('AppContent', 'Category retake reset successful', {
+          categoryId,
+          categoryTitle: category?.title,
+          username: user.username,
+          deleted: result.deleted,
+          points_deducted: result.points_deducted,
+          new_total_points: result.new_total_points,
+        }, { force: true });
+
+        // Automatically open the trivia game for this category
+        console.log("[v0] retake: about to call handleStartCategory", categoryId);
+        handleStartCategory(categoryId);
+        console.log("[v0] retake: handleStartCategory returned");
+      } else {
+        const result = await response.json();
+        logClientError(
+          `Category retake failed: ${result.error}`,
+          'Category Retake Soft Error',
+          { categoryId, categoryTitle: category?.title, status: response.status, username: user.username }
+        );
+      }
+    } catch (error) {
+      logClientError(
+        error instanceof Error ? error : new Error(String(error)),
+        'Category Retake Soft Error',
+        { categoryId, categoryTitle: category?.title, username: user.username }
+      );
+    }
+  }, [user?.username, mutateProgress, refreshUser, handleStartCategory]);
 
   const handleStartTrivia = () => {
     if (todayPlayed) return;
@@ -84,6 +178,8 @@ function AppContent() {
   const handleTriviaComplete = (score: number, correctAnswers: number) => {
     setGameResult({ score, correctAnswers });
     setCurrentScreen('results');
+    // Refresh category progress after completing a trivia session
+    mutateProgress();
   };
 
   const handleNavigation = (screen: NavScreen) => {
@@ -149,6 +245,8 @@ function AppContent() {
 
       {currentScreen === 'trivia' && (
         <TriviaGame
+          categoryId={selectedCategory?.id}
+          dbCategory={selectedCategory?.dbCategory}
           onComplete={handleTriviaComplete}
           onExit={() => setCurrentScreen('home')}
         />
@@ -182,10 +280,11 @@ function AppContent() {
       {currentScreen === 'categories' && (
         <DailyCategoriesScreen
           currentDay={currentDay}
-          completedCategories={[]}
+          completedCategories={completedCategories}
           streak={user?.current_streak ?? 0}
           onStartCategory={handleStartCategory}
           onViewResults={handleViewCategoryResults}
+          onRetakeCategory={handleRetakeCategory}
           onBack={() => setCurrentScreen('home')}
         />
       )}

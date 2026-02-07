@@ -122,6 +122,8 @@ export async function GET(request: NextRequest) {
     // Get username from header or query param
     const username = request.headers.get('x-username') ||
                      request.nextUrl.searchParams.get('username')
+    // Optional category filter (DB category name, e.g. "Super Bowl XLVIII")
+    const categoryFilter = request.nextUrl.searchParams.get('category')
 
     const supabase = getSupabase()
 
@@ -131,6 +133,7 @@ export async function GET(request: NextRequest) {
       event: 'request_received',
       data: {
         username: username || 'anonymous',
+        category_filter: categoryFilter || 'none',
         has_supabase_url: !!supabaseUrl,
         has_supabase_key: !!supabaseServiceKey,
         supabase_client_created: !!supabase,
@@ -233,7 +236,45 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    if (dailySet?.question_ids && dailySet.question_ids.length > 0) {
+    // If a category filter is provided, skip daily sets and fetch by category directly
+    if (categoryFilter) {
+      logServer({
+        level: 'info',
+        component: 'trivia-daily',
+        event: 'category_filter_active',
+        data: { category: categoryFilter, day: gameSettings.current_day }
+      })
+
+      const { data: categoryQuestions, error: catError } = await supabase
+        .from('trivia_questions')
+        .select('*')
+        .eq('category', categoryFilter)
+        .eq('is_active', true)
+
+      if (catError) {
+        logServerError('trivia-daily', 'fetch_category_questions_error', catError, {
+          category: categoryFilter,
+        })
+        fetchError = 'Failed to load questions'
+      } else {
+        questions = categoryQuestions || []
+        logServer({
+          level: 'info',
+          component: 'trivia-daily',
+          event: 'category_questions_fetched',
+          data: {
+            category: categoryFilter,
+            count: questions.length,
+            questions_detail: questions.map((q: { id: string; question_text: string; correct_answer: string; category: string | null }) => ({
+              id: q.id,
+              question_text: q.question_text.substring(0, 60),
+              correct_answer: q.correct_answer,
+              category: q.category,
+            }))
+          }
+        })
+      }
+    } else if (dailySet?.question_ids && dailySet.question_ids.length > 0) {
       logServer({
         level: 'info',
         component: 'trivia-daily',

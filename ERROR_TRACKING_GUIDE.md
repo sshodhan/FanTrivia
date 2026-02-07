@@ -148,7 +148,7 @@ OpenAI Request:
 ═══════════════════════════════════════════════════════
 Timestamp: 2026-02-01T12:34:57.123Z
 Question ID: fraction-001
-───────────────────────────────────────────────────────
+─────────────────────────────────��─────────────────────
 Server Grade:
   Correct: false
 ───────────────────────────────────────────────────────
@@ -636,7 +636,8 @@ The Daily Categories feature uses both error logging and soft error logging thro
 | File | Logger | What's Tracked |
 |------|--------|----------------|
 | `components/daily-categories/DailyCategoriesScreen.tsx` | `logClientDebug`, `logClientError`, `addBreadcrumb` | Screen mount, tab filtering, play/results actions, locked category attempts, empty filter state |
-| `components/daily-categories/CategoryCard.tsx` | `logClientError` | Unexpected card state (fallthrough in switch) |
+| `components/daily-categories/CategoryCard.tsx` | `logClientError`, `addBreadcrumb` | Unexpected card state (fallthrough in switch), Play Again clicked |
+| `app/page.tsx (handleRetakeCategory)` | `logClientDebug`, `logClientError` | Retake initiated, reset success (with deleted/points data), reset failure |
 | `hooks/useCategoryFilter.ts` | `logClientDebug`, `addBreadcrumb` | Tab switches with from/to context |
 | `hooks/useCategoryState.ts` | `logClientError` | Invalid currentDay, empty categories array |
 | `hooks/useCountdownTimer.ts` | `logClientDebug`, `logClientError` | Invalid time diff, urgent countdown transition, Date errors |
@@ -651,6 +652,7 @@ The Daily Categories feature uses both error logging and soft error logging thro
 | `CategoryState Soft Error` | error | Invalid day or empty categories | `"Invalid currentDay value: -1"` |
 | `CountdownTimer Soft Error` | error | Negative or >24h time diff | `"Countdown timer computed invalid diff: -500ms"` |
 | `CountdownTimer Error` | error | Date API throws | Caught exception in getTimeUntilNextDay |
+| `Category Retake Soft Error` | error | Reset API fails (non-200) or network error | `"Category retake failed: User not found"` |
 
 ### Debug Events
 
@@ -662,6 +664,8 @@ The Daily Categories feature uses both error logging and soft error logging thro
 | `DailyCategories` | `View results` | `categoryId, score, total, points` |
 | `CategoryFilter` | `Tab switched` | `from, to` |
 | `CountdownTimer` | `Countdown became urgent` | `hours, minutes` |
+| `AppContent` | `Category retake initiated` | `categoryId, categoryTitle, dbCategory, username` |
+| `AppContent` | `Category retake reset successful` | `categoryId, categoryTitle, username, deleted, points_deducted, new_total_points` |
 
 ### Breadcrumbs
 
@@ -673,6 +677,7 @@ The following breadcrumbs are added to the circular buffer for error context:
 | `user-action` | `Switched category tab to "{tab}"` | `tab` |
 | `user-action` | `Started category` | `categoryId, categoryTitle, state` |
 | `user-action` | `Viewed category results` | `categoryId, categoryTitle` |
+| `user-action` | `Play Again clicked` | `categoryId, categoryTitle, previousScore, previousTotal` |
 
 ### Searching Vercel Logs for Daily Categories
 
@@ -688,6 +693,12 @@ vercel logs --follow | grep "CategoryState"
 
 # Countdown timer issues
 vercel logs --follow | grep "CountdownTimer"
+
+# Category retake/reset events
+vercel logs --follow | grep "retake"
+
+# Server-side reset events
+vercel logs --follow | grep "reset-category"
 ```
 
 ### Example: Soft Error Log Output
@@ -713,6 +724,67 @@ Breadcrumbs:
   [navigation] Opened Daily Categories screen
   [user-action] Switched category tab to "heritage"
   [user-action] Started category {categoryId: "seahawks-history"}
+═══════════════════════════════════════════════════════
+```
+
+### Answer Endpoint Logging
+
+The answer endpoint (`POST /api/trivia/daily/answer`) produces server-side logs for every answer submission:
+
+| Event | Level | When | Data |
+|-------|-------|------|------|
+| `ANSWER_SUBMITTED` | `info` | Correct answer | `username, questionId, isCorrect, points, streakBonus, streak` |
+| `ANSWER_SUBMITTED` | `warn` | Wrong answer | Same fields (warn level for visibility in Vercel logs) |
+| `duplicate_answer_idempotent` | `info` | User re-submits same answer (app-level check) | `username, questionId, originalAnswer` |
+| `duplicate_answer_race_condition` | `info` | Concurrent duplicate caught by DB unique constraint (23505) | `username, questionId` |
+
+**Idempotent Duplicate Handling:** When a user submits an answer to a question they've already answered (same `username + question_id + day_identifier`), the endpoint returns the **original result** with `already_answered: true` (status 200) instead of a 409 error. The client checks `already_answered` and skips adding duplicate points. Both the app-level duplicate check and the `23505` race-condition handler return the same format.
+
+**Why wrong answers log at `warn` level:** This is intentional to make incorrect answers more visible in Vercel Runtime Logs for debugging question difficulty and answer patterns. They are NOT errors and do not indicate a problem. If you see a stream of `ANSWER_SUBMITTED` warnings on load, they are from a prior play session, not triggered by page load.
+
+### Example: Category Retake Flow Log Output
+
+When a user clicks "Play Again" on a completed category, the following logs are produced:
+
+**Client-side (via logClientDebug, visible in Vercel Runtime Logs):**
+```
+ℹ️ [CLIENT][AppContent] Category retake initiated
+   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "dbCategory": "Super Bowl XLVIII", "username": "player_1234" }
+
+ℹ️ [CLIENT][AppContent] Category retake reset successful
+   └─ Data: { "categoryId": "super-bowl-xlviii", "categoryTitle": "Super Bowl XLVIII", "username": "player_1234", "deleted": 10, "points_deducted": 950, "new_total_points": 200 }
+```
+
+**Server-side (via logServer in reset-category route):**
+```
+ℹ️ [RESET-CATEGORY] RESET_STARTED
+  username: player_1234
+  category_id: super-bowl-xlviii
+  dbCategory: Super Bowl XLVIII
+
+ℹ️ [RESET-CATEGORY] RESET_COMPLETE
+  username: player_1234
+  answers_deleted: 10
+  points_deducted: 950
+  new_total_points: 200
+```
+
+**If reset fails (Category Retake Soft Error):**
+```
+═══════════════════════════════════════════════════════
+CLIENT-SIDE ERROR CAPTURED
+═══════════════════════════════════════════════════════
+Error Type: Category Retake Soft Error
+Message: Category retake failed: User not found
+Additional Info: {
+  "categoryId": "super-bowl-xlviii",
+  "categoryTitle": "Super Bowl XLVIII",
+  "status": 404,
+  "username": "player_1234"
+}
+Breadcrumbs:
+  [navigation] Opened Daily Categories screen
+  [user-action] Play Again clicked {categoryId: "super-bowl-xlviii", previousScore: 10}
 ═══════════════════════════════════════════════════════
 ```
 
