@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logServer, logServerError } from '@/lib/error-tracking/server-logger'
-import { validateAdminAccess } from '@/lib/admin-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -15,9 +14,6 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
-    const authError = await validateAdminAccess(request)
-    if (authError) return authError
-
     const body = await request.json()
     const { user_id } = body as { user_id: string }
 
