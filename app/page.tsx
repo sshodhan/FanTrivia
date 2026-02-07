@@ -16,13 +16,12 @@ import { PhotoWall } from '@/components/photo-wall';
 import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { PartyPlanScreen } from '@/components/party-plan-screen';
+import { PartyFab } from '@/components/party-fab';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
 type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'settings';
 
 interface GameResult {
   score: number;
@@ -91,6 +90,9 @@ function AppContent() {
     setShowNav(!hideNavScreens.includes(currentScreen));
     console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
+
+  // Show party FAB on screens where bottom nav is visible (except party itself)
+  const showPartyFab = showNav && currentScreen !== 'party';
 
   const handleStartCategory = useCallback((categoryId: string) => {
     const category = ALL_CATEGORIES.find(c => c.id === categoryId) || null;
@@ -239,7 +241,6 @@ function AppContent() {
           onViewScoreboard={() => setCurrentScreen('scoreboard')}
           onViewPlayers={() => setCurrentScreen('players')}
           onViewPhotos={() => setCurrentScreen('photos')}
-          onViewParty={() => setCurrentScreen('party')}
         />
       )}
 
@@ -299,6 +300,10 @@ function AppContent() {
           onResetFlow={handleResetFlow}
           isResetting={isResetting}
         />
+      )}
+
+      {showPartyFab && (
+        <PartyFab onClick={() => setCurrentScreen('party')} />
       )}
 
       {showNav && (
