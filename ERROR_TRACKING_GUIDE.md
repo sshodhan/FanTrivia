@@ -788,6 +788,69 @@ Breadcrumbs:
 ═══════════════════════════════════════════════════════
 ```
 
+### TriviaGame Component Logging
+
+The `TriviaGame` component (`components/trivia-game.tsx`) handles answer submission and includes a profile sync mechanism that auto-recovers when the user context is not loaded.
+
+#### Profile Sync Flow
+
+When a user selects an answer but `user.username` is missing (e.g., localStorage cleared, slow hydration), the component:
+
+1. Pauses the timer
+2. Shows an animated "Syncing your profile..." overlay
+3. Calls `refreshUser()` to reload user data from the server
+4. On success, automatically retries the pending answer via a `useEffect`
+5. On failure, shows "Could not sync profile. Please try again." for 1.5s
+
+A `hasSyncedForQuestion` ref limits sync attempts to **one per question** to prevent infinite loops (e.g., if `refreshUser()` returns success but the user object still has no username).
+
+#### Error Types
+
+| Error Type | Level | When | Example |
+|------------|-------|------|---------|
+| `TriviaGame Soft Error` | error | User profile missing at answer time — triggering sync | `"Profile not loaded when answer attempted — triggering sync"` |
+| `TriviaGame Soft Error` | error | `refreshUser()` API call failed | `"Profile sync failed: Network error. Please try again."` |
+| `TriviaGame Profile Sync Loop Blocked` | error | Sync already attempted for this question but username still missing — blocked to prevent infinite loop | `"Profile still missing after sync — not retrying to avoid loop"` |
+| `TriviaGame API Error` | error | Answer submission API returned non-200 | `"Answer submission failed: {response}"` |
+| `TriviaGame Network Error` | error | `fetch()` threw during answer submission | Network/CORS error |
+
+#### Debug Events
+
+| Component | Event | Data |
+|-----------|-------|------|
+| `TriviaGame` | `profile_sync_triggered` | `question_id, selected_index, has_user, user_id` |
+| `TriviaGame` | `profile_sync_success` | `question_id` |
+| `TriviaGame` | `profile_sync_failed` | `question_id, error` |
+| `TriviaGame` | `retrying_pending_answer_after_sync` | `question_id, selected_index, username` |
+| `TriviaGame` | `Answer selected` | `question_id, selected_letter, time_taken_ms, all_options` |
+| `TriviaGame` | `Answer result received` | `question_id, api_is_correct, api_correct_answer_letter, points_earned, already_answered` |
+
+#### Breadcrumbs
+
+| Category | Message | Data |
+|----------|---------|------|
+| `user-action` | `Profile sync triggered before answer` | `question_id, selected_index` |
+| `error` | `Profile sync loop blocked` | `question_id, user_id` |
+
+#### Investigating `TriviaGame Profile Sync Loop Blocked`
+
+This error means `refreshUser()` was called, returned `success: true`, but the user object **still** had no `username`. The guard prevented an infinite retry loop. Likely causes:
+
+1. **User has `user_id` but no `username` in the database** — check `SELECT * FROM users WHERE user_id = '<user_id>'`
+2. **`/api/user` returns a user object with a null/empty username** — check the API response shape
+3. **Race condition** — `setUser()` state update hasn't flushed before the useEffect fires (should not happen with the current `isSyncingProfile` gate, but possible under React batching edge cases)
+
+```bash
+# Search for this specific error in Vercel logs
+vercel logs --follow | grep "Profile Sync Loop Blocked"
+
+# All TriviaGame errors
+vercel logs --follow | grep "TriviaGame"
+
+# Profile sync debug events
+vercel logs --follow | grep "profile_sync"
+```
+
 ---
 
 ## Future Enhancements

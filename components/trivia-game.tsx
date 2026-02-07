@@ -219,9 +219,18 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
       if (hasSyncedForQuestion.current) {
         logClientError(
           'Profile still missing after sync — not retrying to avoid loop',
-          'TriviaGame Soft Error',
-          { question_id: currentQuestion?.id, has_user: !!user, user_id: user?.user_id || 'none' }
+          'TriviaGame Profile Sync Loop Blocked',
+          {
+            question_id: currentQuestion?.id,
+            has_user: !!user,
+            user_id: user?.user_id || 'none',
+            username: user?.username || 'none',
+          }
         );
+        addBreadcrumb('error', 'Profile sync loop blocked', {
+          question_id: currentQuestion?.id,
+          user_id: user?.user_id || 'none',
+        });
         return;
       }
 
