@@ -283,6 +283,14 @@ function MenuTab() {
 
   const slugify = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+  // Reset scroll to top on mount
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+    setActivePill(0);
+  }, []);
+
   // Scroll the active pill into view within the pill bar
   useEffect(() => {
     if (activePillRef.current && pillBarRef.current) {
