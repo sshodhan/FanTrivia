@@ -33,23 +33,23 @@ export function HomeScreen({
       <header className="p-6 text-center relative">
         <button
           onClick={onViewParty}
-          className="absolute left-4 top-6 group flex items-center justify-center w-11 h-11 rounded-full bg-primary/15 hover:bg-primary/25 active:scale-95 transition-all"
+          className="absolute left-3 top-5 group flex flex-col items-center gap-0.5 active:scale-95 transition-transform"
           aria-label="Party info"
         >
-          {/* Party popper icon */}
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary group-hover:rotate-[-8deg] transition-transform">
-            {/* Party horn body */}
-            <path d="M5.8 11.3 2 22l10.7-3.8" />
-            <path d="M4 3h.01" />
-            <path d="M22 8h.01" />
-            <path d="M15 2h.01" />
-            <path d="M22 20h.01" />
-            <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" />
-            <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" />
-            <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" />
-          </svg>
-          {/* Attention dot */}
-          <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+          <span className="relative flex items-center justify-center w-11 h-11 rounded-full bg-primary/15 group-hover:bg-primary/25 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-primary animate-jiggle">
+              <path d="M5.8 11.3 2 22l10.7-3.8" />
+              <path d="M4 3h.01" />
+              <path d="M22 8h.01" />
+              <path d="M15 2h.01" />
+              <path d="M22 20h.01" />
+              <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" />
+              <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" />
+              <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" />
+            </svg>
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full animate-pulse" />
+          </span>
+          <span className="text-[10px] font-semibold text-primary tracking-wide">PARTY</span>
         </button>
         <div className="text-5xl mb-2">🦅</div>
         <h1 className="font-[var(--font-heading)] text-3xl font-bold text-primary tracking-tight">
