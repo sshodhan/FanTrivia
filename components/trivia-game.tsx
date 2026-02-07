@@ -69,10 +69,14 @@ function transformMockQuestion(q: typeof sampleQuestions[number]): DisplayQuesti
 export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: TriviaGameProps) {
   const { user, setTodayPlayed, refreshUser } = useUser();
 
-  // Build the API URL with optional category filter
-  const apiUrl = dbCategory
-    ? `/api/trivia/daily?category=${encodeURIComponent(dbCategory)}`
-    : '/api/trivia/daily';
+  // Build the API URL with optional category filter and username for already-answered filtering
+  const apiUrl = (() => {
+    const params = new URLSearchParams();
+    if (dbCategory) params.set('category', dbCategory);
+    if (user?.username) params.set('username', user.username);
+    const qs = params.toString();
+    return qs ? `/api/trivia/daily?${qs}` : '/api/trivia/daily';
+  })();
 
   // Fetch questions from API
   const { data: apiData, error: apiError, isLoading: isLoadingQuestions } = useSWR(
