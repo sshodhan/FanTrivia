@@ -65,35 +65,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find all question IDs in this category
-    const { data: categoryQuestions, error: questionsError } = await supabase
-      .from('trivia_questions')
-      .select('id')
-      .eq('category', category.dbCategory)
-      .eq('is_active', true)
-
-    if (questionsError || !categoryQuestions || categoryQuestions.length === 0) {
-      logServer({
-        level: 'warn',
-        component: 'reset-category',
-        event: 'no_questions_found',
-        data: { category_id, dbCategory: category.dbCategory, error: questionsError?.message }
-      })
-      return NextResponse.json(
-        { error: 'No questions found for this category' },
-        { status: 404 }
-      )
-    }
-
-    const questionIds = categoryQuestions.map(q => q.id)
-
-    // Get the answers to delete across ALL days so we can calculate points to subtract.
-    // Categories persist across day transitions, so reset must clear all days' answers.
+    // Get the answers to delete using the denormalized category column.
+    // No need to look up question IDs from trivia_questions first.
     const { data: answersToDelete, error: answersLookupError } = await supabase
       .from('daily_answers')
       .select('id, points_earned, streak_bonus')
       .eq('username', username)
-      .in('question_id', questionIds)
+      .eq('category', category.dbCategory)
 
     if (answersLookupError) {
       logServerError('reset-category', 'answers_lookup_error', answersLookupError, {

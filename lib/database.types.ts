@@ -152,6 +152,7 @@ export interface DailyAnswer {
   username: string
   question_id: string
   day_identifier: string | null
+  category: string | null
   selected_answer: AnswerOption
   is_correct: boolean
   points_earned: number
@@ -166,6 +167,7 @@ export interface DailyAnswerInsert {
   selected_answer: AnswerOption
   is_correct: boolean
   day_identifier?: string | null
+  category?: string | null
   points_earned?: number
   streak_bonus?: number
   time_taken_ms?: number | null

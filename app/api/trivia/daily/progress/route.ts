@@ -39,19 +39,13 @@ export async function GET(request: NextRequest) {
 
     const dayIdentifier = settings?.current_day || 'day_1'
 
-    // Fetch all answers by this user across ALL days, joined with question category.
-    // Categories are cumulative (once unlocked, they stay), so progress must persist
-    // across day transitions. We deduplicate by question_id below.
+    // Fetch all answers by this user across ALL days, reading category directly
+    // from the denormalized column. Categories are cumulative (once unlocked, they
+    // stay), so progress must persist across day transitions.
+    // We deduplicate by question_id below.
     const { data: answers, error: answersError } = await supabase
       .from('daily_answers')
-      .select(`
-        question_id,
-        is_correct,
-        points_earned,
-        streak_bonus,
-        answered_at,
-        trivia_questions!inner(category)
-      `)
+      .select('question_id, is_correct, points_earned, streak_bonus, category, answered_at')
       .eq('username', username)
       .order('answered_at', { ascending: false })
 
@@ -86,9 +80,7 @@ export async function GET(request: NextRequest) {
     }>()
 
     for (const answer of uniqueAnswers) {
-      // trivia_questions is the joined row
-      const questionData = answer.trivia_questions as unknown as { category: string | null }
-      const dbCategory = questionData?.category || 'Unknown'
+      const dbCategory = answer.category || 'Unknown'
 
       const existing = categoryStats.get(dbCategory) || {
         correctAnswers: 0,

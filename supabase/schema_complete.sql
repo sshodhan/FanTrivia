@@ -110,6 +110,7 @@ CREATE TABLE daily_answers (
   username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
   question_id UUID NOT NULL REFERENCES trivia_questions(id) ON DELETE CASCADE,
   day_identifier TEXT NOT NULL,
+  category TEXT,
   selected_answer TEXT NOT NULL CHECK (selected_answer IN ('a', 'b', 'c', 'd')),
   is_correct BOOLEAN NOT NULL,
   points_earned INTEGER DEFAULT 0,
@@ -123,6 +124,7 @@ CREATE TABLE daily_answers (
 CREATE INDEX idx_answers_username ON daily_answers(username);
 CREATE INDEX idx_answers_day ON daily_answers(day_identifier);
 CREATE INDEX idx_answers_date ON daily_answers(answered_at);
+CREATE INDEX idx_answers_username_category ON daily_answers(username, category);
 
 -- ============================================
 -- 6. PHOTO UPLOADS TABLE

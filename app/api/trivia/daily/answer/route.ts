@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
     // Get the question to check answer
     const { data: question, error: questionError } = await supabase
       .from('trivia_questions')
-      .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint_text')
+      .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, hint_text, category')
       .eq('id', question_id)
       .single()
 
@@ -266,6 +266,7 @@ export async function POST(request: NextRequest) {
         username,
         question_id,
         day_identifier: dayIdentifier,
+        category: question.category,
         selected_answer,
         is_correct: isCorrect,
         points_earned: points,
