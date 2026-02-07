@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type PartyTab = 'welcome' | 'menu' | 'info';
@@ -20,7 +20,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
   const [activeTab, setActiveTab] = useState<PartyTab>('welcome');
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="p-6 pb-3 text-center relative">
         <button
@@ -76,10 +76,7 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
       </div>
 
       {/* Tab Content */}
-      <div className={cn(
-        'flex-1',
-        activeTab === 'menu' ? 'overflow-hidden' : 'overflow-y-auto'
-      )}>
+      <div className="flex-1 overflow-y-auto">
         {activeTab === 'welcome' && <WelcomeTab onViewScoreboard={onViewScoreboard} />}
         {activeTab === 'menu' && <MenuTab />}
         {activeTab === 'info' && <InfoTab />}
@@ -99,13 +96,10 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
           Welcome, Friends!
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching every moment from the 75th floor of Columbia Tower. The energy is electric, the views are unmatched, and this is the ultimate spot to celebrate with the 12s.
-        </p>
-        <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-          Expect a DJ-powered pregame to get the party started, chef-curated food stations refreshed all game long, drink specials flowing from kickoff to the final whistle, raffles with great prizes, and screens everywhere you look.
+          Welcome to Super Bowl LX! The Seahawks are back on the biggest stage and we&apos;re watching it all from the 75th floor. Expect a DJ-powered pregame, chef-curated food stations running all game long, drink specials, raffles, and screens everywhere you look. Whether you&apos;re here to cheer on the 12s, catch the commercials, or vibe through halftime &mdash; this is your spot.
         </p>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Whether you&apos;re here to cheer on every play, catch the commercials, or vibe through halftime &mdash; this is your spot. Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
+          Grab a drink, load up a plate, jump into some trivia or a board game, and settle in. Go Hawks!
         </p>
       </div>
 
@@ -173,15 +167,22 @@ function WelcomeTab({ onViewScoreboard }: { onViewScoreboard: () => void }) {
 
 interface MenuStation {
   name: string;
-  pillLabel: string;
   emoji: string;
   items: { title: string; description?: string }[];
 }
 
 const MENU_STATIONS: MenuStation[] = [
   {
+    name: 'Drinks',
+    emoji: '🍹',
+    items: [
+      { title: 'Sodas', description: 'Included' },
+      { title: 'Rainier', description: '$4' },
+      { title: 'Bartender', description: 'In your room' },
+    ],
+  },
+  {
     name: 'Welcoming Spread',
-    pillLabel: 'Welcome',
     emoji: '🧀',
     items: [
       { title: 'Cheese and charcuterie' },
@@ -194,7 +195,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: 'Oyster Bar',
-    pillLabel: 'Oyster Bar',
     emoji: '🦪',
     items: [
       { title: 'East Coast vs West Coast Oysters', description: '2 types of each, for as long as they last' },
@@ -203,7 +203,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: 'New England Station',
-    pillLabel: 'NE Station',
     emoji: '🦞',
     items: [
       { title: 'New England Clam Chowder Cups', description: 'Dill oil, oyster cracker' },
@@ -214,7 +213,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: 'Seattle Station',
-    pillLabel: 'Seattle Station',
     emoji: '🐟',
     items: [
       { title: 'Teriyaki Chicken Bao Buns', description: 'Jalapeno, cilantro, carrot and daikon pickle, gochujang teriyaki sauce' },
@@ -225,7 +223,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: 'Tailgate',
-    pillLabel: 'Tailgate',
     emoji: '🏟️',
     items: [
       { title: 'Buffalo & Honey Garlic Sriracha Wings' },
@@ -238,7 +235,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: 'Plant Based Station',
-    pillLabel: 'Plant Based Station',
     emoji: '🌱',
     items: [
       { title: 'BBQ Shiitake Bao Buns', description: 'Vegan kimchi, fermented chili tofu cream, basil, pickled carrot' },
@@ -250,7 +246,6 @@ const MENU_STATIONS: MenuStation[] = [
   },
   {
     name: '4th Quarter Sweets',
-    pillLabel: '4th Quarter Sweets',
     emoji: '🍰',
     items: [
       { title: 'Cookies' },
@@ -260,163 +255,37 @@ const MENU_STATIONS: MenuStation[] = [
       { title: 'Macarons' },
     ],
   },
-  {
-    name: 'Drinks',
-    pillLabel: 'Drinks',
-    emoji: '🍹',
-    items: [
-      { title: 'Cocktails', description: '$$' },
-      { title: 'Sodas', description: 'Included' },
-      { title: 'Rainier', description: '$4' },
-      { title: 'Bartender', description: 'In your room' },
-    ],
-  },
 ];
 
 function MenuTab() {
-  const [activePill, setActivePill] = useState(0);
-  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const pillBarRef = useRef<HTMLDivElement>(null);
-  const activePillRef = useRef<HTMLButtonElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const isScrollingToRef = useRef(false);
-
-  const slugify = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-  // Reset scroll to top on mount
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-    setActivePill(0);
-  }, []);
-
-  // Scroll the active pill into view within the pill bar (without affecting ancestors)
-  useEffect(() => {
-    const pill = activePillRef.current;
-    const bar = pillBarRef.current;
-    if (pill && bar) {
-      const pillLeft = pill.offsetLeft;
-      const pillWidth = pill.offsetWidth;
-      const barWidth = bar.offsetWidth;
-      const targetScroll = pillLeft - barWidth / 2 + pillWidth / 2;
-      bar.scrollTo({ left: targetScroll, behavior: 'smooth' });
-    }
-  }, [activePill]);
-
-  // Observe which section is in view to highlight the matching pill
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (isScrollingToRef.current) return;
-
-      const containerRect = container.getBoundingClientRect();
-      const containerTop = containerRect.top;
-
-      let closestIdx = 0;
-      let closestDistance = Infinity;
-
-      sectionRefs.current.forEach((ref, idx) => {
-        if (!ref) return;
-        const rect = ref.getBoundingClientRect();
-        const distance = Math.abs(rect.top - containerTop - 80);
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          closestIdx = idx;
-        }
-      });
-
-      setActivePill(closestIdx);
-    };
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToStation = useCallback((index: number) => {
-    setActivePill(index);
-    const el = sectionRefs.current[index];
-    if (el && scrollContainerRef.current) {
-      isScrollingToRef.current = true;
-      const containerTop = scrollContainerRef.current.getBoundingClientRect().top;
-      const elTop = el.getBoundingClientRect().top;
-      const offset = elTop - containerTop + scrollContainerRef.current.scrollTop - 8;
-      scrollContainerRef.current.scrollTo({ top: offset, behavior: 'smooth' });
-      setTimeout(() => {
-        isScrollingToRef.current = false;
-      }, 600);
-    }
-  }, []);
-
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Scrollable menu content */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-6 pb-24 space-y-4">
-        <p className="text-muted-foreground text-sm text-center mb-2">
-          Chef-curated action stations refreshed throughout the game
-        </p>
+    <div className="p-6 space-y-4">
+      <p className="text-muted-foreground text-sm text-center mb-2">
+        Chef-curated action stations refreshed throughout the game
+      </p>
 
-        {MENU_STATIONS.map((station, idx) => (
-          <div
-            key={station.name}
-            id={`menu-${slugify(station.name)}`}
-            ref={el => { sectionRefs.current[idx] = el; }}
-            className="bg-card rounded-xl overflow-hidden"
-          >
-            {/* Station header */}
-            <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex items-center gap-3">
-              <span className="text-2xl">{station.emoji}</span>
-              <h3 className="font-[var(--font-heading)] text-base font-bold text-primary">
-                {station.name}
-              </h3>
-            </div>
-            {/* Station items */}
-            <div className="px-5 py-3 divide-y divide-border/50">
-              {station.items.map((item, i) => (
-                <div key={i} className="py-2.5 first:pt-1 last:pb-1">
-                  <div className="font-semibold text-foreground text-sm">{item.title}</div>
-                  {item.description && (
-                    <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</div>
-                  )}
-                </div>
-              ))}
-            </div>
+      {MENU_STATIONS.map(station => (
+        <div key={station.name} className="bg-card rounded-xl overflow-hidden">
+          {/* Station header */}
+          <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex items-center gap-3">
+            <span className="text-2xl">{station.emoji}</span>
+            <h3 className="font-[var(--font-heading)] text-base font-bold text-primary">
+              {station.name}
+            </h3>
           </div>
-        ))}
-      </div>
-
-      {/* Sticky bottom pill navigation */}
-      <div className="sticky bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur-sm border-t border-border/50 px-3 py-2.5">
-        <div
-          ref={pillBarRef}
-          className="flex gap-2 overflow-x-auto no-scrollbar"
-          role="tablist"
-          aria-label="Menu stations"
-        >
-          {MENU_STATIONS.map((station, idx) => {
-            const isActive = activePill === idx;
-            return (
-              <button
-                key={station.name}
-                ref={isActive ? activePillRef : undefined}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => scrollToStation(idx)}
-                className={cn(
-                  'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 whitespace-nowrap',
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-card text-muted-foreground hover:text-foreground'
+          {/* Station items */}
+          <div className="px-5 py-3 divide-y divide-border/50">
+            {station.items.map((item, i) => (
+              <div key={i} className="py-2.5 first:pt-1 last:pb-1">
+                <div className="font-semibold text-foreground text-sm">{item.title}</div>
+                {item.description && (
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</div>
                 )}
-              >
-                {station.pillLabel}
-              </button>
-            );
-          })}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
