@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { useUser } from '@/lib/user-context';
+import { ALL_CATEGORIES, dayIdentifierToNumber } from '@/lib/category-data';
 
 interface AdminConsoleProps {
   onBack: () => void;
@@ -27,6 +28,7 @@ interface GameSettingsData {
   scores_locked: boolean;
   live_question_index: number;
   is_paused: boolean;
+  unlocked_categories: string[];
   updated_at: string;
 }
 
@@ -223,6 +225,44 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
       }
     } catch {
       setDayUpdateError('Failed to update day');
+    } finally {
+      setDayControlLoading(false);
+    }
+  };
+
+  // Toggle a specific category's unlock override
+  const toggleCategoryUnlock = async (categoryId: string) => {
+    if (!gameSettings) return;
+    setDayControlLoading(true);
+    setDayUpdateError(null);
+    setDayUpdateSuccess(null);
+    try {
+      const current = gameSettings.unlocked_categories ?? [];
+      const isCurrentlyUnlocked = current.includes(categoryId);
+      const updated = isCurrentlyUnlocked
+        ? current.filter((id: string) => id !== categoryId)
+        : [...current, categoryId];
+
+      const res = await fetch('/api/admin/game', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-username': user?.username || '',
+        },
+        body: JSON.stringify({ unlocked_categories: updated }),
+      });
+      const data = await res.json();
+      if (data.game_settings) {
+        setGameSettings(data.game_settings);
+        const cat = ALL_CATEGORIES.find(c => c.id === categoryId);
+        const action = isCurrentlyUnlocked ? 'Locked' : 'Unlocked';
+        setDayUpdateSuccess(`${action}: ${cat?.title || categoryId}`);
+        setTimeout(() => setDayUpdateSuccess(null), 3000);
+      } else if (data.error) {
+        setDayUpdateError(data.error);
+      }
+    } catch {
+      setDayUpdateError('Failed to toggle category unlock');
     } finally {
       setDayControlLoading(false);
     }
@@ -669,6 +709,109 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
                 </Button>
               </div>
             </div>
+
+            {/* Category Unlock Overrides */}
+            {gameSettings && (
+              <div className="bg-card rounded-xl p-4">
+                <h3 className="font-bold text-foreground mb-1">Category Unlock Overrides</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Unlock individual categories regardless of the current day. Only locked categories are shown.
+                </p>
+                <div className="space-y-2">
+                  {(() => {
+                    const currentDayNum = dayIdentifierToNumber(gameSettings.current_day);
+                    const lockedCategories = ALL_CATEGORIES.filter(
+                      cat => cat.unlockDay > currentDayNum
+                    );
+
+                    if (lockedCategories.length === 0) {
+                      return (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          All categories are already unlocked by the current day.
+                        </div>
+                      );
+                    }
+
+                    return lockedCategories.map(cat => {
+                      const isOverridden = (gameSettings.unlocked_categories ?? []).includes(cat.id);
+                      const daysAway = cat.unlockDay - currentDayNum;
+
+                      return (
+                        <div
+                          key={cat.id}
+                          className={cn(
+                            'flex items-center justify-between p-3 rounded-lg transition-colors',
+                            isOverridden
+                              ? 'bg-green-500/10 border border-green-500/30'
+                              : 'bg-muted'
+                          )}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-lg flex-shrink-0">{cat.emoji}</span>
+                            <div className="min-w-0">
+                              <div className={cn(
+                                'font-medium text-sm truncate',
+                                isOverridden ? 'text-green-500' : 'text-foreground'
+                              )}>
+                                {cat.title}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Day {cat.unlockDay} &middot; {cat.questionCount} questions &middot; {daysAway} day{daysAway !== 1 ? 's' : ''} away
+                              </div>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={isOverridden}
+                            onCheckedChange={() => toggleCategoryUnlock(cat.id)}
+                            disabled={dayControlLoading}
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+                {(gameSettings.unlocked_categories ?? []).length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {(gameSettings.unlocked_categories ?? []).length} category override{(gameSettings.unlocked_categories ?? []).length !== 1 ? 's' : ''} active
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          setDayControlLoading(true);
+                          try {
+                            const res = await fetch('/api/admin/game', {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'x-username': user?.username || '',
+                              },
+                              body: JSON.stringify({ unlocked_categories: [] }),
+                            });
+                            const data = await res.json();
+                            if (data.game_settings) {
+                              setGameSettings(data.game_settings);
+                              setDayUpdateSuccess('All overrides cleared');
+                              setTimeout(() => setDayUpdateSuccess(null), 3000);
+                            }
+                          } catch {
+                            setDayUpdateError('Failed to clear overrides');
+                          } finally {
+                            setDayControlLoading(false);
+                          }
+                        }}
+                        disabled={dayControlLoading}
+                        className="bg-transparent border-border text-muted-foreground hover:bg-muted text-xs h-7"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Current Settings Info */}
             {gameSettings && (

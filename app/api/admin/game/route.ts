@@ -14,6 +14,7 @@ let demoGameSettings: GameSettings = {
   current_day: 'day_minus_4',
   live_question_index: 0,
   is_paused: false,
+  unlocked_categories: [],
   updated_at: new Date().toISOString()
 }
 
@@ -67,7 +68,7 @@ export async function PATCH(request: NextRequest) {
     if (authError) return authError
 
     const body = await request.json()
-    const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration } = body
+    const { current_mode, current_day, live_question_index, is_paused, scores_locked, questions_per_day, timer_duration, unlocked_categories } = body
 
     if (isDemoMode()) {
       // Update demo settings
@@ -78,6 +79,7 @@ export async function PATCH(request: NextRequest) {
       if (scores_locked !== undefined) demoGameSettings.scores_locked = scores_locked
       if (questions_per_day !== undefined) demoGameSettings.questions_per_day = questions_per_day
       if (timer_duration !== undefined) demoGameSettings.timer_duration = timer_duration
+      if (unlocked_categories !== undefined) demoGameSettings.unlocked_categories = unlocked_categories
       demoGameSettings.updated_at = new Date().toISOString()
 
       return NextResponse.json({ game_settings: demoGameSettings })
@@ -103,6 +105,7 @@ export async function PATCH(request: NextRequest) {
     if (scores_locked !== undefined) updates.scores_locked = scores_locked
     if (questions_per_day !== undefined) updates.questions_per_day = questions_per_day
     if (timer_duration !== undefined) updates.timer_duration = timer_duration
+    if (unlocked_categories !== undefined) updates.unlocked_categories = unlocked_categories
 
     const { data: gameSettings, error } = await supabase
       .from('game_settings')

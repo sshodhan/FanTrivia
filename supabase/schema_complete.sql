@@ -187,6 +187,7 @@ CREATE TABLE game_settings (
   current_day TEXT DEFAULT 'day_minus_4',
   live_question_index INTEGER DEFAULT 0,
   is_paused BOOLEAN DEFAULT false,
+  unlocked_categories JSONB DEFAULT '[]'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

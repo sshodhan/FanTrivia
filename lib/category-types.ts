@@ -41,6 +41,7 @@ export interface DailyCategoriesScreenProps {
   currentDay: number;
   completedCategories: CategoryProgress[];
   streak: number;
+  unlockedCategories?: string[];
   onStartCategory: (id: string) => void;
   onViewResults: (id: string) => void;
   onRetakeCategory?: (id: string) => Promise<void>;
