@@ -186,6 +186,15 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
   const handleSelectAnswer = async (index: number) => {
     if (showResult || selectedAnswer !== null || isSubmitting) return;
 
+    if (!user?.username) {
+      logClientError(
+        'Cannot submit answer: user not loaded',
+        'TriviaGame Missing User',
+        { question_id: currentQuestion?.id, has_user: !!user }
+      );
+      return;
+    }
+
     setSelectedAnswer(index);
     setIsSubmitting(true);
 
@@ -209,7 +218,7 @@ export function TriviaGame({ categoryId, dbCategory, onComplete, onExit }: Trivi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: user?.username || 'anonymous',
+          username: user.username,
           question_id: currentQuestion.id,
           selected_answer: answerLetter,
           time_taken_ms: timeTakenMs,
