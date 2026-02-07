@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calculatePoints, type AnswerOption, type AnswerResult } from '@/lib/database.types'
 import { logServer, logTrivia, logServerError } from '@/lib/error-tracking/server-logger'
+import { sampleQuestions } from '@/lib/mock-data'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -13,14 +14,12 @@ function getSupabase() {
   return createClient(supabaseUrl, supabaseServiceKey)
 }
 
-// Demo mode correct answers
-const DEMO_ANSWERS: Record<string, AnswerOption> = {
-  'demo-1': 'b', // 2013
-  'demo-2': 'c', // Malcolm Smith
-  'demo-3': 'a', // 43-8
-  'demo-4': 'c', // Denver Broncos
-  'demo-5': 'b', // Legion of Boom
-}
+// Build demo answers dynamically from the full sampleQuestions list so that
+// all demo-1 through demo-N IDs are covered (the old hard-coded map only had
+// demo-1..demo-5, causing "Question not found" for demo-6+).
+const DEMO_ANSWERS: Record<string, AnswerOption> = Object.fromEntries(
+  sampleQuestions.map(q => [q.id, q.correct_answer])
+)
 
 // In-memory streak tracking for demo mode
 const demoStreaks = new Map<string, number>()

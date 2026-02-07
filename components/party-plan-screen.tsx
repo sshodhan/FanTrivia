@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { PartyInfoToggle } from '@/components/party-info-toggle';
 
 type PartyTab = 'welcome' | 'menu' | 'info';
 
@@ -22,7 +23,10 @@ export function PartyPlanScreen({ onBack, onViewScoreboard }: PartyPlanScreenPro
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="p-6 pb-3 text-center">
+      <header className="p-6 pb-3 text-center relative">
+        <div className="absolute left-3 top-5">
+          <PartyInfoToggle isActive={true} onToggle={onBack} />
+        </div>
         <div className="text-4xl mb-1">🏈</div>
         <h1 className="font-[var(--font-heading)] text-2xl font-bold text-primary tracking-tight">
           GAME DAY PARTY
