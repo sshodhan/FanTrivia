@@ -430,13 +430,35 @@ Categories are identified via a **static application-level mapping** between cli
 | `memorable-moments` | `Memorable Moments` | Heritage |
 | `stadium-and-12s` | `Stadium & 12s` | Heritage |
 | `seahawks-legends-heritage` | `Seahawks Legends` | Heritage |
-| `hall-of-fame` | `Hall of Fame` | Heritage |
+| `hall-of-fame` | `Seahawks Hall of Fame` | Heritage |
 | `franchise-firsts` | `Franchise Firsts` | Heritage |
 | `2025-season-stats` | `2025 Season Stats` | 2025 Season |
 | `2025-seahawks-stars` | `2025 Seahawks Stars` | 2025 Season |
 | `2025-comparison-qbs` | `2025 Comparison QBs` | 2025 Season |
-| `2025-defense` | `2025 Defense` | 2025 Season |
+| `2025-defense` | `2025 Comparison Defense` | 2025 Season |
 | `super-bowl-connections` | `Super Bowl Connections` | Daily (Finale) |
+
+### Question Counts (Verified Against DB)
+
+| DB Category | Questions | Source |
+|---|---|---|
+| `Super Bowl XLVIII` | 10 | `schema_complete.sql` |
+| `Legion of Boom` | 6 | `schema_complete.sql` |
+| `Russell Wilson Era` | 6 | `schema_complete.sql` |
+| `Seahawks Legends` | 6 | `schema_complete.sql` |
+| `Players & Numbers` | 6 | `schema_complete.sql` |
+| `Seahawks History` | 6 | `schema_complete.sql` |
+| `Memorable Moments` | 6 | `schema_complete.sql` |
+| `Stadium & 12s` | 5 | `schema_complete.sql` |
+| `2025 Season Stats` | 8 | `seed_2025_data.sql` |
+| `2025 Seahawks Stars` | 6 | `seed_2025_data.sql` |
+| `Seahawks Hall of Fame` | 6 | `seed_2025_data.sql` |
+| `Super Bowl Connections` | 6 | `seed_2025_data.sql` |
+| `2025 Comparison QBs` | 6 | `seed_2025_data.sql` |
+| `2025 Comparison Defense` | 8 | `seed_2025_data.sql` |
+| `Franchise Firsts` | 6 | `seed-franchise-firsts.sql` |
+
+**Total: 15 categories, 97 questions**
 
 ### Shared DB Categories
 
