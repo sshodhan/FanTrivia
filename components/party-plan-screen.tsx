@@ -423,27 +423,24 @@ function InfoTab() {
     <div className="p-6 space-y-5">
       {/* Party Kick Off card */}
       <div className="bg-card rounded-xl p-5 border border-primary/30">
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4 mb-3">
           <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-2xl">🎉</span>
           </div>
-          <div>
-            <h3 className="font-[var(--font-heading)] text-lg font-bold text-primary">
-              Party Kick Off
-            </h3>
-            <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Start Time:</span> 1:30 PM PST, Feb 8th
-              </li>
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Reservation:</span> Naomi Akiko
-              </li>
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Party Floor:</span> 75th &mdash; Top floor
-              </li>
-            </ul>
-          </div>
+          <h3 className="font-[var(--font-heading)] text-lg font-bold text-primary">
+            Party Kick Off
+          </h3>
         </div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm pl-1">
+          <dt className="text-foreground font-semibold whitespace-nowrap">Doors-Open:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">2:00 PM, Feb-8th</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Kickoff:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">3:30 PM</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Reservation:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">Naomi Akiko</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Party Floor:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">75th &mdash; Top floor</dd>
+        </dl>
       </div>
 
       {/* Venue card */}
