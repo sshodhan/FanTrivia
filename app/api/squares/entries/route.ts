@@ -111,7 +111,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'entry_id, game_id, and username are required' }, { status: 400 });
     }
 
-    // Verify the requester is the game creator
+    // Verify game exists and is open
     const { data: game } = await supabase
       .from('squares_games')
       .select('created_by, status')
@@ -122,12 +122,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 });
     }
 
-    if (game.created_by !== username) {
-      return NextResponse.json({ error: 'Only the game creator can remove entries' }, { status: 403 });
-    }
-
     if (game.status !== 'open') {
       return NextResponse.json({ error: 'Cannot remove entries after the board is locked' }, { status: 400 });
+    }
+
+    // Verify requester is either the game creator or the square owner
+    const { data: entry } = await supabase
+      .from('squares_entries')
+      .select('player_name')
+      .eq('id', entry_id)
+      .single();
+
+    if (!entry) {
+      return NextResponse.json({ error: 'Entry not found' }, { status: 404 });
+    }
+
+    const isCreator = game.created_by === username;
+    const isOwner = entry.player_name === username;
+
+    if (!isCreator && !isOwner) {
+      return NextResponse.json({ error: 'Only the game creator or square owner can remove entries' }, { status: 403 });
     }
 
     const { error } = await supabase

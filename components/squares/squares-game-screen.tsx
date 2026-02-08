@@ -233,10 +233,17 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
 
   const handleRemoveEntry = useCallback(async (entry: SquaresEntry) => {
     if (!game || !user?.username) return;
-    if (game.created_by !== user.username) return;
 
-    const confirmed = window.confirm(`Remove ${entry.player_name}'s square at (${entry.row_index}, ${entry.col_index})?`);
-    if (!confirmed) return;
+    const isOwner = entry.player_name === user.username;
+    const isAdmin = game.created_by === user.username;
+
+    // Only the admin or the square owner can remove it
+    if (!isAdmin && !isOwner) return;
+
+    const message = isOwner
+      ? `Remove your square at row ${entry.row_index}, col ${entry.col_index}?`
+      : `Remove ${entry.player_name}'s square at row ${entry.row_index}, col ${entry.col_index}?`;
+    if (!window.confirm(message)) return;
 
     try {
       const response = await fetch('/api/squares/entries', {
@@ -520,6 +527,7 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           currentUser={user?.username}
           selectedSquares={selectedSquares}
           onSquareClick={handleSquareClick}
+          onClaimedSquareClick={game.status === 'open' ? handleRemoveEntry : undefined}
           onSquareLongPress={isCreator && game.status === 'open' ? handleRemoveEntry : undefined}
         />
 

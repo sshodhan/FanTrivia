@@ -14,6 +14,7 @@ interface SquaresGridProps {
   currentUser?: string;
   selectedSquares: Set<string>;
   onSquareClick: (row: number, col: number) => void;
+  onClaimedSquareClick?: (entry: SquaresEntry) => void;
   onSquareLongPress?: (entry: SquaresEntry) => void;
 }
 
@@ -24,6 +25,7 @@ export function SquaresGrid({
   currentUser,
   selectedSquares,
   onSquareClick,
+  onClaimedSquareClick,
   onSquareLongPress,
 }: SquaresGridProps) {
   const gridSize = game.grid_size || 10;
@@ -67,9 +69,14 @@ export function SquaresGrid({
   const handleClick = useCallback((row: number, col: number) => {
     if (game.status !== 'open') return;
     const key = `${row}-${col}`;
-    if (entryMap.has(key)) return;
+    const entry = entryMap.get(key);
+    if (entry) {
+      // Tapping a claimed square triggers the manage flow
+      onClaimedSquareClick?.(entry);
+      return;
+    }
     onSquareClick(row, col);
-  }, [game.status, entryMap, onSquareClick]);
+  }, [game.status, entryMap, onSquareClick, onClaimedSquareClick]);
 
   const showNumbers = hasNumbers && (allRevealed || !justLocked);
 
