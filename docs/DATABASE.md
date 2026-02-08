@@ -193,6 +193,69 @@ Seahawks roster for player cards feature.
 
 ---
 
+### squares_games
+Super Bowl Squares party game boards.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `name` | TEXT | Game name (e.g., "Super Bowl LIX Party") |
+| `team_a_name` | TEXT | Row team name (default: "Seahawks") |
+| `team_b_name` | TEXT | Column team name (default: "Patriots") |
+| `grid_size` | INTEGER | Grid dimension (default: 10) |
+| `status` | TEXT | 'open', 'locked', 'in_progress', 'completed' |
+| `row_numbers` | INT[] | Shuffled 0-9 assigned to rows (null until locked) |
+| `col_numbers` | INT[] | Shuffled 0-9 assigned to columns (null until locked) |
+| `q1_score_a` - `q4_score_a` | INTEGER | Team A scores per quarter |
+| `q1_score_b` - `q4_score_b` | INTEGER | Team B scores per quarter |
+| `created_by` | TEXT | Username of game creator |
+| `entry_fee` | DECIMAL | Optional display-only entry fee |
+| `share_code` | TEXT (UNIQUE) | 6-character code for joining |
+| `created_at` | TIMESTAMP | Creation time |
+| `updated_at` | TIMESTAMP | Auto-updated on changes |
+
+**Game lifecycle:** `open` -> `locked` -> `in_progress` -> `completed`
+
+**Trigger:** `updated_at` auto-updates on any row change.
+
+---
+
+### squares_entries
+Individual square claims on a game board.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `game_id` | UUID | FK to squares_games |
+| `row_index` | INTEGER | Row position (0-9) |
+| `col_index` | INTEGER | Column position (0-9) |
+| `player_name` | TEXT | Name displayed on the square |
+| `player_user_id` | TEXT | Optional link to app user_id |
+| `claimed_at` | TIMESTAMP | When the square was claimed |
+
+**Unique constraint:** `(game_id, row_index, col_index)` - one claim per square
+
+---
+
+### squares_winners
+Winners determined at the end of each quarter.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key |
+| `game_id` | UUID | FK to squares_games |
+| `quarter` | INTEGER | Quarter number (1-4) |
+| `entry_id` | UUID | FK to squares_entries (winning square) |
+| `winning_row_digit` | INTEGER | Last digit of Team A score |
+| `winning_col_digit` | INTEGER | Last digit of Team B score |
+| `created_at` | TIMESTAMP | When winner was determined |
+
+**Unique constraint:** `(game_id, quarter)` - one winner per quarter
+
+**Winner logic:** Take last digit of each team's score, find the row/col that maps to those digits, that square's owner wins.
+
+---
+
 ### admin_action_logs
 Audit trail of admin actions.
 
@@ -315,7 +378,20 @@ Stores user-uploaded party photos.
 │photo_likes  │                  │daily_trivia_sets  │
 └─────────────┘                  │game_day_rounds    │
                                  └───────────────────┘
+
+┌─────────────────┐
+│ squares_games   │
+└────────┬────────┘
+         │
+    ┌────┴─────┐
+    │          │
+    ▼          ▼
+┌─────────────────┐  ┌─────────────────┐
+│squares_entries  │──>│squares_winners  │
+└─────────────────┘  └─────────────────┘
 ```
+
+**Note:** The squares tables are standalone — they do not reference the `users` table. The `created_by` and `player_name` fields store usernames as plain text for flexibility (guests can play without accounts).
 
 ---
 
@@ -339,6 +415,10 @@ Stores user-uploaded party photos.
 | seahawks_players | idx_players_active | is_active |
 | seahawks_players | idx_players_position | position |
 | admin_action_logs | idx_logs_performed_at | performed_at DESC |
+| squares_games | idx_squares_games_share_code | share_code |
+| squares_games | idx_squares_games_created_by | created_by |
+| squares_entries | idx_squares_entries_game_id | game_id |
+| squares_winners | idx_squares_winners_game_id | game_id |
 
 ---
 
@@ -349,6 +429,19 @@ The full schema is in `supabase/schema.sql`. For incremental changes:
 1. Create migration file: `supabase/migrations/YYYYMMDD_description.sql`
 2. Test locally with Supabase CLI
 3. Apply to production via SQL Editor
+
+**Applied migrations:**
+
+| File | Description |
+|------|-------------|
+| `20260204_add_user_id_and_admin.sql` | User ID column and admin flag |
+| `20260205_add_image_validated.sql` | Player image validation |
+| `20260205_update_patriots_roster.sql` | Patriots roster seed data |
+| `20260207_add_category_to_daily_answers.sql` | Category tracking on answers |
+| `20260207_add_unlocked_categories.sql` | Category unlock state |
+| `20260208_add_squares_game.sql` | Super Bowl Squares tables (3 tables, indexes, trigger) |
+
+**Verification:** Hit `GET /api/squares/health` to confirm squares tables are set up.
 
 ---
 

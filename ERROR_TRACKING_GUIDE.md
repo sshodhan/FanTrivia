@@ -853,6 +853,137 @@ vercel logs --follow | grep "profile_sync"
 
 ---
 
+## Super Bowl Squares Logging
+
+The Super Bowl Squares feature uses both server-side and client-side logging across all API routes and UI components.
+
+### Server-Side Logging (API Routes)
+
+| File | Logger | Events |
+|------|--------|--------|
+| `app/api/squares/route.ts` | `logServer`, `logServerError` | `game_created`, `game_creation_failed`, `fetch_games_by_creator_failed`, `fetch_active_games_failed` |
+| `app/api/squares/entries/route.ts` | `logServer`, `logServerError` | `squares_claimed`, `squares_already_claimed` (warn), `claim_squares_failed`, `entry_removed` |
+| `app/api/squares/lock/route.ts` | `logServer`, `logServerError` | `board_locked`, `lock_board_failed` |
+| `app/api/squares/scores/route.ts` | `logServer`, `logServerError` | `scores_entered`, `winner_determined`, `no_winner_for_quarter`, `update_scores_failed`, `winner_upsert_failed` |
+| `app/api/squares/join/route.ts` | `logServer` | `game_joined`, `join_game_not_found` (warn) |
+
+### Client-Side Logging (Components)
+
+| File | Logger | What's Tracked |
+|------|--------|----------------|
+| `components/squares/squares-game-screen.tsx` | `logClientDebug`, `logClientError` | Game joined via code, squares claimed, join/claim failures |
+| `components/squares/create-game-form.tsx` | `logClientDebug`, `logClientError` | Game created, creation failure |
+| `components/squares/admin-controls.tsx` | `logClientDebug`, `logClientError` | Board locked, scores submitted (with winner name), lock/score failures |
+
+### Error Types
+
+| Error Type | Level | When | Example |
+|------------|-------|------|---------|
+| `Squares Soft Error` | error | API returns non-200 (game not created, claim conflict, lock/score failed) | `"Game creation failed: Name is required"` |
+| `Squares Network Error` | error | `fetch()` throws during any squares API call | Network/CORS error |
+
+### Debug Events (force: true)
+
+| Component | Event | Data |
+|-----------|-------|------|
+| `CreateGameForm` | `Game created` | `gameId, gameName, teamA, teamB, username` |
+| `SquaresGame` | `Game joined via code` | `gameId, shareCode, gameName` |
+| `SquaresGame` | `Squares claimed` | `gameId, playerName, squareCount` |
+| `AdminControls` | `Board locked` | `gameId, gameName, claimed, username` |
+| `AdminControls` | `Scores submitted` | `gameId, quarter, scoreA, scoreB, winner, username` |
+
+### Server-Side Event Details
+
+| Event | Level | Component | Data Captured |
+|-------|-------|-----------|---------------|
+| `game_created` | info | `squares-api` | gameId, name, createdBy, shareCode, teamA, teamB |
+| `squares_claimed` | info | `squares-entries` | gameId, playerName, squareCount, playerUserId |
+| `squares_already_claimed` | warn | `squares-entries` | gameId, playerName, squareCount |
+| `entry_removed` | info | `squares-entries` | entryId, gameId, removedBy |
+| `board_locked` | info | `squares-lock` | gameId, lockedBy, rowNumbers, colNumbers |
+| `scores_entered` | info | `squares-scores` | gameId, quarter, score_a, score_b, enteredBy, newStatus |
+| `winner_determined` | info | `squares-scores` | gameId, quarter, winnerName, rowDigit, colDigit, winningRow, winningCol |
+| `no_winner_for_quarter` | info | `squares-scores` | gameId, quarter, rowDigit, colDigit, reason (square_unclaimed) |
+| `game_joined` | info | `squares-join` | gameId, shareCode, gameName, entryCount |
+| `join_game_not_found` | warn | `squares-join` | shareCode |
+
+### Searching Vercel Logs for Squares
+
+```bash
+# All squares server events
+vercel logs --follow | grep "squares"
+
+# Game creation events
+vercel logs --follow | grep "game_created"
+
+# Winner determination
+vercel logs --follow | grep "winner_determined"
+
+# Lock events
+vercel logs --follow | grep "board_locked"
+
+# Score events
+vercel logs --follow | grep "scores_entered"
+
+# Soft errors (client-side)
+vercel logs --follow | grep "Squares Soft Error"
+
+# Network errors
+vercel logs --follow | grep "Squares Network Error"
+```
+
+### Example: Game Created Log Output
+
+**Server-side (development):**
+```
+=======================================================
+ℹ️ [SQUARES-API] GAME_CREATED
+=======================================================
+Timestamp: 2026-02-08T12:34:56.789Z
+-------------------------------------------------------
+Data:
+{
+  "gameId": "abc-123",
+  "name": "Super Bowl LIX Party",
+  "createdBy": "player_1234",
+  "shareCode": "X7K9M2",
+  "teamA": "Seahawks",
+  "teamB": "Patriots"
+}
+=======================================================
+```
+
+**Client-side (via logClientDebug, visible in Vercel Runtime Logs):**
+```
+ℹ️ [CLIENT][CreateGameForm] Game created
+   └─ Data: { "gameId": "abc-123", "gameName": "Super Bowl LIX Party", "teamA": "Seahawks", "teamB": "Patriots", "username": "player_1234" }
+   └─ Time: 2026-02-08T12:34:57.123Z
+```
+
+### Example: Winner Determined Log Output
+
+**Server-side (development):**
+```
+=======================================================
+ℹ️ [SQUARES-SCORES] WINNER_DETERMINED
+=======================================================
+Timestamp: 2026-02-08T19:45:00.000Z
+-------------------------------------------------------
+Data:
+{
+  "gameId": "abc-123",
+  "quarter": 1,
+  "winnerName": "LegionOfBoom",
+  "rowDigit": 4,
+  "colDigit": 7,
+  "winningRow": 3,
+  "winningCol": 8
+}
+=======================================================
+```
+
+---
+
 ## Future Enhancements
 
 - [ ] Add error grouping/deduplication

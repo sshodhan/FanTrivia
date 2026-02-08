@@ -307,6 +307,92 @@ export interface AdminActionLog {
 }
 
 // ============================================
+// SQUARES GAME TYPES
+// ============================================
+export type SquaresGameStatus = 'open' | 'locked' | 'in_progress' | 'completed';
+
+export interface SquaresGame {
+  id: string;
+  name: string;
+  team_a_name: string;
+  team_b_name: string;
+  grid_size: number;
+  status: SquaresGameStatus;
+  row_numbers: number[] | null;
+  col_numbers: number[] | null;
+  q1_score_a: number | null;
+  q1_score_b: number | null;
+  q2_score_a: number | null;
+  q2_score_b: number | null;
+  q3_score_a: number | null;
+  q3_score_b: number | null;
+  q4_score_a: number | null;
+  q4_score_b: number | null;
+  created_by: string;
+  entry_fee: number | null;
+  share_code: string | null;
+  max_squares_per_player: number | null;
+  require_login: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SquaresGameInsert {
+  name: string;
+  team_a_name?: string;
+  team_b_name?: string;
+  created_by: string;
+  entry_fee?: number | null;
+  max_squares_per_player?: number | null;
+  require_login?: boolean;
+}
+
+export interface SquaresEntry {
+  id: string;
+  game_id: string;
+  row_index: number;
+  col_index: number;
+  player_name: string;
+  player_user_id: string | null;
+  player_emoji: string | null;
+  player_color: string | null;
+  claimed_at: string;
+}
+
+export interface SquaresEntryInsert {
+  game_id: string;
+  row_index: number;
+  col_index: number;
+  player_name: string;
+  player_user_id?: string | null;
+  player_emoji?: string | null;
+  player_color?: string | null;
+}
+
+export type SquaresAuditAction =
+  | 'claim' | 'reassign' | 'remove' | 'free_square' | 'bulk_fill'
+  | 'score_entry' | 'score_undo' | 'number_shuffle' | 'number_reshuffle' | 'lock_board';
+
+export interface SquaresAuditLog {
+  id: string;
+  game_id: string;
+  action: SquaresAuditAction;
+  details: Record<string, unknown>;
+  performed_by: string;
+  created_at: string;
+}
+
+export interface SquaresWinner {
+  id: string;
+  game_id: string;
+  quarter: number;
+  entry_id: string;
+  winning_row_digit: number;
+  winning_col_digit: number;
+  created_at: string;
+}
+
+// ============================================
 // API RESPONSE TYPES
 // ============================================
 export interface ApiResponse<T> {
