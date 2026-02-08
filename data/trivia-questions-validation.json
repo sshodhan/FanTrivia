@@ -1,0 +1,1570 @@
+{
+  "generated": "2026-02-07",
+  "total_categories": 16,
+  "total_questions": 115,
+  "note": "4 duplicate Franchise Firsts questions removed from DB total of 119",
+  "categories": [
+    {
+      "category": "Super Bowl XLVIII",
+      "tab": "Daily",
+      "question_count": 10,
+      "total_points": 1000,
+      "questions": [
+        {
+          "id": "36328d43-a74d-4dc0-a0e0-cbbc156103e8",
+          "difficulty": "easy",
+          "question": "What year did the Seattle Seahawks win their first Super Bowl?",
+          "options": {
+            "a": "2012",
+            "b": "2013",
+            "c": "2014",
+            "d": "2015"
+          },
+          "correct_answer": "b",
+          "correct_text": "2013"
+        },
+        {
+          "id": "c5b7918a-f1b0-4412-8849-764558eb8e57",
+          "difficulty": "easy",
+          "question": "Which team did the Seahawks defeat in Super Bowl XLVIII?",
+          "options": {
+            "a": "New England Patriots",
+            "b": "San Francisco 49ers",
+            "c": "Denver Broncos",
+            "d": "Green Bay Packers"
+          },
+          "correct_answer": "c",
+          "correct_text": "Denver Broncos"
+        },
+        {
+          "id": "9e3b9ed3-594f-45e1-9f4b-410124c39b4f",
+          "difficulty": "easy",
+          "question": "Who was named MVP of Super Bowl XLVIII?",
+          "options": {
+            "a": "Russell Wilson",
+            "b": "Marshawn Lynch",
+            "c": "Malcolm Smith",
+            "d": "Richard Sherman"
+          },
+          "correct_answer": "c",
+          "correct_text": "Malcolm Smith"
+        },
+        {
+          "id": "65aef537-4d57-4afe-9fec-2fd2baf7d7cd",
+          "difficulty": "medium",
+          "question": "What stadium hosted Super Bowl XLVIII?",
+          "options": {
+            "a": "CenturyLink Field",
+            "b": "MetLife Stadium",
+            "c": "Lucas Oil Stadium",
+            "d": "University of Phoenix Stadium"
+          },
+          "correct_answer": "b",
+          "correct_text": "MetLife Stadium"
+        },
+        {
+          "id": "11ed05b1-1958-46ec-8000-e1d422b838a9",
+          "difficulty": "medium",
+          "question": "Who kicked off Super Bowl XLVIII with a safety on the first play?",
+          "options": {
+            "a": "Cliff Avril",
+            "b": "Michael Bennett",
+            "c": "The snap went over Peyton Manning",
+            "d": "Bobby Wagner"
+          },
+          "correct_answer": "c",
+          "correct_text": "The snap went over Peyton Manning"
+        },
+        {
+          "id": "f23f55f3-5e6f-4cf9-a5a3-509b527ade3e",
+          "difficulty": "medium",
+          "question": "What was the final score of Super Bowl XLVIII?",
+          "options": {
+            "a": "43-8",
+            "b": "34-7",
+            "c": "38-10",
+            "d": "41-14"
+          },
+          "correct_answer": "a",
+          "correct_text": "43-8"
+        },
+        {
+          "id": "0fb6b34b-4e5f-498d-a9d4-284123e19545",
+          "difficulty": "medium",
+          "question": "Who returned an interception for a touchdown in Super Bowl XLVIII?",
+          "options": {
+            "a": "Richard Sherman",
+            "b": "Earl Thomas",
+            "c": "Malcolm Smith",
+            "d": "Kam Chancellor"
+          },
+          "correct_answer": "c",
+          "correct_text": "Malcolm Smith"
+        },
+        {
+          "id": "ce65d784-328f-403a-b8c4-2e621cc2c711",
+          "difficulty": "hard",
+          "question": "Who caught the first touchdown pass in Super Bowl XLVIII?",
+          "options": {
+            "a": "Golden Tate",
+            "b": "Doug Baldwin",
+            "c": "Percy Harvin",
+            "d": "Jermaine Kearse"
+          },
+          "correct_answer": "d",
+          "correct_text": "Jermaine Kearse"
+        },
+        {
+          "id": "c47db131-4730-4636-96f2-6e0c900b42c9",
+          "difficulty": "hard",
+          "question": "How many turnovers did the Seahawks force in Super Bowl XLVIII?",
+          "options": {
+            "a": "2",
+            "b": "3",
+            "c": "4",
+            "d": "5"
+          },
+          "correct_answer": "c",
+          "correct_text": "4"
+        },
+        {
+          "id": "e0d9af5f-cb99-4158-82cb-9af05ddf46b6",
+          "difficulty": "hard",
+          "question": "How many seconds into Super Bowl XLVIII did the Seahawks score their first points?",
+          "options": {
+            "a": "8 seconds",
+            "b": "12 seconds",
+            "c": "15 seconds",
+            "d": "20 seconds"
+          },
+          "correct_answer": "b",
+          "correct_text": "12 seconds"
+        }
+      ]
+    },
+    {
+      "category": "Legion of Boom",
+      "tab": "Daily",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "bf78b07f-e8a0-4cbb-9d04-90983242b2e5",
+          "difficulty": "easy",
+          "question": "What was the nickname of the Seahawks legendary defense?",
+          "options": {
+            "a": "Steel Curtain",
+            "b": "Legion of Boom",
+            "c": "Purple People Eaters",
+            "d": "Monsters of the Midway"
+          },
+          "correct_answer": "b",
+          "correct_text": "Legion of Boom"
+        },
+        {
+          "id": "033d28af-7da8-4026-b7d7-645e3e8f65c7",
+          "difficulty": "easy",
+          "question": "What position did Richard Sherman play?",
+          "options": {
+            "a": "Free Safety",
+            "b": "Strong Safety",
+            "c": "Cornerback",
+            "d": "Linebacker"
+          },
+          "correct_answer": "c",
+          "correct_text": "Cornerback"
+        },
+        {
+          "id": "ae5ac0d4-6eb3-48d2-8ca0-ba644d76325e",
+          "difficulty": "easy",
+          "question": "Which three players formed the core of the Legion of Boom secondary?",
+          "options": {
+            "a": "Sherman, Thomas, Chancellor",
+            "b": "Sherman, Thomas, Maxwell",
+            "c": "Chancellor, Browner, Thomas",
+            "d": "Sherman, Chancellor, Lane"
+          },
+          "correct_answer": "a",
+          "correct_text": "Sherman, Thomas, Chancellor"
+        },
+        {
+          "id": "7f44c97c-e3ed-4214-a555-ed63fb82edbc",
+          "difficulty": "medium",
+          "question": "Which Legion of Boom member was known for devastating hits at the line of scrimmage?",
+          "options": {
+            "a": "Earl Thomas",
+            "b": "Richard Sherman",
+            "c": "Kam Chancellor",
+            "d": "Brandon Browner"
+          },
+          "correct_answer": "c",
+          "correct_text": "Kam Chancellor"
+        },
+        {
+          "id": "05d37a5e-61c7-4de2-af87-2d21f7ff428a",
+          "difficulty": "medium",
+          "question": "What jersey number did Earl Thomas wear?",
+          "options": {
+            "a": "25",
+            "b": "29",
+            "c": "31",
+            "d": "33"
+          },
+          "correct_answer": "b",
+          "correct_text": "29"
+        },
+        {
+          "id": "1d67c450-66c5-496b-b889-652eb4428ae0",
+          "difficulty": "hard",
+          "question": "In what year did the Legion of Boom lead the NFL in fewest points allowed?",
+          "options": {
+            "a": "2012",
+            "b": "2013",
+            "c": "2014",
+            "d": "2015"
+          },
+          "correct_answer": "b",
+          "correct_text": "2013"
+        }
+      ]
+    },
+    {
+      "category": "Russell Wilson Era",
+      "tab": "Daily",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "506e3362-3e8f-40b6-afc9-a4be27ed387b",
+          "difficulty": "easy",
+          "question": "What jersey number did Russell Wilson wear with the Seahawks?",
+          "options": {
+            "a": "1",
+            "b": "3",
+            "c": "7",
+            "d": "12"
+          },
+          "correct_answer": "b",
+          "correct_text": "3"
+        },
+        {
+          "id": "2edf0631-bcc7-4466-beca-e40e6be2f3cf",
+          "difficulty": "easy",
+          "question": "What was Russell Wilsons signature phrase?",
+          "options": {
+            "a": "Go Hawks",
+            "b": "Why Not Us",
+            "c": "Beast Mode",
+            "d": "Blue Friday"
+          },
+          "correct_answer": "b",
+          "correct_text": "Why Not Us"
+        },
+        {
+          "id": "c887b870-d2e6-4fc0-a47d-9e8132d9b127",
+          "difficulty": "medium",
+          "question": "Which college did Russell Wilson transfer to before being drafted?",
+          "options": {
+            "a": "NC State",
+            "b": "Wisconsin",
+            "c": "Stanford",
+            "d": "Oregon"
+          },
+          "correct_answer": "b",
+          "correct_text": "Wisconsin"
+        },
+        {
+          "id": "7740f071-d392-49a4-bd77-a928664efeda",
+          "difficulty": "medium",
+          "question": "What round was Russell Wilson drafted in the 2012 NFL Draft?",
+          "options": {
+            "a": "1st round",
+            "b": "2nd round",
+            "c": "3rd round",
+            "d": "4th round"
+          },
+          "correct_answer": "c",
+          "correct_text": "3rd round"
+        },
+        {
+          "id": "d794818b-1da5-4482-a09a-441ca86fdfaa",
+          "difficulty": "medium",
+          "question": "Who did Russell Wilson marry in 2016?",
+          "options": {
+            "a": "Ashton Meem",
+            "b": "Ciara",
+            "c": "Gisele Bundchen",
+            "d": "Carrie Underwood"
+          },
+          "correct_answer": "b",
+          "correct_text": "Ciara"
+        },
+        {
+          "id": "209fe007-9f40-4b45-ab53-7a9ea79ef323",
+          "difficulty": "hard",
+          "question": "How many Pro Bowls did Russell Wilson make as a Seahawk?",
+          "options": {
+            "a": "5",
+            "b": "7",
+            "c": "9",
+            "d": "11"
+          },
+          "correct_answer": "c",
+          "correct_text": "9"
+        }
+      ]
+    },
+    {
+      "category": "Seahawks Legends",
+      "tab": "Daily",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "d4971137-f9d9-4381-9f32-8751db648c01",
+          "difficulty": "easy",
+          "question": "Which Seahawks running back was known as \"Beast Mode\"?",
+          "options": {
+            "a": "Shaun Alexander",
+            "b": "Marshawn Lynch",
+            "c": "Thomas Rawls",
+            "d": "Chris Carson"
+          },
+          "correct_answer": "b",
+          "correct_text": "Marshawn Lynch"
+        },
+        {
+          "id": "b36849f7-48b7-4f69-ac89-1a25afaa44ae",
+          "difficulty": "easy",
+          "question": "Who holds the Seahawks record for most receiving yards in a career?",
+          "options": {
+            "a": "Steve Largent",
+            "b": "Doug Baldwin",
+            "c": "Tyler Lockett",
+            "d": "Brian Blades"
+          },
+          "correct_answer": "a",
+          "correct_text": "Steve Largent"
+        },
+        {
+          "id": "ed27cdd7-39c0-4ad7-9790-d00e61ad155d",
+          "difficulty": "medium",
+          "question": "Who is the Seahawks all-time leading rusher?",
+          "options": {
+            "a": "Marshawn Lynch",
+            "b": "Shaun Alexander",
+            "c": "Chris Warren",
+            "d": "Curt Warner"
+          },
+          "correct_answer": "b",
+          "correct_text": "Shaun Alexander"
+        },
+        {
+          "id": "a211b8bb-94c8-432d-a5fc-0dd77812d4d2",
+          "difficulty": "medium",
+          "question": "Who was the head coach when Seattle went to Super Bowl XL?",
+          "options": {
+            "a": "Pete Carroll",
+            "b": "Mike Holmgren",
+            "c": "Chuck Knox",
+            "d": "Tom Flores"
+          },
+          "correct_answer": "b",
+          "correct_text": "Mike Holmgren"
+        },
+        {
+          "id": "34e8c53e-b6da-4f06-af51-21784581b1bf",
+          "difficulty": "medium",
+          "question": "Which legendary left tackle protected Seahawks QBs for 13 seasons?",
+          "options": {
+            "a": "Walter Jones",
+            "b": "Russell Okung",
+            "c": "Max Unger",
+            "d": "Steve Hutchinson"
+          },
+          "correct_answer": "a",
+          "correct_text": "Walter Jones"
+        },
+        {
+          "id": "7a476da9-23d1-4d64-a6ed-cd28f87db5bb",
+          "difficulty": "medium",
+          "question": "Which Seahawk won NFL MVP in 2005?",
+          "options": {
+            "a": "Matt Hasselbeck",
+            "b": "Shaun Alexander",
+            "c": "Walter Jones",
+            "d": "Steve Largent"
+          },
+          "correct_answer": "b",
+          "correct_text": "Shaun Alexander"
+        }
+      ]
+    },
+    {
+      "category": "Players & Numbers",
+      "tab": "Daily",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "4308b128-7470-42e7-ad92-632db109ad4e",
+          "difficulty": "easy",
+          "question": "What jersey number did Beast Mode Marshawn Lynch wear?",
+          "options": {
+            "a": "20",
+            "b": "22",
+            "c": "24",
+            "d": "28"
+          },
+          "correct_answer": "c",
+          "correct_text": "24"
+        },
+        {
+          "id": "04e98438-7cec-4fe9-bf11-3bb3565f34a6",
+          "difficulty": "easy",
+          "question": "What position did Michael Bennett play?",
+          "options": {
+            "a": "Linebacker",
+            "b": "Defensive End",
+            "c": "Safety",
+            "d": "Cornerback"
+          },
+          "correct_answer": "b",
+          "correct_text": "Defensive End"
+        },
+        {
+          "id": "2aa13055-c91b-43c6-96c3-994c9333cfff",
+          "difficulty": "medium",
+          "question": "What number did wide receiver Steve Largent wear?",
+          "options": {
+            "a": "80",
+            "b": "81",
+            "c": "84",
+            "d": "88"
+          },
+          "correct_answer": "a",
+          "correct_text": "80"
+        },
+        {
+          "id": "b9f7cd96-e132-44f7-b435-173878d54e65",
+          "difficulty": "medium",
+          "question": "Which number did linebacker Bobby Wagner wear?",
+          "options": {
+            "a": "50",
+            "b": "52",
+            "c": "54",
+            "d": "56"
+          },
+          "correct_answer": "c",
+          "correct_text": "54"
+        },
+        {
+          "id": "baf85af9-3aef-4f5d-b936-217b08de871d",
+          "difficulty": "medium",
+          "question": "Which Seahawk wore number 89 and was a key receiver in the Super Bowl era?",
+          "options": {
+            "a": "Golden Tate",
+            "b": "Doug Baldwin",
+            "c": "Jermaine Kearse",
+            "d": "Tyler Lockett"
+          },
+          "correct_answer": "b",
+          "correct_text": "Doug Baldwin"
+        },
+        {
+          "id": "a2de65f3-de94-48b0-8cf1-9d4e9c588109",
+          "difficulty": "hard",
+          "question": "What number did kicker Steven Hauschka wear?",
+          "options": {
+            "a": "2",
+            "b": "4",
+            "c": "6",
+            "d": "8"
+          },
+          "correct_answer": "b",
+          "correct_text": "4"
+        }
+      ]
+    },
+    {
+      "category": "Super Bowl Connections",
+      "tab": "Daily",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "a3a30728-7ebc-48af-85e4-ddd0d5a51526",
+          "difficulty": "easy",
+          "question": "The Seahawks are appearing in Super Bowl LX in 2026. What was the final score of their Super Bowl XLVIII victory?",
+          "options": {
+            "a": "34-7",
+            "b": "43-8",
+            "c": "38-10",
+            "d": "28-24"
+          },
+          "correct_answer": "b",
+          "correct_text": "43-8"
+        },
+        {
+          "id": "db7dc7df-7240-4007-868a-0dd1ce78137b",
+          "difficulty": "easy",
+          "question": "The Seahawks' 2025 opponent in Super Bowl LX is the Patriots. Who won Super Bowl XLIX between these teams?",
+          "options": {
+            "a": "Seahawks (28-24)",
+            "b": "Patriots (28-24)",
+            "c": "Seahawks (24-21)",
+            "d": "Patriots (34-28)"
+          },
+          "correct_answer": "b",
+          "correct_text": "Patriots (28-24)"
+        },
+        {
+          "id": "15c347d0-aa4f-4801-b395-e355937267ad",
+          "difficulty": "medium",
+          "question": "In the 2025 NFC Championship, the Seahawks beat the Rams 31-27. In Super Bowl XLVIII, they beat the Broncos by how many points?",
+          "options": {
+            "a": "21 points",
+            "b": "28 points",
+            "c": "35 points",
+            "d": "42 points"
+          },
+          "correct_answer": "c",
+          "correct_text": "35 points"
+        },
+        {
+          "id": "89b20dda-2210-4bc1-816f-5a004ee834b8",
+          "difficulty": "medium",
+          "question": "The Seahawks' 2025 receiving leader Jaxon Smith-Njigba broke whose single-season receiving record?",
+          "options": {
+            "a": "Steve Largent",
+            "b": "Doug Baldwin",
+            "c": "DK Metcalf",
+            "d": "Tyler Lockett"
+          },
+          "correct_answer": "c",
+          "correct_text": "DK Metcalf"
+        },
+        {
+          "id": "8b5492ea-7d66-4d1d-8e65-258e759818f3",
+          "difficulty": "medium",
+          "question": "What do Malcolm Smith (SB XLVIII) and which 2025 Seahawk have in common - both had standout playoff performances that surprised fans?",
+          "options": {
+            "a": "Sam Darnold",
+            "b": "Kenneth Walker III",
+            "c": "Jaxon Smith-Njigba",
+            "d": "Both B and C"
+          },
+          "correct_answer": "d",
+          "correct_text": "Both B and C"
+        },
+        {
+          "id": "dde250ca-8f17-41f2-9b35-85d1ab09943c",
+          "difficulty": "hard",
+          "question": "Both Sam Darnold (2025) and Russell Wilson (SB XLVIII) posted 14-3 records. Who else had a 14-3 record as starting QB?",
+          "options": {
+            "a": "Peyton Manning",
+            "b": "Aaron Rodgers",
+            "c": "Tom Brady",
+            "d": "Drew Brees"
+          },
+          "correct_answer": "c",
+          "correct_text": "Tom Brady"
+        }
+      ]
+    },
+    {
+      "category": "LOB Secondary",
+      "tab": "LOB Era",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "6e5a63bf-d705-4e11-b95a-a77a441c53d5",
+          "difficulty": "easy",
+          "question": "What did Richard Sherman shout during his famous postgame interview after the 2013 NFC Championship?",
+          "options": {
+            "a": "\"We are the best defense ever\"",
+            "b": "\"Don't you ever talk about me\"",
+            "c": "\"I'm the best corner in the game\"",
+            "d": "\"Legion of Boom, baby\""
+          },
+          "correct_answer": "b",
+          "correct_text": "\"Don't you ever talk about me\""
+        },
+        {
+          "id": "d47ec2df-540c-455f-a81d-e403e1aedcc9",
+          "difficulty": "medium",
+          "question": "What coverage technique was the Legion of Boom secondary famous for using?",
+          "options": {
+            "a": "Cover 2 Zone",
+            "b": "Prevent Defense",
+            "c": "Press-Man Coverage",
+            "d": "Nickel Blitz"
+          },
+          "correct_answer": "c",
+          "correct_text": "Press-Man Coverage"
+        },
+        {
+          "id": "77103d97-5da3-4507-8469-4ae20b01245a",
+          "difficulty": "medium",
+          "question": "Which LOB cornerback stood 6'4\" and was known for jamming receivers at the line?",
+          "options": {
+            "a": "Richard Sherman",
+            "b": "Brandon Browner",
+            "c": "Byron Maxwell",
+            "d": "Walter Thurmond"
+          },
+          "correct_answer": "b",
+          "correct_text": "Brandon Browner"
+        },
+        {
+          "id": "efdcb0c1-cfc8-4b7b-ba7e-b07d568110ee",
+          "difficulty": "hard",
+          "question": "The 2013 Seahawks secondary allowed the fewest passing yards in the NFL. How many passing touchdowns did they allow all season?",
+          "options": {
+            "a": "9",
+            "b": "11",
+            "c": "15",
+            "d": "18"
+          },
+          "correct_answer": "b",
+          "correct_text": "11"
+        },
+        {
+          "id": "b2ddef1f-531f-4248-986b-e51907c49ffe",
+          "difficulty": "hard",
+          "question": "How many interceptions did Richard Sherman have during the 2013 regular season?",
+          "options": {
+            "a": "4",
+            "b": "6",
+            "c": "8",
+            "d": "10"
+          },
+          "correct_answer": "c",
+          "correct_text": "8"
+        },
+        {
+          "id": "60f71a52-d8ac-465b-80f8-f7e6f5e57ed7",
+          "difficulty": "hard",
+          "question": "Which undrafted LOB cornerback started in Super Bowl XLVIII and later signed a big free agent deal with Philadelphia?",
+          "options": {
+            "a": "Walter Thurmond",
+            "b": "DeShawn Shead",
+            "c": "Byron Maxwell",
+            "d": "Marcus Trufant"
+          },
+          "correct_answer": "c",
+          "correct_text": "Byron Maxwell"
+        }
+      ]
+    },
+    {
+      "category": "Seahawks History",
+      "tab": "Heritage",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "d83f6981-2bbc-423d-8b59-3c1a5bb4138c",
+          "difficulty": "easy",
+          "question": "What division are the Seahawks currently in?",
+          "options": {
+            "a": "NFC West",
+            "b": "NFC North",
+            "c": "AFC West",
+            "d": "NFC South"
+          },
+          "correct_answer": "a",
+          "correct_text": "NFC West"
+        },
+        {
+          "id": "379809c5-1c27-4d09-bd09-b9ec375e8982",
+          "difficulty": "medium",
+          "question": "What year were the Seattle Seahawks founded?",
+          "options": {
+            "a": "1974",
+            "b": "1976",
+            "c": "1978",
+            "d": "1980"
+          },
+          "correct_answer": "b",
+          "correct_text": "1976"
+        },
+        {
+          "id": "aa2b6ed0-1d0a-4613-a8c7-2043f07d5f5e",
+          "difficulty": "medium",
+          "question": "Which team did the Seahawks lose to in Super Bowl XL?",
+          "options": {
+            "a": "New England Patriots",
+            "b": "Indianapolis Colts",
+            "c": "Pittsburgh Steelers",
+            "d": "Denver Broncos"
+          },
+          "correct_answer": "c",
+          "correct_text": "Pittsburgh Steelers"
+        },
+        {
+          "id": "60eb74e1-823c-4d49-9399-5927863fe695",
+          "difficulty": "medium",
+          "question": "What are the official team colors of the Seahawks?",
+          "options": {
+            "a": "Blue and Green",
+            "b": "College Navy, Action Green, and Wolf Grey",
+            "c": "Navy Blue and Silver",
+            "d": "Royal Blue and Lime Green"
+          },
+          "correct_answer": "b",
+          "correct_text": "College Navy, Action Green, and Wolf Grey"
+        },
+        {
+          "id": "160349f4-d0ee-4d5c-89e4-502e39d8a525",
+          "difficulty": "medium",
+          "question": "How many times have the Seahawks appeared in the Super Bowl?",
+          "options": {
+            "a": "1",
+            "b": "2",
+            "c": "3",
+            "d": "4"
+          },
+          "correct_answer": "c",
+          "correct_text": "3"
+        },
+        {
+          "id": "59286fa9-58e0-4c58-ac39-40875af0d21a",
+          "difficulty": "hard",
+          "question": "Who was the Seahawks first head coach?",
+          "options": {
+            "a": "Chuck Knox",
+            "b": "Jack Patera",
+            "c": "Tom Flores",
+            "d": "Dennis Erickson"
+          },
+          "correct_answer": "b",
+          "correct_text": "Jack Patera"
+        }
+      ]
+    },
+    {
+      "category": "Memorable Moments",
+      "tab": "Heritage",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "33d76e1b-5d71-4135-9fdf-b3f8458e2c21",
+          "difficulty": "easy",
+          "question": "What was the famous Marshawn Lynch run in the 2010 playoffs called?",
+          "options": {
+            "a": "The Run",
+            "b": "Beast Quake",
+            "c": "Thunder Run",
+            "d": "Lynch Mob"
+          },
+          "correct_answer": "b",
+          "correct_text": "Beast Quake"
+        },
+        {
+          "id": "d20b3af5-4dd8-4b9d-9f15-af8aecbedb39",
+          "difficulty": "medium",
+          "question": "Against which team did the \"Beast Quake\" run occur?",
+          "options": {
+            "a": "Green Bay Packers",
+            "b": "New Orleans Saints",
+            "c": "Dallas Cowboys",
+            "d": "Atlanta Falcons"
+          },
+          "correct_answer": "b",
+          "correct_text": "New Orleans Saints"
+        },
+        {
+          "id": "2763789f-f29c-4692-86da-1adbdd660403",
+          "difficulty": "medium",
+          "question": "Who intercepted the pass at the goal line in Super Bowl XLIX?",
+          "options": {
+            "a": "Darrelle Revis",
+            "b": "Malcolm Butler",
+            "c": "Brandon Browner",
+            "d": "Devin McCourty"
+          },
+          "correct_answer": "b",
+          "correct_text": "Malcolm Butler"
+        },
+        {
+          "id": "9b82ebd0-de0e-47e8-93db-2956fbe8de66",
+          "difficulty": "medium",
+          "question": "What controversial play ended Super Bowl XLIX against the Patriots?",
+          "options": {
+            "a": "Fumble at the goal line",
+            "b": "Interception by Malcolm Butler",
+            "c": "Missed field goal",
+            "d": "Incomplete pass"
+          },
+          "correct_answer": "b",
+          "correct_text": "Interception by Malcolm Butler"
+        },
+        {
+          "id": "b6fc2f3b-22ee-4fee-9036-d998bcc78f2b",
+          "difficulty": "medium",
+          "question": "Which Seahawk had the famous \"tip\" play in the 2013 NFC Championship?",
+          "options": {
+            "a": "Earl Thomas",
+            "b": "Richard Sherman",
+            "c": "Kam Chancellor",
+            "d": "Byron Maxwell"
+          },
+          "correct_answer": "b",
+          "correct_text": "Richard Sherman"
+        },
+        {
+          "id": "6040deab-8097-4099-a677-0d4c74c2cf66",
+          "difficulty": "hard",
+          "question": "Who caught the game-winning touchdown in the 2014 NFC Championship overtime?",
+          "options": {
+            "a": "Doug Baldwin",
+            "b": "Jermaine Kearse",
+            "c": "Golden Tate",
+            "d": "Percy Harvin"
+          },
+          "correct_answer": "b",
+          "correct_text": "Jermaine Kearse"
+        }
+      ]
+    },
+    {
+      "category": "Stadium & 12s",
+      "tab": "Heritage",
+      "question_count": 5,
+      "total_points": 500,
+      "questions": [
+        {
+          "id": "3c29645e-193c-4dba-b2d3-bd45cc82ec68",
+          "difficulty": "easy",
+          "question": "What is the current name of the Seahawks home stadium?",
+          "options": {
+            "a": "CenturyLink Field",
+            "b": "Lumen Field",
+            "c": "Qwest Field",
+            "d": "T-Mobile Park"
+          },
+          "correct_answer": "b",
+          "correct_text": "Lumen Field"
+        },
+        {
+          "id": "edff3286-4f07-41c2-8fc1-5a9f11cfceae",
+          "difficulty": "easy",
+          "question": "The Seahawks retired what jersey number to honor their fans?",
+          "options": {
+            "a": "1",
+            "b": "10",
+            "c": "12",
+            "d": "99"
+          },
+          "correct_answer": "c",
+          "correct_text": "12"
+        },
+        {
+          "id": "65114700-5e21-4b84-b8ff-84cfbee05c39",
+          "difficulty": "easy",
+          "question": "Why is 12 a special number for Seahawks fans?",
+          "options": {
+            "a": "It was Steve Largents number",
+            "b": "It represents the 12th man (fans)",
+            "c": "The team was founded in 1912",
+            "d": "They won 12 games their first season"
+          },
+          "correct_answer": "b",
+          "correct_text": "It represents the 12th man (fans)"
+        },
+        {
+          "id": "b09579df-e849-45ef-8d98-5c1851fc9a0f",
+          "difficulty": "medium",
+          "question": "What year did the Seahawks move into their current stadium?",
+          "options": {
+            "a": "1998",
+            "b": "2000",
+            "c": "2002",
+            "d": "2004"
+          },
+          "correct_answer": "c",
+          "correct_text": "2002"
+        },
+        {
+          "id": "dba223de-d9a8-4e86-bc22-b22a266912fb",
+          "difficulty": "hard",
+          "question": "Seahawks fans once caused a minor earthquake during a game. Who were they playing?",
+          "options": {
+            "a": "San Francisco 49ers",
+            "b": "New Orleans Saints",
+            "c": "Green Bay Packers",
+            "d": "Dallas Cowboys"
+          },
+          "correct_answer": "b",
+          "correct_text": "New Orleans Saints"
+        }
+      ]
+    },
+    {
+      "category": "Seahawks Legends Heritage",
+      "tab": "Heritage",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "e8cf4e64-9624-4431-9c79-35e24f05bf45",
+          "difficulty": "medium",
+          "question": "Who won the 1992 NFL Defensive Player of the Year award as a Seahawk?",
+          "options": {
+            "a": "Kenny Easley",
+            "b": "Jacob Green",
+            "c": "Cortez Kennedy",
+            "d": "Eugene Robinson"
+          },
+          "correct_answer": "c",
+          "correct_text": "Cortez Kennedy"
+        },
+        {
+          "id": "925eac57-72a4-4311-9910-3eff3beea851",
+          "difficulty": "medium",
+          "question": "Which head coach led the Seahawks to their first playoff appearance and three consecutive postseasons in the 1980s?",
+          "options": {
+            "a": "Jack Patera",
+            "b": "Tom Flores",
+            "c": "Chuck Knox",
+            "d": "Dennis Erickson"
+          },
+          "correct_answer": "c",
+          "correct_text": "Chuck Knox"
+        },
+        {
+          "id": "ca89969e-22f5-4331-af6d-1883ba49b119",
+          "difficulty": "medium",
+          "question": "How many consecutive seasons did Steve Largent lead the Seahawks in receiving?",
+          "options": {
+            "a": "8",
+            "b": "10",
+            "c": "12",
+            "d": "14"
+          },
+          "correct_answer": "b",
+          "correct_text": "10"
+        },
+        {
+          "id": "eaf03eee-679e-4f0b-ab2d-8b5e52081117",
+          "difficulty": "hard",
+          "question": "Running back Curt Warner rushed for over 1,400 yards in which rookie season?",
+          "options": {
+            "a": "1981",
+            "b": "1983",
+            "c": "1985",
+            "d": "1987"
+          },
+          "correct_answer": "b",
+          "correct_text": "1983"
+        },
+        {
+          "id": "2403d4b7-0883-4936-8cbd-652f446fdece",
+          "difficulty": "hard",
+          "question": "Safety Kenny Easley won the 1984 NFL Defensive Player of the Year. How many interceptions did he have that season?",
+          "options": {
+            "a": "5",
+            "b": "7",
+            "c": "10",
+            "d": "12"
+          },
+          "correct_answer": "c",
+          "correct_text": "10"
+        },
+        {
+          "id": "c31d2756-47a8-45e8-b72d-0ff91c9813de",
+          "difficulty": "hard",
+          "question": "Which Seahawks legend later served as a US Congressman representing Oklahoma?",
+          "options": {
+            "a": "Walter Jones",
+            "b": "Steve Largent",
+            "c": "Dave Krieg",
+            "d": "Kenny Easley"
+          },
+          "correct_answer": "b",
+          "correct_text": "Steve Largent"
+        }
+      ]
+    },
+    {
+      "category": "Seahawks Hall of Fame",
+      "tab": "Heritage",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "85cc2e35-caa8-4f7f-9ec6-a868aa4da6cd",
+          "difficulty": "easy",
+          "question": "Which Seahawks legend was elected to the Pro Football Hall of Fame on January 28, 1995?",
+          "options": {
+            "a": "Walter Jones",
+            "b": "Cortez Kennedy",
+            "c": "Steve Largent",
+            "d": "Kenny Easley"
+          },
+          "correct_answer": "c",
+          "correct_text": "Steve Largent"
+        },
+        {
+          "id": "85cbbecb-8eb5-4d40-b63e-bb6079f98856",
+          "difficulty": "easy",
+          "question": "What position did Cortez Kennedy play?",
+          "options": {
+            "a": "Linebacker",
+            "b": "Defensive End",
+            "c": "Defensive Tackle",
+            "d": "Safety"
+          },
+          "correct_answer": "c",
+          "correct_text": "Defensive Tackle"
+        },
+        {
+          "id": "7073ef51-a544-4f67-a3e9-13bfa188b292",
+          "difficulty": "medium",
+          "question": "Cortez Kennedy was inducted into the Pro Football Hall of Fame in which class year?",
+          "options": {
+            "a": "2010",
+            "b": "2012",
+            "c": "2014",
+            "d": "2017"
+          },
+          "correct_answer": "b",
+          "correct_text": "2012"
+        },
+        {
+          "id": "0e9158d3-7d3a-4a28-b2c9-75fd060ec4ef",
+          "difficulty": "medium",
+          "question": "Walter Jones was enshrined into the Pro Football Hall of Fame in which year?",
+          "options": {
+            "a": "2012",
+            "b": "2013",
+            "c": "2014",
+            "d": "2017"
+          },
+          "correct_answer": "c",
+          "correct_text": "2014"
+        },
+        {
+          "id": "641d9b13-9b80-492a-bfd3-f035010c263a",
+          "difficulty": "hard",
+          "question": "How many Pro Bowl selections did Steve Largent earn in his career?",
+          "options": {
+            "a": "5",
+            "b": "7",
+            "c": "9",
+            "d": "11"
+          },
+          "correct_answer": "b",
+          "correct_text": "7"
+        },
+        {
+          "id": "3ff15d56-cc55-4b7d-844c-ca71cfcc72bc",
+          "difficulty": "hard",
+          "question": "Kenny Easley was enshrined in the Pro Football Hall of Fame in which year?",
+          "options": {
+            "a": "1995",
+            "b": "2012",
+            "c": "2014",
+            "d": "2017"
+          },
+          "correct_answer": "d",
+          "correct_text": "2017"
+        }
+      ]
+    },
+    {
+      "category": "Franchise Firsts",
+      "tab": "Heritage",
+      "question_count": 6,
+      "total_points": 600,
+      "note": "6 unique questions (4 duplicates exist in DB that should be removed)",
+      "duplicate_ids_to_remove": [
+        "4dfb4f54-5cf1-4081-8a79-0e355f6ab989",
+        "718dbbe7-5214-4999-9326-32790c4949e7",
+        "f845988a-45fb-4079-9942-8fd6d7d6b314",
+        "c59d34bb-f7c7-491c-b593-7e87a84125c6",
+        "1e5d8b97-5380-4aa6-a233-99f8c6534bd7",
+        "dcaa76ae-372e-4e20-8f95-7f5d08fdba5c"
+      ],
+      "questions": [
+        {
+          "id": "ee7fc40a-7046-4204-9067-453cffff2e6f",
+          "difficulty": "medium",
+          "question": "Who threw the first pass in Seahawks franchise history?",
+          "options": {
+            "a": "Dave Krieg",
+            "b": "Jim Zorn",
+            "c": "Warren Moon",
+            "d": "Dan McGwire"
+          },
+          "correct_answer": "b",
+          "correct_text": "Jim Zorn"
+        },
+        {
+          "id": "5cb6547e-d776-4a0f-bd74-72a12910f069",
+          "difficulty": "medium",
+          "question": "Who was the first Seahawks player inducted into the Pro Football Hall of Fame?",
+          "options": {
+            "a": "Steve Largent",
+            "b": "Walter Jones",
+            "c": "Cortez Kennedy",
+            "d": "Kenny Easley"
+          },
+          "correct_answer": "a",
+          "correct_text": "Steve Largent"
+        },
+        {
+          "id": "f892734f-e392-4529-9ab4-fd1cf485c1cf",
+          "difficulty": "hard",
+          "question": "Who scored the first touchdown in Seattle Seahawks history?",
+          "options": {
+            "a": "Steve Largent",
+            "b": "Jim Zorn",
+            "c": "Sherman Smith",
+            "d": "Sam McCullum"
+          },
+          "correct_answer": "d",
+          "correct_text": "Sam McCullum"
+        },
+        {
+          "id": "1cd897e4-1db6-484e-9157-1532256a723c",
+          "difficulty": "hard",
+          "question": "In what year did the Seahawks win their first division title?",
+          "options": {
+            "a": "1988",
+            "b": "1999",
+            "c": "2004",
+            "d": "2010"
+          },
+          "correct_answer": "b",
+          "correct_text": "1999"
+        },
+        {
+          "id": "be33356a-ac42-4dfe-8575-b77431a9bdb7",
+          "difficulty": "hard",
+          "question": "What was the result of the Seahawks first regular season game in 1976?",
+          "options": {
+            "a": "Win vs Tampa Bay",
+            "b": "Loss vs St. Louis Cardinals",
+            "c": "Win vs Atlanta Falcons",
+            "d": "Loss vs Green Bay Packers"
+          },
+          "correct_answer": "b",
+          "correct_text": "Loss vs St. Louis Cardinals"
+        },
+        {
+          "id": "a6fda20d-64c9-4e21-ba22-85c5f9d21d02",
+          "difficulty": "hard",
+          "question": "Who was the Seahawks first ever first-round draft pick in 1976?",
+          "options": {
+            "a": "Steve Niehaus",
+            "b": "Jim Zorn",
+            "c": "Steve Largent",
+            "d": "Sherman Smith"
+          },
+          "correct_answer": "a",
+          "correct_text": "Steve Niehaus"
+        }
+      ]
+    },
+    {
+      "category": "2025 Season Stats",
+      "tab": "2025 Season",
+      "question_count": 8,
+      "total_points": 800,
+      "questions": [
+        {
+          "id": "f58390fe-df33-4677-8564-c77a6da5f23f",
+          "difficulty": "easy",
+          "question": "What jersey number does Sam Darnold wear with the Seahawks?",
+          "options": {
+            "a": "#7",
+            "b": "#12",
+            "c": "#14",
+            "d": "#3"
+          },
+          "correct_answer": "c",
+          "correct_text": "#14"
+        },
+        {
+          "id": "ae32bbf8-c2d1-4abd-986e-4f9e309a5c13",
+          "difficulty": "easy",
+          "question": "Who is the Seahawks head coach in the 2025 season?",
+          "options": {
+            "a": "Pete Carroll",
+            "b": "Mike Vrabel",
+            "c": "Mike Macdonald",
+            "d": "Dan Quinn"
+          },
+          "correct_answer": "c",
+          "correct_text": "Mike Macdonald"
+        },
+        {
+          "id": "2feb64ea-9259-4be4-bd21-57a89c755db3",
+          "difficulty": "easy",
+          "question": "In the 2025 regular season, which QB threw the MOST passing touchdowns?",
+          "options": {
+            "a": "Sam Darnold - 25 (SEA)",
+            "b": "Drake Maye - 31 (NE)",
+            "c": "Matthew Stafford - 46 (LAR)",
+            "d": "All three tied"
+          },
+          "correct_answer": "c",
+          "correct_text": "Matthew Stafford - 46 (LAR)"
+        },
+        {
+          "id": "535dc5c1-5e99-41d5-adcb-828183637a52",
+          "difficulty": "easy",
+          "question": "In the 2025 regular season, which QB had the MOST passing yards: Sam Darnold (Seahawks), Drake Maye (Patriots), or Matthew Stafford (Rams)?",
+          "options": {
+            "a": "Sam Darnold - 4,048 (SEA)",
+            "b": "Drake Maye - 4,394 (NE)",
+            "c": "Matthew Stafford - 4,707 (LAR)",
+            "d": "All three tied"
+          },
+          "correct_answer": "c",
+          "correct_text": "Matthew Stafford - 4,707 (LAR)"
+        },
+        {
+          "id": "900e89fb-76ac-4904-b2e1-00020ca7e683",
+          "difficulty": "medium",
+          "question": "How many interceptions did Sam Darnold throw in the 2025 regular season?",
+          "options": {
+            "a": "8",
+            "b": "10",
+            "c": "14",
+            "d": "17"
+          },
+          "correct_answer": "c",
+          "correct_text": "14"
+        },
+        {
+          "id": "09bd3769-b64d-437c-aaae-3ba1bc310b1d",
+          "difficulty": "medium",
+          "question": "What was the Seahawks' regular season record in 2025?",
+          "options": {
+            "a": "12-5",
+            "b": "14-3",
+            "c": "10-7",
+            "d": "13-4"
+          },
+          "correct_answer": "b",
+          "correct_text": "14-3"
+        },
+        {
+          "id": "eff540b3-f7f0-46ed-9827-9a38dea607dd",
+          "difficulty": "medium",
+          "question": "What was Sam Darnold's completion percentage in the 2025 regular season?",
+          "options": {
+            "a": "62.3%",
+            "b": "67.7%",
+            "c": "71.0%",
+            "d": "64.7%"
+          },
+          "correct_answer": "b",
+          "correct_text": "67.7%"
+        },
+        {
+          "id": "ae8f134f-4f1a-4220-9eb3-b5125e3bd678",
+          "difficulty": "hard",
+          "question": "What was Sam Darnold's passer rating in the 2025 regular season?",
+          "options": {
+            "a": "92.4",
+            "b": "99.1",
+            "c": "86.5",
+            "d": "104.6"
+          },
+          "correct_answer": "b",
+          "correct_text": "99.1"
+        }
+      ]
+    },
+    {
+      "category": "2025 Seahawks Stars",
+      "tab": "2025 Season",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "5db146c8-adc5-483a-ae2e-9b1791458352",
+          "difficulty": "easy",
+          "question": "Who did the Seahawks defeat in the 2025 NFC Championship Game?",
+          "options": {
+            "a": "San Francisco 49ers",
+            "b": "Dallas Cowboys",
+            "c": "Los Angeles Rams",
+            "d": "Philadelphia Eagles"
+          },
+          "correct_answer": "c",
+          "correct_text": "Los Angeles Rams"
+        },
+        {
+          "id": "4423f438-95d9-4cae-88cf-519bc1f27a24",
+          "difficulty": "easy",
+          "question": "What jersey number does Jaxon Smith-Njigba wear?",
+          "options": {
+            "a": "#1",
+            "b": "#11",
+            "c": "#13",
+            "d": "#19"
+          },
+          "correct_answer": "b",
+          "correct_text": "#11"
+        },
+        {
+          "id": "9b2d910d-a567-4174-9454-fe6fa1697ab6",
+          "difficulty": "easy",
+          "question": "Who led the NFL in receiving yards in 2025?",
+          "options": {
+            "a": "Puka Nacua (Rams)",
+            "b": "Jaxon Smith-Njigba (Seahawks)",
+            "c": "George Pickens (Cowboys)",
+            "d": "Ja'Marr Chase (Bengals)"
+          },
+          "correct_answer": "b",
+          "correct_text": "Jaxon Smith-Njigba (Seahawks)"
+        },
+        {
+          "id": "fc2d16bd-9ef1-49d2-9cf2-ebb11fafa770",
+          "difficulty": "medium",
+          "question": "How many receiving yards did Jaxon Smith-Njigba have in the 2025 regular season?",
+          "options": {
+            "a": "1,543",
+            "b": "1,650",
+            "c": "1,793",
+            "d": "1,892"
+          },
+          "correct_answer": "c",
+          "correct_text": "1,793"
+        },
+        {
+          "id": "e9e38b29-8768-4ac6-9978-5ea143967013",
+          "difficulty": "medium",
+          "question": "How many rushing yards did Kenneth Walker III have in 2025?",
+          "options": {
+            "a": "876",
+            "b": "952",
+            "c": "1,027",
+            "d": "1,156"
+          },
+          "correct_answer": "c",
+          "correct_text": "1,027"
+        },
+        {
+          "id": "90042ad8-8fee-4c0d-bfb5-09f8f0d7427c",
+          "difficulty": "hard",
+          "question": "How many receptions did Jaxon Smith-Njigba have in 2025?",
+          "options": {
+            "a": "98",
+            "b": "107",
+            "c": "119",
+            "d": "125"
+          },
+          "correct_answer": "c",
+          "correct_text": "119"
+        }
+      ]
+    },
+    {
+      "category": "2025 Comparison QBs",
+      "tab": "2025 Season",
+      "question_count": 6,
+      "total_points": 600,
+      "questions": [
+        {
+          "id": "375b0a8c-40cf-4cf3-bc53-2f0be5659b38",
+          "difficulty": "easy",
+          "question": "Sam Darnold played for which team in 2024 before signing with Seattle?",
+          "options": {
+            "a": "New York Jets",
+            "b": "Carolina Panthers",
+            "c": "San Francisco 49ers",
+            "d": "Minnesota Vikings"
+          },
+          "correct_answer": "d",
+          "correct_text": "Minnesota Vikings"
+        },
+        {
+          "id": "938f1bba-4f49-4685-a0b5-15bf9583f740",
+          "difficulty": "medium",
+          "question": "Which 2025 QB had the BEST passer rating: Darnold (SEA), Maye (NE), or Stafford (LAR)?",
+          "options": {
+            "a": "Sam Darnold - 99.1",
+            "b": "Drake Maye - 113.5",
+            "c": "Matthew Stafford - 102.3",
+            "d": "All within 2 points"
+          },
+          "correct_answer": "b",
+          "correct_text": "Drake Maye - 113.5"
+        },
+        {
+          "id": "39fb68da-04d9-4723-b3b3-5193952b0a9b",
+          "difficulty": "medium",
+          "question": "Which 2025 QB threw the FEWEST interceptions?",
+          "options": {
+            "a": "Sam Darnold - 14 INT",
+            "b": "Drake Maye - 8 INT",
+            "c": "Matthew Stafford - 8 INT",
+            "d": "Both Maye and Stafford tied with 8"
+          },
+          "correct_answer": "d",
+          "correct_text": "Both Maye and Stafford tied with 8"
+        },
+        {
+          "id": "1cc92652-3c77-4c1d-8d65-dd989df3f021",
+          "difficulty": "medium",
+          "question": "Which QB led his team to their first playoff berth since 2021?",
+          "options": {
+            "a": "Sam Darnold (Seahawks)",
+            "b": "Drake Maye (Patriots)",
+            "c": "Matthew Stafford (Rams)",
+            "d": "None - all made playoffs in 2024"
+          },
+          "correct_answer": "b",
+          "correct_text": "Drake Maye (Patriots)"
+        },
+        {
+          "id": "93868ee5-2a4c-4e0e-ae31-554957b33799",
+          "difficulty": "hard",
+          "question": "How many passing TDs did Drake Maye throw in Week 17 vs the Jets - a career high?",
+          "options": {
+            "a": "3",
+            "b": "4",
+            "c": "5",
+            "d": "6"
+          },
+          "correct_answer": "c",
+          "correct_text": "5"
+        },
+        {
+          "id": "be34a813-afb2-4ad9-84ea-9730776a0944",
+          "difficulty": "hard",
+          "question": "Drake Maye set a Patriots franchise record for completion percentage in a single game. What was it?",
+          "options": {
+            "a": "85.7%",
+            "b": "88.5%",
+            "c": "91.3%",
+            "d": "93.2%"
+          },
+          "correct_answer": "c",
+          "correct_text": "91.3%"
+        }
+      ]
+    },
+    {
+      "category": "2025 Comparison Defense",
+      "tab": "2025 Season",
+      "question_count": 8,
+      "total_points": 800,
+      "questions": [
+        {
+          "id": "792a9da5-2452-44c7-aafc-1acee9d3f715",
+          "difficulty": "easy",
+          "question": "What jersey number does Leonard Williams wear?",
+          "options": {
+            "a": "#91",
+            "b": "#95",
+            "c": "#97",
+            "d": "#99"
+          },
+          "correct_answer": "d",
+          "correct_text": "#99"
+        },
+        {
+          "id": "c407eed7-1f5c-466c-87ae-b2a3ed27d32a",
+          "difficulty": "easy",
+          "question": "The Seahawks had the league-leading scoring defense in 2025. Who was their Pro Bowl cornerback?",
+          "options": {
+            "a": "Tariq Woolen",
+            "b": "Devon Witherspoon",
+            "c": "Riq Woolen",
+            "d": "Tre Brown"
+          },
+          "correct_answer": "b",
+          "correct_text": "Devon Witherspoon"
+        },
+        {
+          "id": "77212d24-7a34-40ec-bd43-9e19a4c2633b",
+          "difficulty": "easy",
+          "question": "How many total sacks did Boye Mafe have in the 2025 regular season?",
+          "options": {
+            "a": "4.0",
+            "b": "6.0",
+            "c": "8.0",
+            "d": "10.0"
+          },
+          "correct_answer": "b",
+          "correct_text": "6.0"
+        },
+        {
+          "id": "90dc3a3d-d618-4189-adb4-06af5d868be7",
+          "difficulty": "medium",
+          "question": "Which Seahawks defender was named NFC Defensive Player of the Month for December/January 2025?",
+          "options": {
+            "a": "Boye Mafe",
+            "b": "Devon Witherspoon",
+            "c": "Leonard Williams",
+            "d": "Julian Love"
+          },
+          "correct_answer": "c",
+          "correct_text": "Leonard Williams"
+        },
+        {
+          "id": "f7f2fb60-9f0c-48f1-9c91-4fee605bd1ee",
+          "difficulty": "medium",
+          "question": "Which Seahawks defender led all cornerbacks in total pressures (10) in 2025?",
+          "options": {
+            "a": "Tariq Woolen",
+            "b": "Devon Witherspoon",
+            "c": "Tre Brown",
+            "d": "Michael Jackson"
+          },
+          "correct_answer": "b",
+          "correct_text": "Devon Witherspoon"
+        },
+        {
+          "id": "d4cbd348-43f1-4591-89e9-d8cd0135e013",
+          "difficulty": "medium",
+          "question": "How many sacks did Leonard Williams record in 2025?",
+          "options": {
+            "a": "5.0",
+            "b": "7.0",
+            "c": "9.0",
+            "d": "11.0"
+          },
+          "correct_answer": "b",
+          "correct_text": "7.0"
+        },
+        {
+          "id": "e0f9828f-62ef-44a1-a725-c3898018daa2",
+          "difficulty": "hard",
+          "question": "Which Seahawks safety recorded a sack on Brock Purdy in Week 1 vs the 49ers?",
+          "options": {
+            "a": "Jamal Adams",
+            "b": "Quandre Diggs",
+            "c": "Julian Love",
+            "d": "Rayshawn Jenkins"
+          },
+          "correct_answer": "c",
+          "correct_text": "Julian Love"
+        },
+        {
+          "id": "31b6b37f-8801-46c1-91ee-57b7a78d20ea",
+          "difficulty": "hard",
+          "question": "Devon Witherspoon made consecutive Pro Bowls to start his career. How many Seahawks have done this before him?",
+          "options": {
+            "a": "2",
+            "b": "3",
+            "c": "4",
+            "d": "5"
+          },
+          "correct_answer": "c",
+          "correct_text": "4"
+        }
+      ]
+    }
+  ]
+}
