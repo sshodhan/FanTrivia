@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { PartyInfoToggle } from '@/components/party-info-toggle';
 
@@ -272,34 +272,147 @@ const MENU_STATIONS: MenuStation[] = [
 ];
 
 function MenuTab() {
-  return (
-    <div className="p-6 space-y-4">
-      <p className="text-muted-foreground text-sm text-center mb-2">
-        Chef-curated action stations refreshed throughout the game
-      </p>
+  const [activePill, setActivePill] = useState<string>(MENU_STATIONS[0].name);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const pillsRef = useRef<HTMLDivElement>(null);
+  const pillButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
 
-      {MENU_STATIONS.map(station => (
-        <div key={station.name} className="bg-card rounded-xl overflow-hidden">
-          {/* Station header */}
-          <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex items-center gap-3">
-            <span className="text-2xl">{station.emoji}</span>
-            <h3 className="font-[var(--font-heading)] text-base font-bold text-primary">
-              {station.name}
-            </h3>
-          </div>
-          {/* Station items */}
-          <div className="px-5 py-3 divide-y divide-border/50">
-            {station.items.map((item, i) => (
-              <div key={i} className="py-2.5 first:pt-1 last:pb-1">
-                <div className="font-semibold text-foreground text-sm">{item.title}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</div>
+  const scrollToSection = (stationName: string) => {
+    const section = sectionRefs.current[stationName];
+    if (!section) return;
+
+    isScrollingRef.current = true;
+    setActivePill(stationName);
+
+    // Scroll the pill into view within the horizontal nav
+    const pillButton = pillButtonRefs.current[stationName];
+    if (pillButton && pillsRef.current) {
+      pillButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
+    // Scroll the section into view within the menu content area
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Reset scrolling flag after animation
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 800);
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (isScrollingRef.current) return;
+
+      const pillsHeight = pillsRef.current?.offsetHeight ?? 0;
+      const containerTop = container.getBoundingClientRect().top;
+      const offset = containerTop + pillsHeight + 20;
+
+      let closest: string | null = null;
+      let closestDistance = Infinity;
+
+      for (const station of MENU_STATIONS) {
+        const el = sectionRefs.current[station.name];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const distance = Math.abs(rect.top - offset);
+        if (rect.top <= offset + 100 && distance < closestDistance) {
+          closestDistance = distance;
+          closest = station.name;
+        }
+      }
+
+      if (closest && closest !== activePill) {
+        setActivePill(closest);
+        const pillButton = pillButtonRefs.current[closest];
+        if (pillButton && pillsRef.current) {
+          pillButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [activePill]);
+
+  return (
+    <div ref={scrollContainerRef} className="flex flex-col h-full overflow-y-auto">
+      {/* Sticky pill navigation */}
+      <div
+        ref={pillsRef}
+        className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/50 px-4 py-3"
+      >
+        <nav
+          role="navigation"
+          aria-label="Menu categories"
+          className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {MENU_STATIONS.map(station => {
+            const isActive = activePill === station.name;
+            return (
+              <button
+                key={station.name}
+                ref={el => { pillButtonRefs.current[station.name] = el; }}
+                onClick={() => scrollToSection(station.name)}
+                aria-label={`Jump to ${station.name} section`}
+                className={cn(
+                  'flex items-center gap-1.5 whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 flex-shrink-0',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-[0_0_10px_rgba(105,190,40,0.3)]'
+                    : 'bg-card text-muted-foreground hover:bg-card/80 hover:text-foreground border border-border/50'
                 )}
-              </div>
-            ))}
+              >
+                <span aria-hidden="true">{station.emoji}</span>
+                <span>{station.name}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Description */}
+      <div className="px-6 pt-4">
+        <p className="text-muted-foreground text-sm text-center mb-4">
+          Chef-curated action stations refreshed throughout the game
+        </p>
+      </div>
+
+      {/* Menu sections */}
+      <div className="px-6 pb-6 space-y-4">
+        {MENU_STATIONS.map(station => (
+          <div
+            key={station.name}
+            ref={el => { sectionRefs.current[station.name] = el; }}
+            id={`menu-section-${station.name.toLowerCase().replace(/\s+/g, '-')}`}
+            className="bg-card rounded-xl overflow-hidden scroll-mt-16"
+          >
+            {/* Station header */}
+            <div className="bg-primary/10 border-b border-primary/20 px-5 py-3 flex items-center gap-3">
+              <span className="text-2xl">{station.emoji}</span>
+              <h3 className="font-[var(--font-heading)] text-base font-bold text-primary">
+                {station.name}
+              </h3>
+            </div>
+            {/* Station items */}
+            <div className="px-5 py-3 divide-y divide-border/50">
+              {station.items.map((item, i) => (
+                <div key={i} className="py-2.5 first:pt-1 last:pb-1">
+                  <div className="font-semibold text-foreground text-sm">{item.title}</div>
+                  {item.description && (
+                    <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.description}</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -310,27 +423,24 @@ function InfoTab() {
     <div className="p-6 space-y-5">
       {/* Party Kick Off card */}
       <div className="bg-card rounded-xl p-5 border border-primary/30">
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4 mb-3">
           <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-2xl">🎉</span>
           </div>
-          <div>
-            <h3 className="font-[var(--font-heading)] text-lg font-bold text-primary">
-              Party Kick Off
-            </h3>
-            <ul className="mt-2 space-y-1.5 text-sm text-muted-foreground">
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Start Time:</span> 1:30 PM PST, Feb 8th
-              </li>
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Reservation:</span> Naomi Akiko
-              </li>
-              <li className="flex gap-2">
-                <span className="text-foreground font-medium">Party Floor:</span> 75th &mdash; Top floor
-              </li>
-            </ul>
-          </div>
+          <h3 className="font-[var(--font-heading)] text-lg font-bold text-primary">
+            Party Kick Off
+          </h3>
         </div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm pl-1">
+          <dt className="text-foreground font-semibold whitespace-nowrap">Doors-Open:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">2:00 PM, Feb-8th</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Kickoff:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">3:30 PM</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Reservation:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">Naomi Akiko</dd>
+          <dt className="text-foreground font-semibold whitespace-nowrap">Party Floor:</dt>
+          <dd className="text-muted-foreground whitespace-nowrap">75th &mdash; Top floor</dd>
+        </dl>
       </div>
 
       {/* Venue card */}
