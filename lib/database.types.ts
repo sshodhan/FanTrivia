@@ -371,7 +371,8 @@ export interface SquaresEntryInsert {
 
 export type SquaresAuditAction =
   | 'claim' | 'reassign' | 'remove' | 'free_square' | 'bulk_fill'
-  | 'score_entry' | 'score_undo' | 'number_shuffle' | 'number_reshuffle' | 'lock_board';
+  | 'score_entry' | 'score_undo' | 'number_shuffle' | 'number_reshuffle' | 'lock_board'
+  | 'settings_change';
 
 export interface SquaresAuditLog {
   id: string;
