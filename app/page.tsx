@@ -16,10 +16,11 @@ import { PhotoWall } from '@/components/photo-wall';
 import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { PartyPlanScreen } from '@/components/party-plan-screen';
+import { SquaresGameScreen } from '@/components/squares/squares-game-screen';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings' | 'squares';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface GameResult {
@@ -92,7 +93,7 @@ function AppContent() {
 
   // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
-    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party'];
+    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party', 'squares'];
     setShowNav(!hideNavScreens.includes(currentScreen));
     console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
@@ -245,6 +246,7 @@ function AppContent() {
           onViewPlayers={() => setCurrentScreen('players')}
           onViewPhotos={() => setCurrentScreen('photos')}
           onViewParty={() => setCurrentScreen('party')}
+          onViewSquares={() => setCurrentScreen('squares')}
         />
       )}
 
@@ -299,9 +301,13 @@ function AppContent() {
         <PartyPlanScreen onBack={() => setCurrentScreen('home')} onViewScoreboard={() => setCurrentScreen('scoreboard')} />
       )}
 
+      {currentScreen === 'squares' && (
+        <SquaresGameScreen onBack={() => setCurrentScreen('home')} />
+      )}
+
       {currentScreen === 'settings' && (
-        <SettingsScreen 
-          onBack={() => setCurrentScreen('home')} 
+        <SettingsScreen
+          onBack={() => setCurrentScreen('home')}
           onResetFlow={handleResetFlow}
           isResetting={isResetting}
         />

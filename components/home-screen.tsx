@@ -12,6 +12,7 @@ interface HomeScreenProps {
   onViewPlayers: () => void;
   onViewPhotos: () => void;
   onViewParty: () => void;
+  onViewSquares: () => void;
 }
 
 export function HomeScreen({
@@ -20,6 +21,7 @@ export function HomeScreen({
   onViewPlayers,
   onViewPhotos,
   onViewParty,
+  onViewSquares,
 }: HomeScreenProps) {
   const { user, todayPlayed } = useUser();
 
@@ -142,11 +144,14 @@ export function HomeScreen({
             <div className="text-sm text-muted-foreground">Fan gallery</div>
           </button>
           
-          <div className="bg-primary/10 rounded-xl p-5 text-left border border-primary/30">
-            <div className="text-3xl mb-3">🎮</div>
-            <div className="font-bold text-primary">Game Day</div>
-            <div className="text-sm text-muted-foreground">Coming soon!</div>
-          </div>
+          <button
+            onClick={onViewSquares}
+            className="bg-primary/10 rounded-xl p-5 text-left border border-primary/30 transition-all hover:bg-primary/20 active:scale-[0.98]"
+          >
+            <div className="text-3xl mb-3">🏈</div>
+            <div className="font-bold text-primary">SB Squares</div>
+            <div className="text-sm text-muted-foreground">Party game!</div>
+          </button>
         </div>
       </div>
     </div>
