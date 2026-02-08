@@ -68,7 +68,7 @@ export function HomeScreen({
       )}
 
       {/* Main Action */}
-      <div className="px-6 mb-6">
+      <div className="px-6 mb-4">
         <Button
           onClick={onStartTrivia}
           disabled={todayPlayed}
@@ -91,6 +91,18 @@ export function HomeScreen({
             </div>
           )}
         </Button>
+      </div>
+
+      {/* SB Squares Button */}
+      <div className="px-6 mb-6">
+        <button
+          onClick={onViewSquares}
+          className="w-full h-16 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white font-bold text-lg flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25"
+        >
+          <span className="text-2xl">🏈</span>
+          <span>SB SQUARES</span>
+          <span className="text-sm font-normal opacity-80 ml-1">- Party Game!</span>
+        </button>
       </div>
 
       {/* Quick Stats */}
@@ -142,15 +154,6 @@ export function HomeScreen({
             <div className="text-3xl mb-3">📸</div>
             <div className="font-bold text-foreground">Photo Wall</div>
             <div className="text-sm text-muted-foreground">Fan gallery</div>
-          </button>
-          
-          <button
-            onClick={onViewSquares}
-            className="bg-primary/10 rounded-xl p-5 text-left border border-primary/30 transition-all hover:bg-primary/20 active:scale-[0.98]"
-          >
-            <div className="text-3xl mb-3">🏈</div>
-            <div className="font-bold text-primary">SB Squares</div>
-            <div className="text-sm text-muted-foreground">Party game!</div>
           </button>
         </div>
       </div>
