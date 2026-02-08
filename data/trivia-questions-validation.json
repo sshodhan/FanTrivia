@@ -13,7 +13,7 @@
         {
           "id": "36328d43-a74d-4dc0-a0e0-cbbc156103e8",
           "difficulty": "easy",
-          "question": "What year did the Seattle Seahawks win their first Super Bowl?",
+          "question": "In which NFL season did the Seahawks win their first Super Bowl?",
           "options": {
             "a": "2012",
             "b": "2013",
@@ -21,7 +21,7 @@
             "d": "2015"
           },
           "correct_answer": "b",
-          "correct_text": "2013"
+          "correct_text": "2013 season"
         },
         {
           "id": "c5b7918a-f1b0-4412-8849-764558eb8e57",
@@ -622,13 +622,13 @@
           "difficulty": "hard",
           "question": "The 2013 Seahawks secondary allowed the fewest passing yards in the NFL. How many passing touchdowns did they allow all season?",
           "options": {
-            "a": "9",
-            "b": "11",
-            "c": "15",
-            "d": "18"
+            "a": "11",
+            "b": "14",
+            "c": "16",
+            "d": "20"
           },
-          "correct_answer": "b",
-          "correct_text": "11"
+          "correct_answer": "c",
+          "correct_text": "16"
         },
         {
           "id": "b2ddef1f-531f-4248-986b-e51907c49ffe",
@@ -646,7 +646,7 @@
         {
           "id": "60f71a52-d8ac-465b-80f8-f7e6f5e57ed7",
           "difficulty": "hard",
-          "question": "Which undrafted LOB cornerback started in Super Bowl XLVIII and later signed a big free agent deal with Philadelphia?",
+          "question": "Which sixth-round pick LOB cornerback started in Super Bowl XLVIII and later signed a big free agent deal with Philadelphia?",
           "options": {
             "a": "Walter Thurmond",
             "b": "DeShawn Shead",

@@ -17,13 +17,13 @@ function getSupabase() {
 const DEMO_QUESTIONS: TriviaQuestionPublic[] = [
   {
     id: 'demo-1',
-    question_text: 'What year did the Seattle Seahawks win their first Super Bowl?',
+    question_text: 'In which NFL season did the Seahawks win their first Super Bowl?',
     image_url: null,
     option_a: '2012',
     option_b: '2013',
     option_c: '2014',
     option_d: '2015',
-    hint_text: 'The season was 2013-2014',
+    hint_text: 'The game was played in February 2014, but it was the 2013 season',
     time_limit_seconds: 15,
     points: 100,
     difficulty: 'easy',

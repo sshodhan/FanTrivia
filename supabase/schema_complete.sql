@@ -386,7 +386,7 @@ ON CONFLICT DO NOTHING;
 
 -- Category 1: Super Bowl XLVIII (10 questions)
 INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, option_d, correct_answer, difficulty, category) VALUES
-('What year did the Seattle Seahawks win their first Super Bowl?', '2012', '2013', '2014', '2015', 'b', 'easy', 'Super Bowl XLVIII'),
+('In which NFL season did the Seahawks win their first Super Bowl?', '2012', '2013', '2014', '2015', 'b', 'easy', 'Super Bowl XLVIII'),
 ('Who was named MVP of Super Bowl XLVIII?', 'Russell Wilson', 'Marshawn Lynch', 'Malcolm Smith', 'Richard Sherman', 'c', 'easy', 'Super Bowl XLVIII'),
 ('What was the final score of Super Bowl XLVIII?', '43-8', '34-7', '38-10', '41-14', 'a', 'medium', 'Super Bowl XLVIII'),
 ('Which team did the Seahawks defeat in Super Bowl XLVIII?', 'New England Patriots', 'San Francisco 49ers', 'Denver Broncos', 'Green Bay Packers', 'c', 'easy', 'Super Bowl XLVIII'),

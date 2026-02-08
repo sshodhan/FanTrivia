@@ -46,7 +46,7 @@ INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, optio
   'LOB Secondary'
 ),
 (
-  'Which undrafted LOB cornerback started in Super Bowl XLVIII and later signed a big free agent deal with Philadelphia?',
+  'Which sixth-round pick LOB cornerback started in Super Bowl XLVIII and later signed a big free agent deal with Philadelphia?',
   'Walter Thurmond',
   'DeShawn Shead',
   'Byron Maxwell',
@@ -57,11 +57,11 @@ INSERT INTO trivia_questions (question_text, option_a, option_b, option_c, optio
 ),
 (
   'The 2013 Seahawks secondary allowed the fewest passing yards in the NFL. How many passing touchdowns did they allow all season?',
-  '9',
   '11',
-  '15',
-  '18',
-  'b',
+  '14',
+  '16',
+  '20',
+  'c',
   'hard',
   'LOB Secondary'
 )
