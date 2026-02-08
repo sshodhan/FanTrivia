@@ -97,11 +97,11 @@ export function HomeScreen({
       <div className="px-6 mb-6">
         <button
           onClick={onViewSquares}
-          className="w-full h-16 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-500 to-cyan-500 text-white font-bold text-lg flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-500/25"
+          className="w-full h-16 rounded-xl bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-400 text-gray-900 font-bold text-lg flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-amber-400/40 border-2 border-amber-300"
         >
           <span className="text-2xl">🏈</span>
           <span>SB SQUARES</span>
-          <span className="text-sm font-normal opacity-80 ml-1">- Party Game!</span>
+          <span className="text-sm font-normal opacity-70 ml-1">- Party Game!</span>
         </button>
       </div>
 
