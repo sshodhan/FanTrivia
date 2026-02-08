@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'game_id, player_name, and squares array are required' }, { status: 400 });
     }
 
-    // Verify game exists and is open
+    // Verify game exists and is open (use select('*') for backward compat with pre-migration DB)
     const { data: game, error: gameError } = await supabase
       .from('squares_games')
-      .select('id, status, max_squares_per_player')
+      .select('*')
       .eq('id', game_id)
       .single();
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Game is no longer accepting entries' }, { status: 400 });
     }
 
-    // Enforce max squares per player
+    // Enforce max squares per player (v2 column - may not exist yet)
     if (game.max_squares_per_player) {
       const { count } = await supabase
         .from('squares_entries')
@@ -54,16 +54,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build insert array
-    const entries = squares.map((sq: { row: number; col: number }) => ({
-      game_id,
-      row_index: sq.row,
-      col_index: sq.col,
-      player_name,
-      player_user_id: player_user_id || null,
-      player_emoji: player_emoji || null,
-      player_color: player_color || null,
-    }));
+    // Build insert array (only include v2 columns if provided)
+    const entries = squares.map((sq: { row: number; col: number }) => {
+      const entry: Record<string, unknown> = {
+        game_id,
+        row_index: sq.row,
+        col_index: sq.col,
+        player_name,
+        player_user_id: player_user_id || null,
+      };
+      if (player_emoji) entry.player_emoji = player_emoji;
+      if (player_color) entry.player_color = player_color;
+      return entry;
+    });
 
     const { data: inserted, error: insertError } = await supabase
       .from('squares_entries')

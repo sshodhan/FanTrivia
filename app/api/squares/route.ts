@@ -120,24 +120,32 @@ export async function POST(request: NextRequest) {
 
     const shareCode = generateShareCode();
 
+    const insertData: Record<string, unknown> = {
+      name,
+      team_a_name: team_a_name || 'Seahawks',
+      team_b_name: team_b_name || 'Patriots',
+      created_by,
+      entry_fee: entry_fee || null,
+      share_code: shareCode,
+      status: 'open',
+    };
+
+    // Only include v2 columns if explicitly provided (backward-compatible if migration not yet applied)
+    if (max_squares_per_player != null) {
+      insertData.max_squares_per_player = max_squares_per_player;
+    }
+    if (require_login != null) {
+      insertData.require_login = require_login;
+    }
+
     const { data: game, error } = await supabase
       .from('squares_games')
-      .insert({
-        name,
-        team_a_name: team_a_name || 'Seahawks',
-        team_b_name: team_b_name || 'Patriots',
-        created_by,
-        entry_fee: entry_fee || null,
-        max_squares_per_player: max_squares_per_player || null,
-        require_login: require_login ?? false,
-        share_code: shareCode,
-        status: 'open',
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
-      logServerError('squares-api', 'game_creation_failed', error, { name, created_by })
+      logServerError('squares-api', 'game_creation_failed', error, { name, created_by, supabaseError: { code: error.code, message: error.message, details: error.details } })
       return NextResponse.json({ error: 'Failed to create game' }, { status: 500 });
     }
 
