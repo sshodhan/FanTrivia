@@ -102,20 +102,27 @@ export function ClaimSquareSheet({
               : `${squares.length} squares selected`}
           </p>
 
-          {/* Player name */}
-          <div className="mb-4">
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-              Your Name
-            </label>
-            <Input
-              value={playerName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlayerName(e.target.value)}
-              placeholder="Enter your name"
-              className="bg-input"
-              maxLength={30}
-              autoFocus
-            />
-          </div>
+          {/* Player name - only editable for anonymous users */}
+          {defaultPlayerUserId ? (
+            <div className="mb-4 flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2.5">
+              <span className="text-sm text-muted-foreground">Claiming as</span>
+              <span className="font-bold text-foreground">{defaultPlayerName}</span>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Your Name
+              </label>
+              <Input
+                value={playerName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlayerName(e.target.value)}
+                placeholder="Enter your name"
+                className="bg-input"
+                maxLength={30}
+                autoFocus
+              />
+            </div>
+          )}
 
           {/* Emoji picker */}
           <div className="mb-5">
