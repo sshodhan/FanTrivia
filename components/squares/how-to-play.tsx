@@ -91,6 +91,10 @@ export function HowToPlaySheet({ onClose }: { onClose: () => void }) {
           <div className="mt-4 space-y-2 text-xs text-muted-foreground">
             <div className="flex items-start gap-2">
               <span className="text-primary">+</span>
+              <span>Login or create an account to save your name and track your squares</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-primary">+</span>
               <span>Tap your own squares to unclaim them (while board is open)</span>
             </div>
             <div className="flex items-start gap-2">
