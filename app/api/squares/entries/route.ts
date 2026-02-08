@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger';
 
 // POST /api/squares/entries - Claim a square (or multiple squares)
 export async function POST(request: NextRequest) {
@@ -47,14 +48,23 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       if (insertError.code === '23505') {
+        logServer({ level: 'warn', component: 'squares-entries', event: 'squares_already_claimed', data: { gameId: game_id, playerName: player_name, squareCount: squares.length } })
         return NextResponse.json({ error: 'One or more squares are already claimed' }, { status: 409 });
       }
-      console.error('Error claiming squares:', insertError);
+      logServerError('squares-entries', 'claim_squares_failed', insertError, { gameId: game_id, playerName: player_name })
       return NextResponse.json({ error: 'Failed to claim squares' }, { status: 500 });
     }
 
+    logServer({
+      level: 'info',
+      component: 'squares-entries',
+      event: 'squares_claimed',
+      data: { gameId: game_id, playerName: player_name, squareCount: squares.length, playerUserId: player_user_id || null },
+    })
+
     return NextResponse.json({ entries: inserted }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logServerError('squares-entries', 'claim_squares_error', err)
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }
@@ -99,11 +109,15 @@ export async function DELETE(request: NextRequest) {
       .eq('id', entry_id);
 
     if (error) {
+      logServerError('squares-entries', 'remove_entry_failed', error, { entryId: entry_id, gameId: game_id })
       return NextResponse.json({ error: 'Failed to remove entry' }, { status: 500 });
     }
 
+    logServer({ level: 'info', component: 'squares-entries', event: 'entry_removed', data: { entryId: entry_id, gameId: game_id, removedBy: username } })
+
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    logServerError('squares-entries', 'remove_entry_error', err)
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
+import { logServer } from '@/lib/error-tracking/server-logger';
 
 // GET /api/squares/join?code=XXXXXX - Look up a game by share code
 export async function GET(request: NextRequest) {
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
     .single();
 
   if (error || !game) {
+    logServer({ level: 'warn', component: 'squares-join', event: 'join_game_not_found', data: { shareCode: code.toUpperCase() } })
     return NextResponse.json({ error: 'Game not found. Check the code and try again.' }, { status: 404 });
   }
 
@@ -37,6 +39,8 @@ export async function GET(request: NextRequest) {
     .select('*')
     .eq('game_id', game.id)
     .order('quarter', { ascending: true });
+
+  logServer({ level: 'info', component: 'squares-join', event: 'game_joined', data: { gameId: game.id, shareCode: code.toUpperCase(), gameName: game.name, entryCount: entries?.length || 0 } })
 
   return NextResponse.json({ game, entries: entries || [], winners: winners || [] });
 }

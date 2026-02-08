@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
 import { generateShareCode } from '@/lib/squares-utils';
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger';
 
 // GET /api/squares - List games or get a specific game
 export async function GET(request: NextRequest) {
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      logServerError('squares-api', 'fetch_games_by_creator_failed', error, { createdBy })
       return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
     }
 
@@ -94,6 +96,7 @@ export async function GET(request: NextRequest) {
     .limit(20);
 
   if (error) {
+    logServerError('squares-api', 'fetch_active_games_failed', error)
     return NextResponse.json({ error: 'Failed to fetch games' }, { status: 500 });
   }
 
@@ -132,12 +135,20 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating squares game:', error);
+      logServerError('squares-api', 'game_creation_failed', error, { name, created_by })
       return NextResponse.json({ error: 'Failed to create game' }, { status: 500 });
     }
 
+    logServer({
+      level: 'info',
+      component: 'squares-api',
+      event: 'game_created',
+      data: { gameId: game.id, name, createdBy: created_by, shareCode, teamA: team_a_name || 'Seahawks', teamB: team_b_name || 'Patriots' },
+    })
+
     return NextResponse.json({ game }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logServerError('squares-api', 'game_creation_error', err)
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

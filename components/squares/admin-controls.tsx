@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import type { SquaresGame, SquaresEntry, SquaresWinner } from '@/lib/database.types';
 import { getLatestQuarter, getWinningSquare, countClaimed, isBoardFull } from '@/lib/squares-utils';
 
@@ -45,12 +46,29 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
       const data = await response.json();
 
       if (!response.ok) {
+        logClientError(
+          `Lock board failed: ${data.error || 'Unknown error'}`,
+          'Squares Soft Error',
+          { gameId: game.id, claimed, status: response.status }
+        )
         setError(data.error || 'Failed to lock board');
         return;
       }
 
+      logClientDebug('AdminControls', 'Board locked', {
+        gameId: game.id,
+        gameName: game.name,
+        claimed,
+        username,
+      }, { force: true })
+
       onGameUpdated();
-    } catch {
+    } catch (err) {
+      logClientError(
+        err instanceof Error ? err : new Error('Network error locking board'),
+        'Squares Network Error',
+        { gameId: game.id }
+      )
       setError('Network error. Please try again.');
     } finally {
       setIsLocking(false);
@@ -92,14 +110,33 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
       const data = await response.json();
 
       if (!response.ok) {
+        logClientError(
+          `Score submission failed: ${data.error || 'Unknown error'}`,
+          'Squares Soft Error',
+          { gameId: game.id, quarter: nextQuarter, scoreA: parsedA, scoreB: parsedB, status: response.status }
+        )
         setError(data.error || 'Failed to submit scores');
         return;
       }
 
+      logClientDebug('AdminControls', 'Scores submitted', {
+        gameId: game.id,
+        quarter: nextQuarter,
+        scoreA: parsedA,
+        scoreB: parsedB,
+        winner: data.winner?.player_name || null,
+        username,
+      }, { force: true })
+
       setScoreA('');
       setScoreB('');
       onGameUpdated();
-    } catch {
+    } catch (err) {
+      logClientError(
+        err instanceof Error ? err : new Error('Network error submitting scores'),
+        'Squares Network Error',
+        { gameId: game.id, quarter: nextQuarter }
+      )
       setError('Network error. Please try again.');
     } finally {
       setIsSubmittingScore(false);

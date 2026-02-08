@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase';
+import { logServer, logServerError } from '@/lib/error-tracking/server-logger';
 
 // POST /api/squares/scores - Enter scores for a quarter
 export async function POST(request: NextRequest) {
@@ -59,9 +60,16 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError) {
-      console.error('Error updating scores:', updateError);
+      logServerError('squares-scores', 'update_scores_failed', updateError, { gameId: game_id, quarter, score_a, score_b })
       return NextResponse.json({ error: 'Failed to update scores' }, { status: 500 });
     }
+
+    logServer({
+      level: 'info',
+      component: 'squares-scores',
+      event: 'scores_entered',
+      data: { gameId: game_id, quarter, score_a, score_b, enteredBy: username, newStatus: quarter === 4 ? 'completed' : 'in_progress' },
+    })
 
     // Calculate winning square
     const rowDigit = score_a % 10;
@@ -95,7 +103,22 @@ export async function POST(request: NextRequest) {
 
       if (!winnerError) {
         winner = { ...winnerRecord, player_name: winningEntry.player_name };
+        logServer({
+          level: 'info',
+          component: 'squares-scores',
+          event: 'winner_determined',
+          data: { gameId: game_id, quarter, winnerName: winningEntry.player_name, rowDigit, colDigit, winningRow, winningCol },
+        })
+      } else {
+        logServerError('squares-scores', 'winner_upsert_failed', winnerError, { gameId: game_id, quarter, rowDigit, colDigit })
       }
+    } else {
+      logServer({
+        level: 'info',
+        component: 'squares-scores',
+        event: 'no_winner_for_quarter',
+        data: { gameId: game_id, quarter, rowDigit, colDigit, winningRow, winningCol, reason: 'square_unclaimed' },
+      })
     }
 
     return NextResponse.json({
@@ -103,7 +126,8 @@ export async function POST(request: NextRequest) {
       winner,
       winning_position: { row: winningRow, col: winningCol, rowDigit, colDigit },
     });
-  } catch {
+  } catch (err) {
+    logServerError('squares-scores', 'scores_entry_error', err)
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 }

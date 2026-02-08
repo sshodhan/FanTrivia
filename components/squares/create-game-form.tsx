@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 
 interface CreateGameFormProps {
   username: string;
@@ -45,12 +46,30 @@ export function CreateGameForm({ username, onCreated, onCancel }: CreateGameForm
       const data = await response.json();
 
       if (!response.ok) {
+        logClientError(
+          `Game creation failed: ${data.error || 'Unknown error'}`,
+          'Squares Soft Error',
+          { gameName: name.trim(), username, status: response.status }
+        )
         setError(data.error || 'Failed to create game');
         return;
       }
 
+      logClientDebug('CreateGameForm', 'Game created', {
+        gameId: data.game.id,
+        gameName: name.trim(),
+        teamA: teamA.trim() || 'Seahawks',
+        teamB: teamB.trim() || 'Patriots',
+        username,
+      }, { force: true })
+
       onCreated(data.game.id);
-    } catch {
+    } catch (err) {
+      logClientError(
+        err instanceof Error ? err : new Error('Network error creating game'),
+        'Squares Network Error',
+        { gameName: name.trim(), username }
+      )
       setError('Network error. Please try again.');
     } finally {
       setIsSubmitting(false);

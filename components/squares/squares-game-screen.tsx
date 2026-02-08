@@ -12,6 +12,7 @@ import { ClaimBar } from './claim-bar';
 import { ShareSection } from './share-section';
 import { countClaimed, getWinningSquare, getLatestQuarter } from '@/lib/squares-utils';
 import { fireBigConfetti } from '@/lib/confetti';
+import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import type { SquaresGame, SquaresEntry, SquaresWinner } from '@/lib/database.types';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -92,13 +93,29 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
       const data = await response.json();
 
       if (!response.ok) {
+        logClientError(
+          `Join game failed: ${data.error || 'Game not found'}`,
+          'Squares Soft Error',
+          { shareCode: code, status: response.status }
+        )
         setJoinError(data.error || 'Game not found');
         return;
       }
 
+      logClientDebug('SquaresGame', 'Game joined via code', {
+        gameId: data.game.id,
+        shareCode: code,
+        gameName: data.game.name,
+      }, { force: true })
+
       setActiveGameId(data.game.id);
       setView('game');
-    } catch {
+    } catch (err) {
+      logClientError(
+        err instanceof Error ? err : new Error('Network error joining game'),
+        'Squares Network Error',
+        { shareCode: code }
+      )
       setJoinError('Network error. Please try again.');
     } finally {
       setIsJoining(false);
@@ -145,13 +162,28 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
       });
 
       if (response.ok) {
+        logClientDebug('SquaresGame', 'Squares claimed', {
+          gameId: activeGameId,
+          playerName,
+          squareCount: squares.length,
+        }, { force: true })
         setSelectedSquares(new Set());
         mutateGame();
       } else {
         const data = await response.json();
+        logClientError(
+          `Claim squares failed: ${data.error || 'Unknown error'}`,
+          'Squares Soft Error',
+          { gameId: activeGameId, squareCount: squares.length, status: response.status }
+        )
         alert(data.error || 'Failed to claim squares');
       }
-    } catch {
+    } catch (err) {
+      logClientError(
+        err instanceof Error ? err : new Error('Network error claiming squares'),
+        'Squares Network Error',
+        { gameId: activeGameId, squareCount: squares.length }
+      )
       alert('Network error. Please try again.');
     }
   }, [activeGameId, selectedSquares, user?.user_id, mutateGame]);
