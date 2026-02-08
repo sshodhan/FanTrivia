@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import { useUser } from '@/lib/user-context';
 import { AVATARS } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,33 @@ interface SettingsScreenProps {
   isResetting?: boolean;
 }
 
-type SettingsTab = 'profile' | 'preferences' | 'logs' | 'admin';
+type SettingsTab = 'profile' | 'preferences' | 'trivia-status' | 'logs' | 'admin';
+
+interface TriviaStatusCategory {
+  categoryId: string;
+  title: string;
+  expectedQuestions: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+  totalPoints: number;
+  isCompleted: boolean;
+}
+
+interface TriviaStatusUser {
+  username: string;
+  totalPoints: number;
+  completedCount: number;
+  pendingCount: number;
+  unattemptedCount: number;
+  categories: TriviaStatusCategory[];
+}
+
+interface TriviaStatusResponse {
+  users: TriviaStatusUser[];
+  totalCategories: number;
+}
+
+const triviaStatusFetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface DebugLog {
   id: string;
@@ -40,6 +67,14 @@ export function SettingsScreen({ onBack, onResetFlow, isResetting }: SettingsScr
   const [logsFilter, setLogsFilter] = useState('');
   const [verboseLogging, setVerboseLogging] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+
+  // Trivia status state
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const { data: triviaStatusData, isLoading: triviaStatusLoading } = useSWR<TriviaStatusResponse>(
+    activeTab === 'trivia-status' ? '/api/trivia/all-status' : null,
+    triviaStatusFetcher,
+    { refreshInterval: 30000 }
+  );
 
   // Preferences state
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -148,6 +183,7 @@ export function SettingsScreen({ onBack, onResetFlow, isResetting }: SettingsScr
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
     { id: 'preferences', label: 'Preferences' },
+    { id: 'trivia-status', label: 'Trivia Status' },
     { id: 'logs', label: 'Logs' },
   ];
 
@@ -392,6 +428,117 @@ export function SettingsScreen({ onBack, onResetFlow, isResetting }: SettingsScr
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Trivia Status Tab */}
+        {activeTab === 'trivia-status' && (
+          <div className="space-y-3">
+            {triviaStatusLoading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                Loading trivia status...
+              </div>
+            ) : !triviaStatusData?.users?.length ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No users found</p>
+              </div>
+            ) : (
+              <>
+                <div className="text-sm text-muted-foreground mb-2">
+                  {triviaStatusData.users.length} player{triviaStatusData.users.length !== 1 ? 's' : ''} &middot; {triviaStatusData.totalCategories} categories
+                </div>
+                {triviaStatusData.users.map((u) => {
+                  const isCurrentUser = user && u.username === user.username;
+                  const isExpanded = expandedUser === u.username;
+
+                  return (
+                    <div key={u.username}>
+                      <button
+                        onClick={() => setExpandedUser(isExpanded ? null : u.username)}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
+                          'bg-[#001B33] border border-[#002244]',
+                          'hover:bg-[#002244] hover:border-[#69BE28]',
+                          isCurrentUser && 'border-[#69BE28]'
+                        )}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className={cn(
+                            'font-bold truncate',
+                            isCurrentUser ? 'text-[#69BE28]' : 'text-white'
+                          )}>
+                            {u.username}
+                          </div>
+                          <div className="text-xs text-[#A5ACAF] mt-0.5">
+                            {u.completedCount} done &middot; {u.pendingCount} in progress &middot; {u.unattemptedCount} not started
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-lg font-black text-[#69BE28] leading-none">
+                            {u.totalPoints}
+                          </div>
+                          <div className="text-[10px] font-medium text-[#A5ACAF]">pts</div>
+                        </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={cn(
+                            'text-[#A5ACAF] flex-shrink-0 transition-transform',
+                            isExpanded && 'rotate-180'
+                          )}
+                        >
+                          <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                      </button>
+
+                      {isExpanded && u.categories.length > 0 && (
+                        <div className="mt-1 ml-4 space-y-1">
+                          {u.categories.map((cat) => (
+                            <div
+                              key={cat.categoryId}
+                              className={cn(
+                                'flex items-center justify-between px-3 py-2 rounded-lg text-sm',
+                                cat.isCompleted
+                                  ? 'bg-[#69BE28]/10 border border-[#69BE28]/30'
+                                  : 'bg-yellow-500/10 border border-yellow-500/30'
+                              )}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="flex-shrink-0">
+                                  {cat.isCompleted ? '\u2705' : '\u23F3'}
+                                </span>
+                                <span className="text-foreground truncate">{cat.title}</span>
+                              </div>
+                              <div className="flex items-center gap-3 flex-shrink-0 text-xs">
+                                <span className="text-muted-foreground">
+                                  {cat.correctAnswers}/{cat.expectedQuestions}
+                                </span>
+                                <span className="text-[#69BE28] font-medium">
+                                  {cat.totalPoints} pts
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {isExpanded && u.categories.length === 0 && (
+                        <div className="mt-1 ml-4 px-3 py-2 text-sm text-muted-foreground">
+                          No categories attempted yet
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         )}
 
