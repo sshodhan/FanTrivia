@@ -8,9 +8,11 @@ import { Input } from '@/components/ui/input';
 import { SquaresGrid } from './squares-grid';
 import { CreateGameForm } from './create-game-form';
 import { AdminControls } from './admin-controls';
-import { ClaimBar } from './claim-bar';
 import { ShareSection } from './share-section';
-import { countClaimed, getWinningSquare, getLatestQuarter } from '@/lib/squares-utils';
+import { ClaimSquareSheet } from './claim-square-sheet';
+import { MultiSelectToolbar } from './multi-select-toolbar';
+import { useSquaresRealtime } from '@/hooks/useSquaresRealtime';
+import { countClaimed, countPlayerSquares, getWinningSquare, getWinningPosition, getLatestQuarter, getPlayerColor } from '@/lib/squares-utils';
 import { fireBigConfetti } from '@/lib/confetti';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import type { SquaresGame, SquaresEntry, SquaresWinner } from '@/lib/database.types';
@@ -32,6 +34,8 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
   const [joinError, setJoinError] = useState('');
   const [isJoining, setIsJoining] = useState(false);
   const [selectedSquares, setSelectedSquares] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [showClaimSheet, setShowClaimSheet] = useState(false);
   const prevLatestQuarterRef = useRef(0);
 
   // Fetch user's games for the lobby
@@ -50,6 +54,14 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
   const game: SquaresGame | null = gameData?.game || null;
   const entries: SquaresEntry[] = gameData?.entries || [];
   const winners: SquaresWinner[] = gameData?.winners || [];
+
+  // Realtime polling for faster updates
+  useSquaresRealtime({
+    gameId: activeGameId,
+    enabled: view === 'game',
+    onEntryChange: () => mutateGame(),
+    onGameChange: () => mutateGame(),
+  });
 
   // Auto-join from share code on mount
   useEffect(() => {
@@ -129,18 +141,26 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
 
   const handleSquareClick = useCallback((row: number, col: number) => {
     const key = `${row}-${col}`;
-    setSelectedSquares((prev: Set<string>) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  }, []);
 
-  const handleClaimSquares = useCallback(async (playerName: string) => {
+    if (isMultiSelectMode) {
+      // In multi-select mode, toggle the square
+      setSelectedSquares((prev: Set<string>) => {
+        const next = new Set(prev);
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+        return next;
+      });
+    } else {
+      // Single select mode - select and immediately show claim sheet
+      setSelectedSquares(new Set([key]));
+      setShowClaimSheet(true);
+    }
+  }, [isMultiSelectMode]);
+
+  const handleClaimSquares = useCallback(async (playerName: string, emoji: string) => {
     if (!activeGameId || selectedSquares.size === 0) return;
 
     const squareKeys = Array.from(selectedSquares) as string[];
@@ -158,6 +178,8 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           squares,
           player_name: playerName,
           player_user_id: user?.user_id || null,
+          player_emoji: emoji,
+          player_color: getPlayerColor(playerName),
         }),
       });
 
@@ -165,9 +187,12 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
         logClientDebug('SquaresGame', 'Squares claimed', {
           gameId: activeGameId,
           playerName,
+          emoji,
           squareCount: squares.length,
         }, { force: true })
         setSelectedSquares(new Set());
+        setShowClaimSheet(false);
+        setIsMultiSelectMode(false);
         mutateGame();
       } else {
         const data = await response.json();
@@ -176,15 +201,18 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           'Squares Soft Error',
           { gameId: activeGameId, squareCount: squares.length, status: response.status }
         )
-        alert(data.error || 'Failed to claim squares');
+        throw new Error(data.error || 'Failed to claim squares');
       }
     } catch (err) {
+      if (err instanceof Error && err.message.includes('claim')) {
+        throw err; // Re-throw for the sheet to display
+      }
       logClientError(
         err instanceof Error ? err : new Error('Network error claiming squares'),
         'Squares Network Error',
         { gameId: activeGameId, squareCount: squares.length }
       )
-      alert('Network error. Please try again.');
+      throw new Error('Network error. Please try again.');
     }
   }, [activeGameId, selectedSquares, user?.user_id, mutateGame]);
 
@@ -192,8 +220,56 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
     setSelectedSquares(new Set());
   }, []);
 
+  const handleToggleMultiSelect = useCallback(() => {
+    setIsMultiSelectMode(prev => !prev);
+    setSelectedSquares(new Set());
+  }, []);
+
+  const handleClaimAll = useCallback(() => {
+    if (selectedSquares.size > 0) {
+      setShowClaimSheet(true);
+    }
+  }, [selectedSquares.size]);
+
+  const handleRemoveEntry = useCallback(async (entry: SquaresEntry) => {
+    if (!game || !user?.username) return;
+    if (game.created_by !== user.username) return;
+
+    const confirmed = window.confirm(`Remove ${entry.player_name}'s square at (${entry.row_index}, ${entry.col_index})?`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/squares/entries', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entry_id: entry.id,
+          game_id: game.id,
+          username: user.username,
+        }),
+      });
+
+      if (response.ok) {
+        logClientDebug('SquaresGame', 'Entry removed via long press', {
+          gameId: game.id,
+          entryId: entry.id,
+          playerName: entry.player_name,
+        }, { force: true });
+        mutateGame();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to remove entry');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    }
+  }, [game, user?.username, mutateGame]);
+
   const isCreator = game?.created_by === user?.username;
   const claimed = entries.length;
+  const currentPlayerSquareCount = user?.username
+    ? countPlayerSquares(entries, user.username)
+    : 0;
 
   // Lobby view
   if (view === 'lobby') {
@@ -371,6 +447,8 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           onClick={() => {
             setActiveGameId(null);
             setSelectedSquares(new Set());
+            setIsMultiSelectMode(false);
+            setShowClaimSheet(false);
             setView('lobby');
           }}
           className="text-muted-foreground hover:text-foreground"
@@ -398,6 +476,42 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Winner announcement banner */}
+        {getLatestQuarter(game) > 0 && (() => {
+          const latestQ = getLatestQuarter(game);
+          const result = getWinningSquare(game, latestQ, entries);
+          const position = getWinningPosition(game, latestQ);
+          if (!position) return null;
+
+          const scores = latestQ === 1 ? { a: game.q1_score_a, b: game.q1_score_b }
+            : latestQ === 2 ? { a: game.q2_score_a, b: game.q2_score_b }
+            : latestQ === 3 ? { a: game.q3_score_a, b: game.q3_score_b }
+            : { a: game.q4_score_a, b: game.q4_score_b };
+
+          return (
+            <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-4 text-center squares-winner-burst">
+              <div className="text-2xl mb-1">🏆</div>
+              <p className="font-bold text-yellow-400">
+                Q{latestQ} Winner: {result ? result.entry.player_name : 'Unclaimed Square'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {game.team_a_name} {scores.a} - {game.team_b_name} {scores.b}
+              </p>
+            </div>
+          );
+        })()}
+
+        {/* Multi-select toolbar (only when game is open) */}
+        {game.status === 'open' && (
+          <MultiSelectToolbar
+            isMultiSelectMode={isMultiSelectMode}
+            selectedCount={selectedSquares.size}
+            onToggleMultiSelect={handleToggleMultiSelect}
+            onClaimAll={handleClaimAll}
+            onClearSelection={handleClearSelection}
+          />
+        )}
+
         {/* Grid */}
         <SquaresGrid
           game={game}
@@ -406,6 +520,7 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           currentUser={user?.username}
           selectedSquares={selectedSquares}
           onSquareClick={handleSquareClick}
+          onSquareLongPress={isCreator && game.status === 'open' ? handleRemoveEntry : undefined}
         />
 
         {/* Share Section */}
@@ -431,7 +546,8 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
             <div className="space-y-2">
               {[1, 2, 3, 4].map(q => {
                 const result = getWinningSquare(game, q, entries);
-                if (!result) return null;
+                const position = getWinningPosition(game, q);
+                if (!position) return null;
                 const scores = q === 1 ? { a: game.q1_score_a, b: game.q1_score_b }
                   : q === 2 ? { a: game.q2_score_a, b: game.q2_score_b }
                   : q === 3 ? { a: game.q3_score_a, b: game.q3_score_b }
@@ -442,7 +558,9 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
                     <span className="text-muted-foreground">
                       Q{q}: {game.team_a_name} {scores.a} - {game.team_b_name} {scores.b}
                     </span>
-                    <span className="font-bold text-yellow-400">{result.entry.player_name}</span>
+                    <span className="font-bold text-yellow-400">
+                      {result ? result.entry.player_name : 'Unclaimed'}
+                    </span>
                   </div>
                 );
               })}
@@ -473,13 +591,25 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
         </div>
       </div>
 
-      {/* Claim Bar */}
-      {game.status === 'open' && (
-        <ClaimBar
-          selectedCount={selectedSquares.size}
+      {/* Claim Square Sheet */}
+      {showClaimSheet && selectedSquares.size > 0 && game.status === 'open' && (
+        <ClaimSquareSheet
+          gameId={game.id}
+          squares={Array.from(selectedSquares).map(k => {
+            const [row, col] = k.split('-').map(Number);
+            return { row, col };
+          })}
           defaultPlayerName={user?.username || ''}
+          defaultPlayerUserId={user?.user_id}
+          maxSquaresPerPlayer={game.max_squares_per_player}
+          currentPlayerSquareCount={currentPlayerSquareCount}
           onClaim={handleClaimSquares}
-          onClear={handleClearSelection}
+          onClose={() => {
+            setShowClaimSheet(false);
+            if (!isMultiSelectMode) {
+              setSelectedSquares(new Set());
+            }
+          }}
         />
       )}
     </div>

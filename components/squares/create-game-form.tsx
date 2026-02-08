@@ -17,6 +17,8 @@ export function CreateGameForm({ username, onCreated, onCancel }: CreateGameForm
   const [teamA, setTeamA] = useState('Seahawks');
   const [teamB, setTeamB] = useState('Patriots');
   const [entryFee, setEntryFee] = useState('');
+  const [maxSquares, setMaxSquares] = useState('');
+  const [requireLogin, setRequireLogin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +42,8 @@ export function CreateGameForm({ username, onCreated, onCancel }: CreateGameForm
           team_b_name: teamB.trim() || 'Patriots',
           created_by: username,
           entry_fee: entryFee ? parseFloat(entryFee) : null,
+          max_squares_per_player: maxSquares ? parseInt(maxSquares, 10) : null,
+          require_login: requireLogin,
         }),
       });
 
@@ -140,6 +144,44 @@ export function CreateGameForm({ username, onCreated, onCancel }: CreateGameForm
             min="0"
             step="0.01"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="max-squares" className="text-sm font-medium text-muted-foreground mb-1.5 block">
+            Max Squares Per Player (optional)
+          </Label>
+          <Input
+            id="max-squares"
+            value={maxSquares}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxSquares(e.target.value)}
+            placeholder="No limit"
+            className="bg-input"
+            type="number"
+            min="1"
+            max="100"
+          />
+          <p className="text-xs text-muted-foreground mt-1">Leave blank for unlimited</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={requireLogin}
+            onClick={() => setRequireLogin(!requireLogin)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${
+              requireLogin ? 'bg-primary' : 'bg-muted'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                requireLogin ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+          <Label className="text-sm font-medium text-muted-foreground">
+            Require login to claim squares
+          </Label>
         </div>
 
         {error && (

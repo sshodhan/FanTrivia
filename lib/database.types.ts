@@ -331,6 +331,8 @@ export interface SquaresGame {
   created_by: string;
   entry_fee: number | null;
   share_code: string | null;
+  max_squares_per_player: number | null;
+  require_login: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -341,6 +343,8 @@ export interface SquaresGameInsert {
   team_b_name?: string;
   created_by: string;
   entry_fee?: number | null;
+  max_squares_per_player?: number | null;
+  require_login?: boolean;
 }
 
 export interface SquaresEntry {
@@ -350,6 +354,8 @@ export interface SquaresEntry {
   col_index: number;
   player_name: string;
   player_user_id: string | null;
+  player_emoji: string | null;
+  player_color: string | null;
   claimed_at: string;
 }
 
@@ -359,6 +365,21 @@ export interface SquaresEntryInsert {
   col_index: number;
   player_name: string;
   player_user_id?: string | null;
+  player_emoji?: string | null;
+  player_color?: string | null;
+}
+
+export type SquaresAuditAction =
+  | 'claim' | 'reassign' | 'remove' | 'free_square' | 'bulk_fill'
+  | 'score_entry' | 'score_undo' | 'number_shuffle' | 'number_reshuffle' | 'lock_board';
+
+export interface SquaresAuditLog {
+  id: string;
+  game_id: string;
+  action: SquaresAuditAction;
+  details: Record<string, unknown>;
+  performed_by: string;
+  created_at: string;
 }
 
 export interface SquaresWinner {

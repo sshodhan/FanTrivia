@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, team_a_name, team_b_name, created_by, entry_fee } = body;
+    const { name, team_a_name, team_b_name, created_by, entry_fee, max_squares_per_player, require_login } = body;
 
     if (!name || !created_by) {
       return NextResponse.json({ error: 'Name and created_by are required' }, { status: 400 });
@@ -128,6 +128,8 @@ export async function POST(request: NextRequest) {
         team_b_name: team_b_name || 'Patriots',
         created_by,
         entry_fee: entry_fee || null,
+        max_squares_per_player: max_squares_per_player || null,
+        require_login: require_login ?? false,
         share_code: shareCode,
         status: 'open',
       })

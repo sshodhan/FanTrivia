@@ -1,4 +1,101 @@
-import type { SquaresGame, SquaresEntry } from './database.types';
+import type { SquaresGame, SquaresEntry, SquaresAuditAction } from './database.types';
+
+// ============================================
+// PLAYER COLORS & EMOJIS
+// ============================================
+
+/** Pool of distinguishable player colors for the grid */
+export const PLAYER_COLORS = [
+  '#E74C3C', // red
+  '#3498DB', // blue
+  '#2ECC71', // green
+  '#F39C12', // orange
+  '#9B59B6', // purple
+  '#1ABC9C', // teal
+  '#E91E63', // pink
+  '#FF9800', // amber
+  '#00BCD4', // cyan
+  '#8BC34A', // lime
+  '#FF5722', // deep orange
+  '#607D8B', // blue grey
+  '#CDDC39', // yellow-green
+  '#795548', // brown
+  '#4CAF50', // medium green
+];
+
+/** Pool of player emojis */
+export const PLAYER_EMOJIS = [
+  '🦅', '🏈', '🎉', '🍕', '🍺', '🎯', '⭐', '🔥', '💪', '🎶',
+  '🦁', '🐻', '🎸', '🎮', '🚀',
+];
+
+/**
+ * Get a consistent color for a player name (deterministic hash)
+ */
+export function getPlayerColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return PLAYER_COLORS[Math.abs(hash) % PLAYER_COLORS.length];
+}
+
+/**
+ * Get a consistent emoji for a player name (deterministic hash)
+ */
+export function getPlayerEmoji(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 7) - hash);
+  }
+  return PLAYER_EMOJIS[Math.abs(hash) % PLAYER_EMOJIS.length];
+}
+
+/**
+ * Count how many squares a player has claimed in a game
+ */
+export function countPlayerSquares(entries: SquaresEntry[], playerName: string): number {
+  return entries.filter(e => e.player_name === playerName).length;
+}
+
+/**
+ * Get unique players from entries
+ */
+export function getUniquePlayers(entries: SquaresEntry[]): Array<{ name: string; count: number; emoji: string; color: string }> {
+  const playerMap = new Map<string, number>();
+  for (const entry of entries) {
+    playerMap.set(entry.player_name, (playerMap.get(entry.player_name) || 0) + 1);
+  }
+  return Array.from(playerMap.entries())
+    .map(([name, count]) => ({
+      name,
+      count,
+      emoji: getPlayerEmoji(name),
+      color: getPlayerColor(name),
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Get the winning position for a quarter (even if unclaimed)
+ */
+export function getWinningPosition(
+  game: SquaresGame,
+  quarter: number,
+): { row: number; col: number; rowDigit: number; colDigit: number } | null {
+  if (!game.row_numbers || !game.col_numbers) return null;
+
+  const { scoreA, scoreB } = getQuarterScores(game, quarter);
+  if (scoreA === null || scoreB === null) return null;
+
+  const rowDigit = scoreA % 10;
+  const colDigit = scoreB % 10;
+  const row = game.row_numbers.indexOf(rowDigit);
+  const col = game.col_numbers.indexOf(colDigit);
+
+  if (row === -1 || col === -1) return null;
+  return { row, col, rowDigit, colDigit };
+}
 
 /**
  * Fisher-Yates shuffle to generate random number assignment (0-9)

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { game_id, squares, player_name, player_user_id } = body;
+    const { game_id, squares, player_name, player_user_id, player_emoji, player_color } = body;
 
     if (!game_id || !player_name || !squares || !Array.isArray(squares) || squares.length === 0) {
       return NextResponse.json({ error: 'game_id, player_name, and squares array are required' }, { status: 400 });
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     // Verify game exists and is open
     const { data: game, error: gameError } = await supabase
       .from('squares_games')
-      .select('id, status')
+      .select('id, status, max_squares_per_player')
       .eq('id', game_id)
       .single();
 
@@ -32,6 +32,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Game is no longer accepting entries' }, { status: 400 });
     }
 
+    // Enforce max squares per player
+    if (game.max_squares_per_player) {
+      const { count } = await supabase
+        .from('squares_entries')
+        .select('*', { count: 'exact', head: true })
+        .eq('game_id', game_id)
+        .eq('player_name', player_name);
+
+      const currentCount = count || 0;
+      if (currentCount + squares.length > game.max_squares_per_player) {
+        logServer({
+          level: 'warn',
+          component: 'squares-entries',
+          event: 'max_squares_exceeded',
+          data: { gameId: game_id, playerName: player_name, currentCount, attempting: squares.length, max: game.max_squares_per_player },
+        });
+        return NextResponse.json({
+          error: `Maximum ${game.max_squares_per_player} squares per player. You already have ${currentCount}.`,
+        }, { status: 400 });
+      }
+    }
+
     // Build insert array
     const entries = squares.map((sq: { row: number; col: number }) => ({
       game_id,
@@ -39,6 +61,8 @@ export async function POST(request: NextRequest) {
       col_index: sq.col,
       player_name,
       player_user_id: player_user_id || null,
+      player_emoji: player_emoji || null,
+      player_color: player_color || null,
     }));
 
     const { data: inserted, error: insertError } = await supabase
