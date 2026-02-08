@@ -30,6 +30,8 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
   const [showBulkFill, setShowBulkFill] = useState(false);
   const [bulkFillMode, setBulkFillMode] = useState<'round_robin' | 'house'>('round_robin');
   const [houseName, setHouseName] = useState('House');
+  const [maxSquaresInput, setMaxSquaresInput] = useState(game.max_squares_per_player?.toString() ?? '');
+  const [isSavingMaxSquares, setIsSavingMaxSquares] = useState(false);
 
   const claimed = countClaimed(entries);
   const boardFull = isBoardFull(entries);
@@ -223,6 +225,43 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
     }
   };
 
+  const handleSaveMaxSquares = async () => {
+    setIsSavingMaxSquares(true);
+    setError('');
+
+    const newValue = maxSquaresInput.trim() === '' ? null : parseInt(maxSquaresInput, 10);
+
+    if (newValue !== null && (isNaN(newValue) || newValue < 1 || newValue > 100)) {
+      setError('Max squares must be between 1 and 100, or empty for unlimited');
+      setIsSavingMaxSquares(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/squares/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game_id: game.id, username, max_squares_per_player: newValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        logClientError(`Update max squares failed: ${data.error || 'Unknown error'}`, 'Squares Soft Error', { gameId: game.id, newValue, status: response.status });
+        setError(data.error || 'Failed to update max squares');
+        return;
+      }
+
+      logClientDebug('AdminControls', 'Max squares updated', { gameId: game.id, newValue, username }, { force: true });
+      onGameUpdated();
+    } catch (err) {
+      logClientError(err instanceof Error ? err : new Error('Network error updating max squares'), 'Squares Network Error', { gameId: game.id });
+      setError('Network error. Please try again.');
+    } finally {
+      setIsSavingMaxSquares(false);
+    }
+  };
+
   return (
     <div className="bg-card rounded-xl p-4 space-y-4">
       <h3 className="font-[var(--font-heading)] text-lg font-bold text-foreground flex items-center gap-2">
@@ -329,6 +368,38 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
               )}
             </div>
           )}
+
+          {/* Max Squares Per Player */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              Max Squares Per Player:{' '}
+              <span className="text-foreground font-medium">
+                {game.max_squares_per_player ?? 'Unlimited'}
+              </span>
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="1"
+                max="100"
+                value={maxSquaresInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxSquaresInput(e.target.value)}
+                placeholder="Unlimited"
+                className="bg-input text-sm flex-1"
+              />
+              <Button
+                size="sm"
+                onClick={handleSaveMaxSquares}
+                disabled={isSavingMaxSquares}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {isSavingMaxSquares ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Leave empty for unlimited. Value must be 1-100.
+            </p>
+          </div>
         </div>
       )}
 
