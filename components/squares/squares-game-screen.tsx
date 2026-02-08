@@ -11,6 +11,7 @@ import { AdminControls } from './admin-controls';
 import { ShareSection } from './share-section';
 import { ClaimSquareSheet } from './claim-square-sheet';
 import { MultiSelectToolbar } from './multi-select-toolbar';
+import { HowToPlaySheet, HowToPlayButton } from './how-to-play';
 import { useSquaresRealtime } from '@/hooks/useSquaresRealtime';
 import { countClaimed, countPlayerSquares, getWinningSquare, getWinningPosition, getLatestQuarter, getPlayerColor } from '@/lib/squares-utils';
 import { fireBigConfetti } from '@/lib/confetti';
@@ -36,6 +37,7 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
   const [selectedSquares, setSelectedSquares] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [showClaimSheet, setShowClaimSheet] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   const prevLatestQuarterRef = useRef(0);
 
   // Fetch user's games for the lobby
@@ -470,7 +472,7 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
             {game.team_a_name} vs {game.team_b_name}
           </p>
         </div>
-        <div className="text-right">
+        <div className="flex items-center gap-2">
           <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
             game.status === 'open' ? 'bg-primary/20 text-primary' :
             game.status === 'locked' ? 'bg-yellow-500/20 text-yellow-400' :
@@ -479,6 +481,7 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           }`}>
             {claimed}/100
           </span>
+          <HowToPlayButton onClick={() => setShowHowToPlay(true)} />
         </div>
       </header>
 
@@ -598,6 +601,11 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
           )}
         </div>
       </div>
+
+      {/* How to Play Sheet */}
+      {showHowToPlay && (
+        <HowToPlaySheet onClose={() => setShowHowToPlay(false)} />
+      )}
 
       {/* Claim Square Sheet */}
       {showClaimSheet && selectedSquares.size > 0 && game.status === 'open' && (
