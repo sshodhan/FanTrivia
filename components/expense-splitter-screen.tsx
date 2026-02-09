@@ -46,6 +46,10 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [potCollector, setPotCollector] = useState<string>('');
 
+  // Name mapping: squares player name -> WhatsApp name
+  // Used when someone claimed a square as "Naomi" but their WhatsApp is "Naomi Akiko"
+  const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
+
   // Audit trail - tracks all actions for transparency
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
 
@@ -160,11 +164,11 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
   // Calculate results
   const results = useMemo(() => {
     if (!showResults) return null;
-    const balances = calculateBalances(expenses, squaresSettlements, potCollector || null);
+    const balances = calculateBalances(expenses, squaresSettlements, potCollector || null, nameMap);
     const settlements = minimizeTransactions(balances);
-    const message = generateWhatsAppMessage(settlements, balances, expenses, squaresSettlements, auditLog);
+    const message = generateWhatsAppMessage(settlements, balances, expenses, squaresSettlements, auditLog, nameMap);
     return { balances, settlements, message };
-  }, [showResults, expenses, squaresSettlements, potCollector, auditLog]);
+  }, [showResults, expenses, squaresSettlements, potCollector, auditLog, nameMap]);
 
   // Copy to clipboard
   const handleCopy = useCallback(async () => {
@@ -646,6 +650,84 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
                         ))}
                       </div>
                     </div>
+
+                    {/* Name mapping - shown when squares names don't match WhatsApp names */}
+                    {people.length > 0 && squaresSettlements.length > 0 && (() => {
+                      // Find squares names that aren't in the people list and aren't already mapped
+                      const unmapped = squaresSettlements
+                        .map((s: SquaresSettlement) => s.playerName)
+                        .filter((sqName: string) => !people.includes(sqName) && !nameMap.has(sqName));
+                      const mapped = Array.from(nameMap.entries());
+
+                      if (unmapped.length === 0 && mapped.length === 0) return null;
+
+                      return (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                          <h3 className="text-sm font-semibold text-yellow-400 mb-1">
+                            Link Names
+                          </h3>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            These Squares names don&apos;t match anyone in your People list. Link them to the right WhatsApp name.
+                          </p>
+
+                          {/* Already mapped */}
+                          {mapped.length > 0 && (
+                            <div className="space-y-2 mb-3">
+                              {mapped.map(([sqName, waName]: [string, string]) => (
+                                <div key={sqName} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
+                                  <span className="text-muted-foreground">{sqName}</span>
+                                  <span className="text-xs text-muted-foreground mx-2">=</span>
+                                  <span className="font-medium text-green-400">{waName}</span>
+                                  <button
+                                    onClick={() => {
+                                      setNameMap((prev: Map<string, string>) => {
+                                        const next = new Map(prev);
+                                        next.delete(sqName);
+                                        return next;
+                                      });
+                                    }}
+                                    className="text-muted-foreground hover:text-destructive ml-2"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Unmapped names */}
+                          {unmapped.map((sqName: string) => (
+                            <div key={sqName} className="flex items-center gap-2 mb-2">
+                              <span className="text-sm text-foreground whitespace-nowrap min-w-0 truncate flex-shrink-0">
+                                {sqName}
+                              </span>
+                              <span className="text-xs text-muted-foreground">=</span>
+                              <Select
+                                value=""
+                                onValueChange={(waName: string) => {
+                                  if (!waName) return;
+                                  setNameMap((prev: Map<string, string>) => {
+                                    const next = new Map(prev);
+                                    next.set(sqName, waName);
+                                    return next;
+                                  });
+                                  addAudit('name_mapped', `"${sqName}" (Squares) = "${waName}" (WhatsApp)`);
+                                }}
+                              >
+                                <SelectTrigger className="bg-input flex-1 min-w-0">
+                                  <SelectValue placeholder="WhatsApp name..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {people.map((name: string) => (
+                                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
 
                     {/* Pot collector */}
                     {people.length > 0 && (

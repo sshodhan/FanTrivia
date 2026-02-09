@@ -33,13 +33,22 @@ export interface BalanceSummary {
 /**
  * Calculate how much each person's fair share is for all expenses,
  * factoring in squares entry fees and winnings.
+ *
+ * nameMap: maps Squares player names to WhatsApp names so they
+ * are treated as the same person in the calculation.
  */
 export function calculateBalances(
   expenses: Expense[],
   squaresSettlements: SquaresSettlement[],
   potCollector: string | null, // who collected the squares pot money
+  nameMap?: Map<string, string>, // squaresName -> whatsappName
 ): BalanceSummary[] {
   const balanceMap = new Map<string, { paid: number; share: number }>();
+
+  // Resolve a squares name to its mapped WhatsApp name (or itself)
+  const resolve = (name: string): string => {
+    return nameMap?.get(name) ?? name;
+  };
 
   const getOrCreate = (name: string) => {
     if (!balanceMap.has(name)) {
@@ -71,7 +80,8 @@ export function calculateBalances(
     const totalWinnings = squaresSettlements.reduce((sum, s) => sum + s.winnings, 0);
 
     for (const settlement of squaresSettlements) {
-      const player = getOrCreate(settlement.playerName);
+      const resolvedName = resolve(settlement.playerName);
+      const player = getOrCreate(resolvedName);
       // They owe their entry fees
       player.share += settlement.totalOwed;
       // They receive their winnings
@@ -154,6 +164,7 @@ export function generateWhatsAppMessage(
   expenses: Expense[],
   squaresSettlements: SquaresSettlement[],
   auditLog?: AuditEntry[],
+  nameMap?: Map<string, string>,
 ): string {
   const lines: string[] = [];
 
@@ -181,6 +192,15 @@ export function generateWhatsAppMessage(
       for (const w of winners) {
         lines.push(`- ${w.playerName} won $${w.winnings.toFixed(2)}`);
       }
+    }
+    lines.push('');
+  }
+
+  // Name mappings
+  if (nameMap && nameMap.size > 0) {
+    lines.push('*Name Mappings (Squares -> WhatsApp):*');
+    for (const [sqName, waName] of nameMap) {
+      lines.push(`- ${sqName} = ${waName}`);
     }
     lines.push('');
   }
@@ -220,6 +240,7 @@ export type AuditAction =
   | 'squares_unlinked'
   | 'pot_collector_set'
   | 'names_imported'
+  | 'name_mapped'
   | 'settlement_calculated';
 
 export interface AuditEntry {
@@ -238,6 +259,7 @@ const AUDIT_LABELS: Record<AuditAction, string> = {
   squares_unlinked: 'Unlinked squares game',
   pot_collector_set: 'Set pot collector',
   names_imported: 'Imported names from squares',
+  name_mapped: 'Linked name',
   settlement_calculated: 'Calculated settlement',
 };
 
