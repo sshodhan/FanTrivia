@@ -2,13 +2,14 @@
 -- SEED DAILY TRIVIA SETS
 -- Maps day_identifiers to questions by category
 -- ============================================
--- Run this AFTER schema_complete.sql and seed_2025_data.sql
+-- Run this AFTER schema_complete.sql, seed_2025_data.sql, and seed_super_bowl_lx.sql
 --
 -- Day 1 (day_minus_4): Super Bowl XLVIII (10 questions)
 -- Day 2 (day_minus_3): Legion of Boom (6 questions)
 -- Day 3 (day_minus_2): 2025 Season Stats (8 questions)
 -- Day 4 (day_minus_1): 2025 Comparison QBs (6 questions)
 -- Day 5 (game_day):    2025 Comparison Defense (8 questions)
+-- Day 6 (day_plus_1):  Super Bowl LX 2026 (10 questions)
 -- ============================================
 
 -- Clear existing sets
@@ -63,6 +64,16 @@ SELECT
   true
 FROM trivia_questions
 WHERE category = '2025 Comparison Defense' AND is_active = true;
+
+-- Day 6: Super Bowl LX (2026) - Seahawks 2026 Super Bowl Moments
+INSERT INTO daily_trivia_sets (day_identifier, display_date, question_ids, is_active)
+SELECT
+  'day_plus_1',
+  CURRENT_DATE + INTERVAL '5 days',
+  ARRAY_AGG(id ORDER BY difficulty, created_at),
+  true
+FROM trivia_questions
+WHERE category = 'Super Bowl LX (2026)' AND is_active = true;
 
 -- Verify
 SELECT
