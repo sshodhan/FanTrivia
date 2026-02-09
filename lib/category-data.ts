@@ -12,16 +12,6 @@ export const CATEGORY_TABS: CategoryTab[] = [
 export const ALL_CATEGORIES: Category[] = [
   // ========== DAILY TAB (Day 1-6) ==========
   {
-    id: 'super-bowl-lx-2026',
-    title: 'Seahawks 2026 Super Bowl Moments',
-    emoji: '🏆',
-    questionCount: 10,
-    unlockDay: 6,
-    groupId: 'daily',
-    pillFilters: ['daily'],
-    dbCategory: 'Super Bowl LX (2026)',
-  },
-  {
     id: 'super-bowl-xlviii',
     title: 'Super Bowl XLVIII',
     emoji: '🏆',
@@ -70,6 +60,16 @@ export const ALL_CATEGORIES: Category[] = [
     groupId: 'daily',
     pillFilters: ['daily'],
     dbCategory: 'Players & Numbers',
+  },
+  {
+    id: 'super-bowl-lx-2026',
+    title: 'Seahawks 2026 Super Bowl Moments',
+    emoji: '🏆',
+    questionCount: 10,
+    unlockDay: 6,
+    groupId: 'daily',
+    pillFilters: ['daily'],
+    dbCategory: 'Super Bowl LX (2026)',
   },
 
   // ========== LOB ERA TAB ==========
