@@ -27,9 +27,10 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface ExpenseSplitterScreenProps {
   onBack: () => void;
+  onOpenClaimPage?: (gameId: string) => void;
 }
 
-export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
+export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitterScreenProps) {
   // State for people in the WhatsApp group
   const [people, setPeople] = useState<string[]>([]);
   const [newPersonName, setNewPersonName] = useState('');
@@ -74,6 +75,74 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
 
   const squaresSettlements: SquaresSettlement[] = settlementData?.settlements || [];
   const squaresPlayers: string[] = settlementData?.players || [];
+
+  // Fetch identity claims for the selected game
+  const { data: claimsData, mutate: mutateClaims } = useSWR(
+    selectedGameId ? `/api/squares/settlements/claims?game_id=${selectedGameId}` : null,
+    fetcher
+  );
+  const claims: {
+    id: string;
+    squares_player_name: string;
+    whatsapp_name: string;
+    app_username: string | null;
+    squares_count: number;
+    status: 'pending' | 'approved' | 'rejected';
+  }[] = claimsData?.claims || [];
+
+  // Review a claim (approve/reject)
+  const handleReviewClaim = useCallback(async (claimId: string, status: 'approved' | 'rejected') => {
+    try {
+      await fetch('/api/squares/settlements/claims/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim_id: claimId, status }),
+      });
+      mutateClaims();
+
+      const claim = claims.find((c: { id: string }) => c.id === claimId);
+      if (claim) {
+        addAudit(
+          status === 'approved' ? 'name_mapped' : 'person_removed',
+          status === 'approved'
+            ? `Approved claim: "${claim.squares_player_name}" = "${claim.whatsapp_name}"`
+            : `Rejected claim: "${claim.squares_player_name}" by "${claim.whatsapp_name}"`
+        );
+      }
+    } catch {
+      // silent fail - user can retry
+    }
+  }, [mutateClaims, claims, addAudit]);
+
+  // Import approved claims into people list + name map
+  const approvedClaims = claims.filter((c: { status: string }) => c.status === 'approved');
+
+  const handleImportApprovedClaims = useCallback(() => {
+    if (approvedClaims.length === 0) return;
+
+    const newPeople = new Set(people);
+    const newMap = new Map(nameMap);
+    const imported: string[] = [];
+
+    for (const claim of approvedClaims) {
+      // Add the WhatsApp name to people list
+      if (!newPeople.has(claim.whatsapp_name)) {
+        newPeople.add(claim.whatsapp_name);
+        imported.push(claim.whatsapp_name);
+      }
+      // Set name mapping if squares name differs from WhatsApp name
+      if (claim.squares_player_name !== claim.whatsapp_name) {
+        newMap.set(claim.squares_player_name, claim.whatsapp_name);
+      }
+    }
+
+    setPeople(Array.from(newPeople));
+    setNameMap(newMap);
+
+    if (imported.length > 0) {
+      addAudit('names_imported', `${imported.length} verified identities from claims (${imported.join(', ')})`);
+    }
+  }, [approvedClaims, people, nameMap, addAudit]);
 
   // Add a person
   const handleAddPerson = useCallback(() => {
@@ -351,8 +420,18 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
               </Button>
             </div>
 
-            {/* Import from squares */}
-            {squaresPlayers.length > 0 && (
+            {/* Import from verified claims (preferred) */}
+            {approvedClaims.length > 0 && (
+              <button
+                onClick={handleImportApprovedClaims}
+                className="w-full bg-green-500/20 text-green-400 rounded-lg px-3 py-2 text-sm font-medium hover:bg-green-500/30 transition-colors"
+              >
+                Import {approvedClaims.length} verified identities (admin-approved)
+              </button>
+            )}
+
+            {/* Import from squares (fallback) */}
+            {squaresPlayers.length > 0 && approvedClaims.length === 0 && (
               <button
                 onClick={handleImportSquaresPlayers}
                 className="w-full bg-amber-500/20 text-amber-400 rounded-lg px-3 py-2 text-sm font-medium hover:bg-amber-500/30 transition-colors"
@@ -626,6 +705,19 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
                       </div>
                     </div>
 
+                    {/* Ask people to claim their identity */}
+                    {onOpenClaimPage && selectedGameId && (
+                      <button
+                        onClick={() => onOpenClaimPage(selectedGameId)}
+                        className="w-full bg-blue-500/20 text-blue-400 rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-500/30 transition-colors text-left"
+                      >
+                        <div className="font-semibold">Ask people to claim their identity</div>
+                        <div className="text-xs text-blue-400/70 mt-0.5">
+                          Share this page in WhatsApp so each person can map their name
+                        </div>
+                      </button>
+                    )}
+
                     {/* Player squares breakdown */}
                     <div className="bg-card rounded-xl p-4">
                       <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -752,6 +844,72 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
                         </div>
                       );
                     })()}
+
+                    {/* Identity Claims - admin review */}
+                    {claims.length > 0 && (
+                      <div className="bg-card rounded-xl p-4">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                          Identity Claims ({claims.filter((c: { status: string }) => c.status === 'pending').length} pending)
+                        </h3>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          People have claimed their Squares identity. Review and approve to auto-populate the People list.
+                        </p>
+                        <div className="space-y-2">
+                          {claims.map((claim: {
+                            id: string;
+                            squares_player_name: string;
+                            whatsapp_name: string;
+                            app_username: string | null;
+                            squares_count: number;
+                            status: string;
+                          }) => (
+                            <div key={claim.id} className={`rounded-lg px-3 py-2 text-sm ${
+                              claim.status === 'approved'
+                                ? 'bg-green-500/10 border border-green-500/20'
+                                : claim.status === 'rejected'
+                                ? 'bg-red-500/10 border border-red-500/20'
+                                : 'bg-muted/30'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium text-foreground">{claim.squares_player_name}</span>
+                                  {claim.app_username && (
+                                    <span className="text-blue-400 text-xs ml-1">@{claim.app_username}</span>
+                                  )}
+                                  <span className="text-muted-foreground mx-1">=</span>
+                                  <span className="text-foreground">{claim.whatsapp_name}</span>
+                                  <span className="text-muted-foreground text-xs ml-2">
+                                    ({claim.squares_count} sq)
+                                  </span>
+                                </div>
+                                {claim.status === 'pending' && (
+                                  <div className="flex gap-1 ml-2">
+                                    <button
+                                      onClick={() => handleReviewClaim(claim.id, 'approved')}
+                                      className="bg-green-500/20 text-green-400 rounded px-2 py-1 text-xs font-medium hover:bg-green-500/30"
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleReviewClaim(claim.id, 'rejected')}
+                                      className="bg-red-500/20 text-red-400 rounded px-2 py-1 text-xs font-medium hover:bg-red-500/30"
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                )}
+                                {claim.status === 'approved' && (
+                                  <span className="text-green-400 text-xs font-medium ml-2">Approved</span>
+                                )}
+                                {claim.status === 'rejected' && (
+                                  <span className="text-red-400 text-xs font-medium ml-2">Rejected</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Pot collector */}
                     {people.length > 0 && (
