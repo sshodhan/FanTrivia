@@ -16,8 +16,11 @@ import {
   minimizeTransactions,
   generateWhatsAppMessage,
   generateExpenseId,
+  createAuditEntry,
+  formatAuditTime,
   type Expense,
   type SquaresSettlement,
+  type AuditEntry,
 } from '@/lib/expense-splitter';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -43,10 +46,17 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [potCollector, setPotCollector] = useState<string>('');
 
+  // Audit trail - tracks all actions for transparency
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+
+  const addAudit = useCallback((action: AuditEntry['action'], detail: string) => {
+    setAuditLog((prev: AuditEntry[]) => [...prev, createAuditEntry(action, detail)]);
+  }, []);
+
   // State for UI
   const [showResults, setShowResults] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'people' | 'expenses' | 'squares'>('people');
+  const [activeTab, setActiveTab] = useState<'people' | 'expenses' | 'squares' | 'activity'>('people');
 
   // Fetch available squares games
   const { data: gamesData } = useSWR('/api/squares', fetcher);
@@ -67,7 +77,8 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
     if (!name || people.includes(name)) return;
     setPeople((prev: string[]) => [...prev, name]);
     setNewPersonName('');
-  }, [newPersonName, people]);
+    addAudit('person_added', name);
+  }, [newPersonName, people, addAudit]);
 
   // Remove a person
   const handleRemovePerson = useCallback((name: string) => {
@@ -79,7 +90,8 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
       e.splitAmong = newSplit;
       return true;
     }));
-  }, []);
+    addAudit('person_removed', name);
+  }, [addAudit]);
 
   // Import names from squares game
   const handleImportSquaresPlayers = useCallback(() => {
@@ -88,7 +100,8 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
       const combined = new Set([...prev, ...squaresPlayers]);
       return Array.from(combined);
     });
-  }, [squaresPlayers]);
+    addAudit('names_imported', `${squaresPlayers.length} names (${squaresPlayers.join(', ')})`);
+  }, [squaresPlayers, addAudit]);
 
   // Add an expense
   const handleAddExpense = useCallback(() => {
@@ -113,17 +126,23 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
       },
     ]);
 
+    addAudit('expense_added', `${desc} - $${amount.toFixed(2)} paid by ${newExpensePaidBy}, split among ${splitAmong.length} people`);
+
     setNewExpenseDesc('');
     setNewExpenseAmount('');
     setNewExpensePaidBy('');
     setSplitMode('everyone');
     setCustomSplit(new Set());
-  }, [newExpenseDesc, newExpenseAmount, newExpensePaidBy, splitMode, customSplit, people]);
+  }, [newExpenseDesc, newExpenseAmount, newExpensePaidBy, splitMode, customSplit, people, addAudit]);
 
   // Remove an expense
   const handleRemoveExpense = useCallback((id: string) => {
+    const removed = expenses.find((e: Expense) => e.id === id);
     setExpenses((prev: Expense[]) => prev.filter((e: Expense) => e.id !== id));
-  }, []);
+    if (removed) {
+      addAudit('expense_removed', `${removed.description} - $${removed.amount.toFixed(2)}`);
+    }
+  }, [expenses, addAudit]);
 
   // Toggle person in custom split
   const toggleCustomSplit = useCallback((name: string) => {
@@ -143,9 +162,9 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
     if (!showResults) return null;
     const balances = calculateBalances(expenses, squaresSettlements, potCollector || null);
     const settlements = minimizeTransactions(balances);
-    const message = generateWhatsAppMessage(settlements, balances, expenses, squaresSettlements);
+    const message = generateWhatsAppMessage(settlements, balances, expenses, squaresSettlements, auditLog);
     return { balances, settlements, message };
-  }, [showResults, expenses, squaresSettlements, potCollector]);
+  }, [showResults, expenses, squaresSettlements, potCollector, auditLog]);
 
   // Copy to clipboard
   const handleCopy = useCallback(async () => {
@@ -228,6 +247,23 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
             )}
           </div>
 
+          {/* Audit Trail */}
+          {auditLog.length > 0 && (
+            <div className="bg-card rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Audit Trail ({auditLog.length} actions)
+              </h3>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {auditLog.map((entry: AuditEntry) => (
+                  <div key={entry.id} className="flex items-start justify-between gap-2 text-xs bg-muted/30 rounded px-2 py-1.5">
+                    <span className="text-foreground">{entry.description}</span>
+                    <span className="text-muted-foreground whitespace-nowrap">{formatAuditTime(entry.timestamp)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* WhatsApp Message Preview */}
           <div className="bg-card rounded-xl p-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
@@ -267,7 +303,7 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
 
       {/* Tabs */}
       <div className="flex border-b border-border">
-        {(['people', 'expenses', 'squares'] as const).map(tab => (
+        {(['people', 'expenses', 'squares', 'activity'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -280,6 +316,7 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
             {tab === 'people' && `People (${people.length})`}
             {tab === 'expenses' && `Expenses (${expenses.length})`}
             {tab === 'squares' && 'Squares'}
+            {tab === 'activity' && `Activity (${auditLog.length})`}
           </button>
         ))}
       </div>
@@ -478,6 +515,39 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
           </>
         )}
 
+        {/* Activity Tab */}
+        {activeTab === 'activity' && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Full audit trail of every action. This is included in the WhatsApp message so everyone can verify.
+            </p>
+
+            {auditLog.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">📋</div>
+                <p className="text-muted-foreground text-sm">
+                  No activity yet. Actions will appear here as you add people, expenses, and link games.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {[...auditLog].reverse().map((entry: AuditEntry) => (
+                  <div key={entry.id} className="bg-card rounded-lg px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-foreground">{entry.description}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatAuditTime(entry.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {/* Squares Tab */}
         {activeTab === 'squares' && (
           <>
@@ -498,7 +568,16 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
                   <label className="text-xs text-muted-foreground mb-1 block">Select game</label>
                   <Select
                     value={selectedGameId || ''}
-                    onValueChange={(value) => setSelectedGameId(value || null)}
+                    onValueChange={(value: string) => {
+                      const prev = selectedGameId;
+                      setSelectedGameId(value || null);
+                      if (value) {
+                        const game = games.find((g: { id: string; name: string }) => g.id === value);
+                        addAudit('squares_linked', game?.name || value);
+                      } else if (prev) {
+                        addAudit('squares_unlinked', '');
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full bg-input">
                       <SelectValue placeholder="Choose a Squares game..." />
@@ -574,7 +653,10 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
                         <label className="text-xs text-muted-foreground mb-1 block">
                           Who collects/manages the pot?
                         </label>
-                        <Select value={potCollector} onValueChange={setPotCollector}>
+                        <Select value={potCollector} onValueChange={(value: string) => {
+                          setPotCollector(value);
+                          if (value) addAudit('pot_collector_set', value);
+                        }}>
                           <SelectTrigger className="w-full bg-input">
                             <SelectValue placeholder="Select pot collector..." />
                           </SelectTrigger>
@@ -597,7 +679,10 @@ export function ExpenseSplitterScreen({ onBack }: ExpenseSplitterScreenProps) {
       {/* Calculate button - fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t border-border">
         <Button
-          onClick={() => setShowResults(true)}
+          onClick={() => {
+            addAudit('settlement_calculated', `${people.length} people, ${expenses.length} expenses`);
+            setShowResults(true);
+          }}
           disabled={!canCalculate}
           className="w-full h-14 text-lg font-bold bg-primary text-primary-foreground hover:bg-primary/90"
         >
