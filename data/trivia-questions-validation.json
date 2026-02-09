@@ -1,9 +1,147 @@
 {
-  "generated": "2026-02-07",
-  "total_categories": 16,
-  "total_questions": 115,
-  "note": "4 duplicate Franchise Firsts questions removed from DB total of 119",
+  "generated": "2026-02-09",
+  "total_categories": 17,
+  "total_questions": 125,
+  "note": "4 duplicate Franchise Firsts questions removed from DB total of 119. Added Super Bowl LX (2026) category with 10 questions.",
   "categories": [
+    {
+      "category": "Super Bowl LX (2026)",
+      "tab": "Daily",
+      "question_count": 10,
+      "total_points": 1000,
+      "questions": [
+        {
+          "id": "2a8c7d46-6094-4737-a1b4-41b63fc323c3",
+          "difficulty": "medium",
+          "question": "Who was named the Most Valuable Player (MVP) of Super Bowl LX (2026)?",
+          "options": {
+            "a": "Sam Darnold",
+            "b": "Jaxon Smith-Njigba",
+            "c": "Kenneth Walker III",
+            "d": "Devon Witherspoon"
+          },
+          "correct_answer": "c",
+          "correct_text": "Kenneth Walker III"
+        },
+        {
+          "id": "2414162a-2967-4f74-992f-703fe4b92663",
+          "difficulty": "medium",
+          "question": "What was the final score of Super Bowl LX, in which the Seattle Seahawks defeated the New England Patriots?",
+          "options": {
+            "a": "Seahawks 24, Patriots 10",
+            "b": "Seahawks 29, Patriots 13",
+            "c": "Seahawks 34, Patriots 17",
+            "d": "Seahawks 31, Patriots 20"
+          },
+          "correct_answer": "b",
+          "correct_text": "Seahawks 29, Patriots 13"
+        },
+        {
+          "id": "3d728a80-705b-48c0-a7be-c5ef81fbb6f4",
+          "difficulty": "hard",
+          "question": "How many total sacks did the Seahawks defense record against the Patriots in Super Bowl LX?",
+          "options": {
+            "a": "3",
+            "b": "4",
+            "c": "6",
+            "d": "8"
+          },
+          "correct_answer": "c",
+          "correct_text": "6"
+        },
+        {
+          "id": "9ee4200f-fa11-4953-8963-843c14f17765",
+          "difficulty": "hard",
+          "question": "Seahawks kicker Jason Myers set a Super Bowl record by making how many field goals in Super Bowl LX?",
+          "options": {
+            "a": "3",
+            "b": "4",
+            "c": "5",
+            "d": "6"
+          },
+          "correct_answer": "c",
+          "correct_text": "5"
+        },
+        {
+          "id": "652b946d-d961-4d25-959b-c7e3230d961a",
+          "difficulty": "medium",
+          "question": "How many interceptions did Seahawks quarterback Sam Darnold throw in Super Bowl LX?",
+          "options": {
+            "a": "0",
+            "b": "1",
+            "c": "2",
+            "d": "3"
+          },
+          "correct_answer": "a",
+          "correct_text": "0"
+        },
+        {
+          "id": "c9de802d-b930-4507-b9c5-dfa793b0ad73",
+          "difficulty": "medium",
+          "question": "Which artist headlined the Super Bowl LX halftime show?",
+          "options": {
+            "a": "Post Malone",
+            "b": "Billie Eilish",
+            "c": "Bad Bunny",
+            "d": "Tyler, the Creator"
+          },
+          "correct_answer": "c",
+          "correct_text": "Bad Bunny"
+        },
+        {
+          "id": "6212af06-100a-43a9-8b8b-efdf5acde8c6",
+          "difficulty": "hard",
+          "question": "How many total turnovers did Patriots quarterback Drake Maye commit in Super Bowl LX?",
+          "options": {
+            "a": "1",
+            "b": "2",
+            "c": "3",
+            "d": "4"
+          },
+          "correct_answer": "c",
+          "correct_text": "3"
+        },
+        {
+          "id": "8ae42342-0598-4453-8c68-e2821f20cde5",
+          "difficulty": "medium",
+          "question": "At age 38, which Seahawks head coach became one of the youngest to win a Super Bowl by leading Seattle to victory in Super Bowl LX?",
+          "options": {
+            "a": "Sean McVay",
+            "b": "Mike Macdonald",
+            "c": "Kevin O'Connell",
+            "d": "Dan Campbell"
+          },
+          "correct_answer": "b",
+          "correct_text": "Mike Macdonald"
+        },
+        {
+          "id": "d5fe323f-3d6b-4926-8e5b-71f909e09d49",
+          "difficulty": "hard",
+          "question": "For how many consecutive quarters did the Patriots fail to score points in Super Bowl LX?",
+          "options": {
+            "a": "1",
+            "b": "2",
+            "c": "3",
+            "d": "4"
+          },
+          "correct_answer": "c",
+          "correct_text": "3"
+        },
+        {
+          "id": "7fe0377a-16c8-4b65-8ce5-629de54efe9f",
+          "difficulty": "medium",
+          "question": "Which Seahawks defensive player recorded a pick-six in Super Bowl LX (2026) against the Patriots?",
+          "options": {
+            "a": "Devon Witherspoon",
+            "b": "Boye Mafe",
+            "c": "Julian Love",
+            "d": "Uchenna Nwosu"
+          },
+          "correct_answer": "d",
+          "correct_text": "Uchenna Nwosu"
+        }
+      ]
+    },
     {
       "category": "Super Bowl XLVIII",
       "tab": "Daily",
