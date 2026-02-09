@@ -15,6 +15,7 @@ export interface SquaresSettlement {
   entryFee: number;     // per square
   totalOwed: number;    // squareCount * entryFee
   winnings: number;     // amount won from quarters
+  appUsername: string | null; // HawkTrivia username if they were logged in
 }
 
 export interface Settlement {
