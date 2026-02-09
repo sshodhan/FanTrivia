@@ -58,20 +58,39 @@ export function countPlayerSquares(entries: SquaresEntry[], playerName: string):
   return entries.filter(e => e.player_name === playerName).length;
 }
 
+export interface UniquePlayer {
+  name: string;
+  count: number;
+  emoji: string;
+  color: string;
+  playerUserId: string | null;
+  squares: Array<{ row: number; col: number }>;
+}
+
 /**
- * Get unique players from entries
+ * Get unique players from entries with their user IDs and square positions
  */
-export function getUniquePlayers(entries: SquaresEntry[]): Array<{ name: string; count: number; emoji: string; color: string }> {
-  const playerMap = new Map<string, number>();
+export function getUniquePlayers(entries: SquaresEntry[]): UniquePlayer[] {
+  const playerMap = new Map<string, { userId: string | null; squares: Array<{ row: number; col: number }> }>();
   for (const entry of entries) {
-    playerMap.set(entry.player_name, (playerMap.get(entry.player_name) || 0) + 1);
+    const existing = playerMap.get(entry.player_name);
+    if (existing) {
+      existing.squares.push({ row: entry.row_index, col: entry.col_index });
+    } else {
+      playerMap.set(entry.player_name, {
+        userId: entry.player_user_id,
+        squares: [{ row: entry.row_index, col: entry.col_index }],
+      });
+    }
   }
   return Array.from(playerMap.entries())
-    .map(([name, count]) => ({
+    .map(([name, data]) => ({
       name,
-      count,
+      count: data.squares.length,
       emoji: getPlayerEmoji(name),
       color: getPlayerColor(name),
+      playerUserId: data.userId,
+      squares: data.squares.sort((a, b) => a.row - b.row || a.col - b.col),
     }))
     .sort((a, b) => b.count - a.count);
 }

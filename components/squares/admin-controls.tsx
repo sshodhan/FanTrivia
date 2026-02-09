@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import type { SquaresGame, SquaresEntry, SquaresWinner } from '@/lib/database.types';
-import { getLatestQuarter, getWinningSquare, countClaimed, isBoardFull, getUniquePlayers } from '@/lib/squares-utils';
+import { getLatestQuarter, getWinningSquare, getWinningPosition, countClaimed, isBoardFull, getUniquePlayers } from '@/lib/squares-utils';
 
 interface AdminControlsProps {
   game: SquaresGame;
@@ -30,6 +30,10 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
   const [showBulkFill, setShowBulkFill] = useState(false);
   const [bulkFillMode, setBulkFillMode] = useState<'round_robin' | 'house'>('round_robin');
   const [houseName, setHouseName] = useState('House');
+  const [maxSquaresInput, setMaxSquaresInput] = useState(game.max_squares_per_player?.toString() ?? '');
+  const [isSavingMaxSquares, setIsSavingMaxSquares] = useState(false);
+  const [playerFilter, setPlayerFilter] = useState('');
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set());
 
   const claimed = countClaimed(entries);
   const boardFull = isBoardFull(entries);
@@ -223,6 +227,43 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
     }
   };
 
+  const handleSaveMaxSquares = async () => {
+    setIsSavingMaxSquares(true);
+    setError('');
+
+    const newValue = maxSquaresInput.trim() === '' ? null : parseInt(maxSquaresInput, 10);
+
+    if (newValue !== null && (isNaN(newValue) || newValue < 1 || newValue > 100)) {
+      setError('Max squares must be between 1 and 100, or empty for unlimited');
+      setIsSavingMaxSquares(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/squares/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ game_id: game.id, username, max_squares_per_player: newValue }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        logClientError(`Update max squares failed: ${data.error || 'Unknown error'}`, 'Squares Soft Error', { gameId: game.id, newValue, status: response.status });
+        setError(data.error || 'Failed to update max squares');
+        return;
+      }
+
+      logClientDebug('AdminControls', 'Max squares updated', { gameId: game.id, newValue, username }, { force: true });
+      onGameUpdated();
+    } catch (err) {
+      logClientError(err instanceof Error ? err : new Error('Network error updating max squares'), 'Squares Network Error', { gameId: game.id });
+      setError('Network error. Please try again.');
+    } finally {
+      setIsSavingMaxSquares(false);
+    }
+  };
+
   return (
     <div className="bg-card rounded-xl p-4 space-y-4">
       <h3 className="font-[var(--font-heading)] text-lg font-bold text-foreground flex items-center gap-2">
@@ -303,30 +344,119 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
             </div>
           )}
 
-          {/* Player List */}
-          {players.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowPlayerPanel(!showPlayerPanel)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          {/* Max Squares Per Player */}
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">
+              Max Squares Per Player:{' '}
+              <span className="text-foreground font-medium">
+                {game.max_squares_per_player ?? 'Unlimited'}
+              </span>
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min="1"
+                max="100"
+                value={maxSquaresInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMaxSquaresInput(e.target.value)}
+                placeholder="Unlimited"
+                className="bg-input text-sm flex-1"
+              />
+              <Button
+                size="sm"
+                onClick={handleSaveMaxSquares}
+                disabled={isSavingMaxSquares}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                {players.length} Players ({claimed} squares)
-              </button>
-              {showPlayerPanel && (
-                <div className="mt-2 space-y-1">
-                  {players.map(p => (
-                    <div key={p.name} className="flex items-center justify-between bg-muted/20 rounded px-2 py-1.5 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                        <span>{p.emoji}</span>
-                        <span className="text-foreground">{p.name}</span>
+                {isSavingMaxSquares ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Leave empty for unlimited. Value must be 1-100.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Player List — always visible for winner identification */}
+      {players.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowPlayerPanel(!showPlayerPanel)}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {players.length} Players ({claimed} squares)
+          </button>
+          {showPlayerPanel && (
+            <div className="mt-2 space-y-2">
+              {/* Search Filter */}
+              <Input
+                type="text"
+                value={playerFilter}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlayerFilter(e.target.value)}
+                placeholder="Filter by name or user ID..."
+                className="bg-input text-sm"
+              />
+              <div className="space-y-1 max-h-80 overflow-y-auto">
+                {players
+                  .filter(p => {
+                    if (!playerFilter.trim()) return true;
+                    const q = playerFilter.toLowerCase();
+                    return p.name.toLowerCase().includes(q) || (p.playerUserId?.toLowerCase().includes(q) ?? false);
+                  })
+                  .map(p => {
+                    const isExpanded = expandedPlayers.has(p.name);
+                    const hasNumbers = !!game.row_numbers && !!game.col_numbers;
+                    return (
+                      <div key={p.name} className="bg-muted/20 rounded px-2 py-1.5">
+                        <button
+                          onClick={() => {
+                            setExpandedPlayers(prev => {
+                              const next = new Set(prev);
+                              if (next.has(p.name)) next.delete(p.name);
+                              else next.add(p.name);
+                              return next;
+                            });
+                          }}
+                          className="w-full flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                            <span>{p.emoji}</span>
+                            <div className="min-w-0 text-left">
+                              <span className="text-foreground">{p.name}</span>
+                              <span className="block text-[10px] text-muted-foreground font-mono break-all">
+                                {p.playerUserId ?? 'Guest'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-muted-foreground text-xs">{p.count} sq</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
+                          </div>
+                        </button>
+                        {isExpanded && (
+                          <div className="mt-1.5 pl-8 flex flex-wrap gap-1">
+                            {p.squares.map(sq => (
+                              <span
+                                key={`${sq.row}-${sq.col}`}
+                                className="inline-block bg-muted/40 rounded px-1.5 py-0.5 text-[11px] font-mono text-muted-foreground"
+                              >
+                                ({sq.row},{sq.col})
+                                {hasNumbers && (
+                                  <span className="text-primary ml-0.5">
+                                    [{game.row_numbers![sq.row]},{game.col_numbers![sq.col]}]
+                                  </span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-muted-foreground text-xs">{p.count} sq</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    );
+                  })}
+              </div>
             </div>
           )}
         </div>
@@ -409,6 +539,7 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
           <p className="text-sm font-medium text-foreground">Results:</p>
           {[1, 2, 3, 4].map(q => {
             const result = getWinningSquare(game, q, entries);
+            const position = getWinningPosition(game, q);
             const scores = q === 1 ? { a: game.q1_score_a, b: game.q1_score_b }
               : q === 2 ? { a: game.q2_score_a, b: game.q2_score_b }
               : q === 3 ? { a: game.q3_score_a, b: game.q3_score_b }
@@ -417,11 +548,27 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
             if (scores.a === null) return null;
 
             return (
-              <div key={q} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Q{q}: {scores.a}-{scores.b}</span>
-                <span className={result ? 'font-bold text-yellow-400' : 'text-muted-foreground italic'}>
-                  {result ? result.entry.player_name : 'No winner (unclaimed)'}
-                </span>
+              <div key={q} className="bg-muted/30 rounded-lg px-3 py-2 text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground font-medium">Q{q}: {scores.a}-{scores.b}</span>
+                  <span className={result ? 'font-bold text-yellow-400' : 'text-destructive font-medium'}>
+                    {result ? result.entry.player_name : 'Unclaimed'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  {result ? (
+                    <span className="text-muted-foreground font-mono break-all">
+                      {result.entry.player_user_id ?? 'Guest'}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">No player on this square</span>
+                  )}
+                  {position && (
+                    <span className="text-muted-foreground font-mono flex-shrink-0 ml-2">
+                      ({position.row},{position.col}) <span className="text-primary">[{position.rowDigit},{position.colDigit}]</span>
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
