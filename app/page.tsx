@@ -17,10 +17,11 @@ import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { PartyPlanScreen } from '@/components/party-plan-screen';
 import { SquaresGameScreen } from '@/components/squares/squares-game-screen';
+import { ExpenseSplitterScreen } from '@/components/expense-splitter-screen';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings' | 'squares';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings' | 'squares' | 'splitter';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface GameResult {
@@ -93,7 +94,7 @@ function AppContent() {
 
   // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
-    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party', 'squares'];
+    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party', 'squares', 'splitter'];
     setShowNav(!hideNavScreens.includes(currentScreen));
     console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
@@ -247,6 +248,7 @@ function AppContent() {
           onViewPhotos={() => setCurrentScreen('photos')}
           onViewParty={() => setCurrentScreen('party')}
           onViewSquares={() => setCurrentScreen('squares')}
+          onViewSplitter={() => setCurrentScreen('splitter')}
         />
       )}
 
@@ -303,6 +305,10 @@ function AppContent() {
 
       {currentScreen === 'squares' && (
         <SquaresGameScreen onBack={() => setCurrentScreen('home')} />
+      )}
+
+      {currentScreen === 'splitter' && (
+        <ExpenseSplitterScreen onBack={() => setCurrentScreen('home')} />
       )}
 
       {currentScreen === 'settings' && (
