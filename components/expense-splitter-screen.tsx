@@ -19,7 +19,7 @@ import {
   createAuditEntry,
   formatAuditTime,
   type Expense,
-  type SquaresSettlement,
+  type GameEntry,
   type AuditEntry,
 } from '@/lib/expense-splitter';
 
@@ -43,14 +43,26 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   const [splitMode, setSplitMode] = useState<'everyone' | 'custom'>('everyone');
   const [customSplit, setCustomSplit] = useState<Set<string>>(new Set());
 
+  // Game mode: 'squares' = link to DB game, 'custom' = manual entry (poker, fantasy, etc.)
+  const [gameMode, setGameMode] = useState<'squares' | 'custom'>('squares');
+  const [gameLabel, setGameLabel] = useState('Squares'); // user-editable label
+
   // State for squares integration
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [potCollector, setPotCollector] = useState<string>('');
-  // Admin-editable fee per square (null = use game default)
+  // Admin-editable fee per unit (null = use game default)
   const [feeOverride, setFeeOverride] = useState<number | null>(null);
+  // Custom quarter payout percentages for squares mode (default: even 25% each)
+  const [quarterPayouts, setQuarterPayouts] = useState<[number, number, number, number]>([25, 25, 25, 25]);
 
-  // Name mapping: squares player name -> WhatsApp name
-  // Used when someone claimed a square as "Naomi" but their WhatsApp is "Naomi Akiko"
+  // State for custom game mode (poker, fantasy, etc.)
+  const [customEntries, setCustomEntries] = useState<GameEntry[]>([]);
+  const [newCustomPlayer, setNewCustomPlayer] = useState('');
+  const [newCustomBuyIn, setNewCustomBuyIn] = useState('');
+  const [newCustomPayout, setNewCustomPayout] = useState('');
+
+  // Name mapping: game player name -> WhatsApp name
+  // Used when someone's game name differs from their WhatsApp name
   const [nameMap, setNameMap] = useState<Map<string, string>>(new Map());
 
   // Audit trail - tracks all actions for transparency
@@ -63,7 +75,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   // State for UI
   const [showResults, setShowResults] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'people' | 'expenses' | 'squares' | 'activity'>('people');
+  const [activeTab, setActiveTab] = useState<'people' | 'expenses' | 'game' | 'activity'>('people');
 
   // Fetch available squares games
   const { data: gamesData } = useSWR('/api/squares', fetcher);
@@ -75,35 +87,56 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
     fetcher
   );
 
-  const rawSquaresSettlements: SquaresSettlement[] = settlementData?.settlements || [];
+  const rawSquaresEntries: GameEntry[] = (settlementData?.settlements || []).map(
+    (s: { playerName: string; unitCount: number; costPerUnit: number; totalOwed: number; winnings: number; appUsername: string | null }) => ({
+      playerName: s.playerName,
+      unitCount: s.unitCount,
+      costPerUnit: s.costPerUnit,
+      totalOwed: s.totalOwed,
+      winnings: s.winnings,
+      appUsername: s.appUsername,
+    })
+  );
   const squaresPlayers: string[] = settlementData?.players || [];
 
-  // The effective fee per square: admin override or game default
+  // The effective fee per unit: admin override or game default
   const gameFee: number = settlementData?.game?.entryFee ?? 0;
   const effectiveFee = feeOverride ?? gameFee;
 
-  // Recompute settlements with the admin's fee override
-  const squaresSettlements: SquaresSettlement[] = useMemo(() => {
-    if (effectiveFee === gameFee) return rawSquaresSettlements;
-    // Recalculate totalOwed and winnings with the new fee
-    const totalSquares = rawSquaresSettlements.reduce((sum, s) => sum + s.squareCount, 0);
-    const newTotalPot = totalSquares * effectiveFee;
-    const newQuarterPayout = newTotalPot > 0 ? newTotalPot * 0.25 : 0;
-    // Figure out which players had winnings (non-zero) to redistribute
-    return rawSquaresSettlements.map(s => {
-      const hadWinnings = s.winnings > 0 && gameFee > 0;
-      // Number of quarters won = original winnings / original quarter payout
-      const quartersWon = gameFee > 0 && s.winnings > 0
-        ? Math.round(s.winnings / (settlementData?.quarterPayout || 1))
-        : 0;
+  // Recompute squares entries with the admin's fee/payout overrides
+  const squaresEntries: GameEntry[] = useMemo(() => {
+    const isDefaultFee = effectiveFee === gameFee;
+    const isDefaultPayouts = quarterPayouts[0] === 25 && quarterPayouts[1] === 25 && quarterPayouts[2] === 25 && quarterPayouts[3] === 25;
+    if (isDefaultFee && isDefaultPayouts) return rawSquaresEntries;
+
+    // Recalculate totalOwed and winnings with the new fee & payout splits
+    const totalUnits = rawSquaresEntries.reduce((sum, s) => sum + s.unitCount, 0);
+    const newTotalPot = totalUnits * effectiveFee;
+
+    // Figure out which quarter each winner won, then apply custom payout %
+    return rawSquaresEntries.map(s => {
+      let newWinnings = 0;
+      if (s.winnings > 0 && gameFee > 0) {
+        // Determine how many quarters won and which ones
+        const originalQuarterPayout = settlementData?.quarterPayout || 1;
+        const quartersWon = Math.round(s.winnings / originalQuarterPayout);
+        // With custom payouts, we can't know WHICH quarters they won from the API alone,
+        // so we apply an average of the custom payout rates for their quarter count
+        const totalPayoutPct = quarterPayouts.reduce((sum: number, pct: number) => sum + pct, 0);
+        const avgPayoutPct = totalPayoutPct > 0 ? totalPayoutPct / 4 : 25;
+        newWinnings = quartersWon * (newTotalPot * avgPayoutPct / 100);
+      }
       return {
         ...s,
-        entryFee: effectiveFee,
-        totalOwed: s.squareCount * effectiveFee,
-        winnings: hadWinnings ? quartersWon * newQuarterPayout : 0,
+        costPerUnit: effectiveFee,
+        totalOwed: s.unitCount * effectiveFee,
+        winnings: newWinnings,
       };
     });
-  }, [rawSquaresSettlements, effectiveFee, gameFee, settlementData?.quarterPayout]);
+  }, [rawSquaresEntries, effectiveFee, gameFee, quarterPayouts, settlementData?.quarterPayout]);
+
+  // The final game entries: either from squares DB or manual custom entries
+  const gameEntries: GameEntry[] = gameMode === 'squares' ? squaresEntries : customEntries;
 
   // Fetch identity claims for the selected game
   const { data: claimsData, mutate: mutateClaims } = useSWR(
@@ -248,7 +281,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
 
   // Toggle person in custom split
   const toggleCustomSplit = useCallback((name: string) => {
-    setCustomSplit(prev => {
+    setCustomSplit((prev: Set<string>) => {
       const next = new Set(prev);
       if (next.has(name)) {
         next.delete(name);
@@ -262,11 +295,11 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   // Calculate results
   const results = useMemo(() => {
     if (!showResults) return null;
-    const balances = calculateBalances(expenses, squaresSettlements, potCollector || null, nameMap);
+    const balances = calculateBalances(expenses, gameEntries, potCollector || null, nameMap);
     const settlements = minimizeTransactions(balances);
-    const message = generateWhatsAppMessage(settlements, balances, expenses, squaresSettlements, auditLog, nameMap);
+    const message = generateWhatsAppMessage(settlements, balances, expenses, gameEntries, auditLog, nameMap, gameLabel);
     return { balances, settlements, message };
-  }, [showResults, expenses, squaresSettlements, potCollector, auditLog, nameMap]);
+  }, [showResults, expenses, gameEntries, potCollector, auditLog, nameMap, gameLabel]);
 
   // Copy to clipboard
   const handleCopy = useCallback(async () => {
@@ -288,7 +321,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
     }
   }, [results?.message]);
 
-  const canCalculate = people.length >= 2 && (expenses.length > 0 || squaresSettlements.length > 0);
+  const canCalculate = people.length >= 2 && (expenses.length > 0 || gameEntries.length > 0);
 
   // Results view
   if (showResults && results) {
@@ -405,7 +438,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
 
       {/* Tabs */}
       <div className="flex border-b border-border">
-        {(['people', 'expenses', 'squares', 'activity'] as const).map(tab => (
+        {(['people', 'expenses', 'game', 'activity'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -417,7 +450,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
           >
             {tab === 'people' && `People (${people.length})`}
             {tab === 'expenses' && `Expenses (${expenses.length})`}
-            {tab === 'squares' && 'Squares'}
+            {tab === 'game' && `Game (${gameEntries.length})`}
             {tab === 'activity' && `Activity (${auditLog.length})`}
           </button>
         ))}
@@ -660,355 +693,636 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
           </>
         )}
 
-        {/* Squares Tab */}
-        {activeTab === 'squares' && (
+        {/* Game Tab */}
+        {activeTab === 'game' && (
           <>
-            <p className="text-sm text-muted-foreground">
-              Link a Squares game to include entry fees and winnings in the settlement.
-            </p>
+            {/* Game mode toggle */}
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={() => { setGameMode('squares'); setGameLabel('Squares'); }}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  gameMode === 'squares'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Squares
+              </button>
+              <button
+                onClick={() => { setGameMode('custom'); setGameLabel('Poker'); }}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  gameMode === 'custom'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Custom (Poker, etc.)
+              </button>
+            </div>
 
-            {games.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">🏈</div>
-                <p className="text-muted-foreground text-sm">
-                  No squares games found
-                </p>
-              </div>
-            ) : (
+            {/* Game label - editable */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">Game label:</label>
+              <Input
+                value={gameLabel}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGameLabel(e.target.value)}
+                placeholder="e.g. Poker Night, Fantasy League"
+                className="bg-input text-sm h-8 flex-1"
+              />
+            </div>
+
+            {/* ============ SQUARES MODE ============ */}
+            {gameMode === 'squares' && (
               <>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Select game</label>
-                  <Select
-                    value={selectedGameId || ''}
-                    onValueChange={(value: string) => {
-                      const prev = selectedGameId;
-                      setSelectedGameId(value || null);
-                      setFeeOverride(null); // reset override when switching games
-                      if (value) {
-                        const game = games.find((g: { id: string; name: string }) => g.id === value);
-                        addAudit('squares_linked', game?.name || value);
-                      } else if (prev) {
-                        addAudit('squares_unlinked', '');
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-full bg-input">
-                      <SelectValue placeholder="Choose a Squares game..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {games.map((g: { id: string; name: string; status: string }) => (
-                        <SelectItem key={g.id} value={g.id}>
-                          {g.name} ({g.status})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  Link a Squares game to include entry fees and winnings in the settlement.
+                </p>
 
-                {settlementData && (
+                {games.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground text-sm">
+                      No squares games found
+                    </p>
+                  </div>
+                ) : (
                   <>
-                    {/* Game info + fee multiplier */}
-                    <div className="bg-card rounded-xl p-4 space-y-3">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                          $ per square
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={feeOverride ?? gameFee}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                              const val = parseFloat(e.target.value);
-                              if (isNaN(val) || val < 0) return;
-                              if (val === gameFee) {
-                                setFeeOverride(null);
-                              } else {
-                                setFeeOverride(val);
-                              }
-                            }}
-                            onBlur={() => {
-                              if (feeOverride !== null && feeOverride !== gameFee) {
-                                addAudit('expense_added', `Set fee to $${feeOverride.toFixed(2)}/square (game default was $${gameFee.toFixed(2)})`);
-                              }
-                            }}
-                            className="bg-input w-28 text-center font-bold"
-                          />
-                          <span className="text-sm text-muted-foreground">per square</span>
-                          {feeOverride !== null && feeOverride !== gameFee && (
-                            <button
-                              onClick={() => setFeeOverride(null)}
-                              className="text-xs text-amber-400 hover:text-amber-300"
-                            >
-                              reset to ${gameFee.toFixed(2)}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {(() => {
-                        const totalSquares = squaresSettlements.reduce((sum, s) => sum + s.squareCount, 0);
-                        const computedPot = totalSquares * effectiveFee;
-                        const computedQuarterPay = computedPot > 0 ? computedPot * 0.25 : 0;
-                        return (
-                          <>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Total squares</span>
-                              <span className="font-medium text-foreground">{totalSquares}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Total pot</span>
-                              <span className="font-medium text-foreground">
-                                ${computedPot.toFixed(2)}
-                                {feeOverride !== null && feeOverride !== gameFee && (
-                                  <span className="text-amber-400 text-xs ml-1">(overridden)</span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Quarters scored</span>
-                              <span className="font-medium text-foreground">{settlementData.quartersScored}/4</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Per-quarter payout</span>
-                              <span className="font-medium text-foreground">${computedQuarterPay.toFixed(2)}</span>
-                            </div>
-                          </>
-                        );
-                      })()}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Select game</label>
+                      <Select
+                        value={selectedGameId || ''}
+                        onValueChange={(value: string) => {
+                          const prev = selectedGameId;
+                          setSelectedGameId(value || null);
+                          setFeeOverride(null);
+                          if (value) {
+                            const game = games.find((g: { id: string; name: string }) => g.id === value);
+                            addAudit('game_linked', game?.name || value);
+                          } else if (prev) {
+                            addAudit('game_unlinked', '');
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full bg-input">
+                          <SelectValue placeholder="Choose a Squares game..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {games.map((g: { id: string; name: string; status: string }) => (
+                            <SelectItem key={g.id} value={g.id}>
+                              {g.name} ({g.status})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* Ask people to claim their identity */}
-                    {onOpenClaimPage && selectedGameId && (
-                      <button
-                        onClick={() => onOpenClaimPage(selectedGameId)}
-                        className="w-full bg-blue-500/20 text-blue-400 rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-500/30 transition-colors text-left"
-                      >
-                        <div className="font-semibold">Ask people to claim their identity</div>
-                        <div className="text-xs text-blue-400/70 mt-0.5">
-                          Share this page in WhatsApp so each person can map their name
-                        </div>
-                      </button>
-                    )}
-
-                    {/* Player squares breakdown */}
-                    <div className="bg-card rounded-xl p-4">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                        Players
-                      </h3>
-                      <div className="space-y-2">
-                        {squaresSettlements.map(s => (
-                          <div key={s.playerName} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
-                            <div>
-                              <span className="font-medium text-foreground">{s.playerName}</span>
-                              {s.appUsername && (
-                                <span className="text-blue-400 text-xs ml-1">@{s.appUsername}</span>
-                              )}
-                              <span className="text-muted-foreground ml-2">
-                                {s.squareCount} sq
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-red-400">-${s.totalOwed.toFixed(2)}</span>
-                              {s.winnings > 0 && (
-                                <span className="text-green-400 ml-2">+${s.winnings.toFixed(2)}</span>
+                    {settlementData && (
+                      <>
+                        {/* Game info + fee multiplier */}
+                        <div className="bg-card rounded-xl p-4 space-y-3">
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              $ per square
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={feeOverride ?? gameFee}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (isNaN(val) || val < 0) return;
+                                  if (val === gameFee) {
+                                    setFeeOverride(null);
+                                  } else {
+                                    setFeeOverride(val);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (feeOverride !== null && feeOverride !== gameFee) {
+                                    addAudit('fee_override', `$${feeOverride.toFixed(2)}/square (game default was $${gameFee.toFixed(2)})`);
+                                  }
+                                }}
+                                className="bg-input w-28 text-center font-bold"
+                              />
+                              <span className="text-sm text-muted-foreground">per square</span>
+                              {feeOverride !== null && feeOverride !== gameFee && (
+                                <button
+                                  onClick={() => setFeeOverride(null)}
+                                  className="text-xs text-amber-400 hover:text-amber-300"
+                                >
+                                  reset to ${gameFee.toFixed(2)}
+                                </button>
                               )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* Name mapping - shown when squares names don't match WhatsApp names */}
-                    {people.length > 0 && squaresSettlements.length > 0 && (() => {
-                      // Find squares names that aren't in the people list and aren't already mapped
-                      const unmappedSettlements = squaresSettlements
-                        .filter((s: SquaresSettlement) => !people.includes(s.playerName) && !nameMap.has(s.playerName));
-                      const mapped = Array.from(nameMap.entries());
+                          {(() => {
+                            const totalUnits = squaresEntries.reduce((sum, s) => sum + s.unitCount, 0);
+                            const computedPot = totalUnits * effectiveFee;
+                            return (
+                              <>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Total squares</span>
+                                  <span className="font-medium text-foreground">{totalUnits}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Total pot</span>
+                                  <span className="font-medium text-foreground">
+                                    ${computedPot.toFixed(2)}
+                                    {feeOverride !== null && feeOverride !== gameFee && (
+                                      <span className="text-amber-400 text-xs ml-1">(overridden)</span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Quarters scored</span>
+                                  <span className="font-medium text-foreground">{settlementData.quartersScored}/4</span>
+                                </div>
+                              </>
+                            );
+                          })()}
 
-                      if (unmappedSettlements.length === 0 && mapped.length === 0) return null;
-
-                      return (
-                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                          <h3 className="text-sm font-semibold text-yellow-400 mb-1">
-                            Link Names
-                          </h3>
-                          <p className="text-xs text-muted-foreground mb-3">
-                            These Squares names don&apos;t match anyone in your People list. Link them to the right WhatsApp name.
-                          </p>
-
-                          {/* Already mapped */}
-                          {mapped.length > 0 && (
-                            <div className="space-y-2 mb-3">
-                              {mapped.map(([sqName, waName]: [string, string]) => {
-                                const settlement = squaresSettlements.find((s: SquaresSettlement) => s.playerName === sqName);
+                          {/* Custom quarter payout percentages */}
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Payout per quarter (%)
+                            </label>
+                            <div className="grid grid-cols-4 gap-2">
+                              {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((label, idx) => (
+                                <div key={label} className="text-center">
+                                  <span className="text-xs text-muted-foreground block mb-1">{label}</span>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="5"
+                                    value={quarterPayouts[idx]}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (isNaN(val) || val < 0) return;
+                                      setQuarterPayouts((prev: [number, number, number, number]) => {
+                                        const next = [...prev] as [number, number, number, number];
+                                        next[idx] = val;
+                                        return next;
+                                      });
+                                    }}
+                                    onBlur={() => {
+                                      const total = quarterPayouts.reduce((sum: number, pct: number) => sum + pct, 0);
+                                      if (total !== 100) {
+                                        // Just log it - don't prevent saving
+                                      }
+                                      const isDefault = quarterPayouts.every((p: number) => p === 25);
+                                      if (!isDefault) {
+                                        addAudit('payout_override', `Q1:${quarterPayouts[0]}% Q2:${quarterPayouts[1]}% Q3:${quarterPayouts[2]}% Q4:${quarterPayouts[3]}%`);
+                                      }
+                                    }}
+                                    className="bg-input text-center text-sm h-8"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                            {(() => {
+                              const total = quarterPayouts.reduce((sum: number, pct: number) => sum + pct, 0);
+                              const totalUnits = squaresEntries.reduce((sum, s) => sum + s.unitCount, 0);
+                              const computedPot = totalUnits * effectiveFee;
+                              if (total !== 100) {
                                 return (
-                                  <div key={sqName} className="bg-muted/30 rounded-lg px-3 py-2">
-                                    <div className="flex items-center justify-between text-sm">
-                                      <span className="text-muted-foreground">{sqName}</span>
-                                      <span className="text-xs text-muted-foreground mx-2">=</span>
-                                      <span className="font-medium text-green-400 flex-1">{waName}</span>
-                                      <button
-                                        onClick={() => {
-                                          setNameMap((prev: Map<string, string>) => {
-                                            const next = new Map(prev);
-                                            next.delete(sqName);
-                                            return next;
-                                          });
-                                        }}
-                                        className="text-muted-foreground hover:text-destructive ml-2"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                                      </button>
+                                  <p className="text-xs text-amber-400 mt-1">
+                                    Percentages total {total}% (should be 100%)
+                                  </p>
+                                );
+                              }
+                              return (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Q1: ${(computedPot * quarterPayouts[0] / 100).toFixed(0)} / Q2: ${(computedPot * quarterPayouts[1] / 100).toFixed(0)} / Q3: ${(computedPot * quarterPayouts[2] / 100).toFixed(0)} / Q4: ${(computedPot * quarterPayouts[3] / 100).toFixed(0)}
+                                </p>
+                              );
+                            })()}
+                          </div>
+                        </div>
+
+                        {/* Ask people to claim their identity */}
+                        {onOpenClaimPage && selectedGameId && (
+                          <button
+                            onClick={() => onOpenClaimPage(selectedGameId)}
+                            className="w-full bg-blue-500/20 text-blue-400 rounded-lg px-4 py-3 text-sm font-medium hover:bg-blue-500/30 transition-colors text-left"
+                          >
+                            <div className="font-semibold">Ask people to claim their identity</div>
+                            <div className="text-xs text-blue-400/70 mt-0.5">
+                              Share this page in WhatsApp so each person can map their name
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Player breakdown */}
+                        <div className="bg-card rounded-xl p-4">
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                            Players
+                          </h3>
+                          <div className="space-y-2">
+                            {squaresEntries.map(s => (
+                              <div key={s.playerName} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
+                                <div>
+                                  <span className="font-medium text-foreground">{s.playerName}</span>
+                                  {s.appUsername && (
+                                    <span className="text-blue-400 text-xs ml-1">@{s.appUsername}</span>
+                                  )}
+                                  <span className="text-muted-foreground ml-2">
+                                    {s.unitCount} sq
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-red-400">-${s.totalOwed.toFixed(2)}</span>
+                                  {s.winnings > 0 && (
+                                    <span className="text-green-400 ml-2">+${s.winnings.toFixed(2)}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Name mapping - shown when game names don't match WhatsApp names */}
+                        {people.length > 0 && squaresEntries.length > 0 && (() => {
+                          const unmappedEntries = squaresEntries
+                            .filter((s: GameEntry) => !people.includes(s.playerName) && !nameMap.has(s.playerName));
+                          const mapped = Array.from(nameMap.entries());
+
+                          if (unmappedEntries.length === 0 && mapped.length === 0) return null;
+
+                          return (
+                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                              <h3 className="text-sm font-semibold text-yellow-400 mb-1">
+                                Link Names
+                              </h3>
+                              <p className="text-xs text-muted-foreground mb-3">
+                                These game names don&apos;t match anyone in your People list. Link them to the right WhatsApp name.
+                              </p>
+
+                              {mapped.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                  {mapped.map(([gameName, waName]: [string, string]) => {
+                                    const entry = squaresEntries.find((s: GameEntry) => s.playerName === gameName);
+                                    return (
+                                      <div key={gameName} className="bg-muted/30 rounded-lg px-3 py-2">
+                                        <div className="flex items-center justify-between text-sm">
+                                          <span className="text-muted-foreground">{gameName}</span>
+                                          <span className="text-xs text-muted-foreground mx-2">=</span>
+                                          <span className="font-medium text-green-400 flex-1">{waName}</span>
+                                          <button
+                                            onClick={() => {
+                                              setNameMap((prev: Map<string, string>) => {
+                                                const next = new Map(prev);
+                                                next.delete(gameName);
+                                                return next;
+                                              });
+                                            }}
+                                            className="text-muted-foreground hover:text-destructive ml-2"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                          </button>
+                                        </div>
+                                        {entry?.appUsername && (
+                                          <div className="text-xs text-muted-foreground mt-1">
+                                            App login: @{entry.appUsername}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {unmappedEntries.map((s: GameEntry) => (
+                                <div key={s.playerName} className="mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-shrink-0 min-w-0">
+                                      <span className="text-sm text-foreground whitespace-nowrap truncate block">
+                                        {s.playerName}
+                                      </span>
+                                      {s.appUsername && (
+                                        <span className="text-xs text-blue-400">
+                                          app: @{s.appUsername}
+                                        </span>
+                                      )}
                                     </div>
-                                    {settlement?.appUsername && (
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        App login: @{settlement.appUsername}
+                                    <span className="text-xs text-muted-foreground">=</span>
+                                    <Select
+                                      value=""
+                                      onValueChange={(waName: string) => {
+                                        if (!waName) return;
+                                        setNameMap((prev: Map<string, string>) => {
+                                          const next = new Map(prev);
+                                          next.set(s.playerName, waName);
+                                          return next;
+                                        });
+                                        const detail = s.appUsername
+                                          ? `"${s.playerName}" (game, app: @${s.appUsername}) = "${waName}" (WhatsApp)`
+                                          : `"${s.playerName}" (game) = "${waName}" (WhatsApp)`;
+                                        addAudit('name_mapped', detail);
+                                      }}
+                                    >
+                                      <SelectTrigger className="bg-input flex-1 min-w-0">
+                                        <SelectValue placeholder="WhatsApp name..." />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {people.map((name: string) => (
+                                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Identity Claims - admin review */}
+                        {claims.length > 0 && (
+                          <div className="bg-card rounded-xl p-4">
+                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                              Identity Claims ({claims.filter((c: { status: string }) => c.status === 'pending').length} pending)
+                            </h3>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              People have claimed their game identity. Review and approve to auto-populate the People list.
+                            </p>
+                            <div className="space-y-2">
+                              {claims.map((claim: {
+                                id: string;
+                                squares_player_name: string;
+                                whatsapp_name: string;
+                                app_username: string | null;
+                                squares_count: number;
+                                status: string;
+                              }) => (
+                                <div key={claim.id} className={`rounded-lg px-3 py-2 text-sm ${
+                                  claim.status === 'approved'
+                                    ? 'bg-green-500/10 border border-green-500/20'
+                                    : claim.status === 'rejected'
+                                    ? 'bg-red-500/10 border border-red-500/20'
+                                    : 'bg-muted/30'
+                                }`}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <span className="font-medium text-foreground">{claim.squares_player_name}</span>
+                                      {claim.app_username && (
+                                        <span className="text-blue-400 text-xs ml-1">@{claim.app_username}</span>
+                                      )}
+                                      <span className="text-muted-foreground mx-1">=</span>
+                                      <span className="text-foreground">{claim.whatsapp_name}</span>
+                                      <span className="text-muted-foreground text-xs ml-2">
+                                        ({claim.squares_count} entries)
+                                      </span>
+                                    </div>
+                                    {claim.status === 'pending' && (
+                                      <div className="flex gap-1 ml-2">
+                                        <button
+                                          onClick={() => handleReviewClaim(claim.id, 'approved')}
+                                          className="bg-green-500/20 text-green-400 rounded px-2 py-1 text-xs font-medium hover:bg-green-500/30"
+                                        >
+                                          Approve
+                                        </button>
+                                        <button
+                                          onClick={() => handleReviewClaim(claim.id, 'rejected')}
+                                          className="bg-red-500/20 text-red-400 rounded px-2 py-1 text-xs font-medium hover:bg-red-500/30"
+                                        >
+                                          Reject
+                                        </button>
                                       </div>
                                     )}
+                                    {claim.status === 'approved' && (
+                                      <span className="text-green-400 text-xs font-medium ml-2">Approved</span>
+                                    )}
+                                    {claim.status === 'rejected' && (
+                                      <span className="text-red-400 text-xs font-medium ml-2">Rejected</span>
+                                    )}
                                   </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Unmapped names */}
-                          {unmappedSettlements.map((s: SquaresSettlement) => (
-                            <div key={s.playerName} className="mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-shrink-0 min-w-0">
-                                  <span className="text-sm text-foreground whitespace-nowrap truncate block">
-                                    {s.playerName}
-                                  </span>
-                                  {s.appUsername && (
-                                    <span className="text-xs text-blue-400">
-                                      app: @{s.appUsername}
-                                    </span>
-                                  )}
                                 </div>
-                                <span className="text-xs text-muted-foreground">=</span>
-                                <Select
-                                  value=""
-                                  onValueChange={(waName: string) => {
-                                    if (!waName) return;
-                                    setNameMap((prev: Map<string, string>) => {
-                                      const next = new Map(prev);
-                                      next.set(s.playerName, waName);
-                                      return next;
-                                    });
-                                    const detail = s.appUsername
-                                      ? `"${s.playerName}" (Squares, app: @${s.appUsername}) = "${waName}" (WhatsApp)`
-                                      : `"${s.playerName}" (Squares) = "${waName}" (WhatsApp)`;
-                                    addAudit('name_mapped', detail);
-                                  }}
-                                >
-                                  <SelectTrigger className="bg-input flex-1 min-w-0">
-                                    <SelectValue placeholder="WhatsApp name..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {people.map((name: string) => (
-                                      <SelectItem key={name} value={name}>{name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Identity Claims - admin review */}
-                    {claims.length > 0 && (
-                      <div className="bg-card rounded-xl p-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                          Identity Claims ({claims.filter((c: { status: string }) => c.status === 'pending').length} pending)
-                        </h3>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          People have claimed their Squares identity. Review and approve to auto-populate the People list.
-                        </p>
-                        <div className="space-y-2">
-                          {claims.map((claim: {
-                            id: string;
-                            squares_player_name: string;
-                            whatsapp_name: string;
-                            app_username: string | null;
-                            squares_count: number;
-                            status: string;
-                          }) => (
-                            <div key={claim.id} className={`rounded-lg px-3 py-2 text-sm ${
-                              claim.status === 'approved'
-                                ? 'bg-green-500/10 border border-green-500/20'
-                                : claim.status === 'rejected'
-                                ? 'bg-red-500/10 border border-red-500/20'
-                                : 'bg-muted/30'
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <span className="font-medium text-foreground">{claim.squares_player_name}</span>
-                                  {claim.app_username && (
-                                    <span className="text-blue-400 text-xs ml-1">@{claim.app_username}</span>
-                                  )}
-                                  <span className="text-muted-foreground mx-1">=</span>
-                                  <span className="text-foreground">{claim.whatsapp_name}</span>
-                                  <span className="text-muted-foreground text-xs ml-2">
-                                    ({claim.squares_count} sq)
-                                  </span>
-                                </div>
-                                {claim.status === 'pending' && (
-                                  <div className="flex gap-1 ml-2">
-                                    <button
-                                      onClick={() => handleReviewClaim(claim.id, 'approved')}
-                                      className="bg-green-500/20 text-green-400 rounded px-2 py-1 text-xs font-medium hover:bg-green-500/30"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={() => handleReviewClaim(claim.id, 'rejected')}
-                                      className="bg-red-500/20 text-red-400 rounded px-2 py-1 text-xs font-medium hover:bg-red-500/30"
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                )}
-                                {claim.status === 'approved' && (
-                                  <span className="text-green-400 text-xs font-medium ml-2">Approved</span>
-                                )}
-                                {claim.status === 'rejected' && (
-                                  <span className="text-red-400 text-xs font-medium ml-2">Rejected</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pot collector */}
-                    {people.length > 0 && (
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                          Who collects/manages the pot?
-                        </label>
-                        <Select value={potCollector} onValueChange={(value: string) => {
-                          setPotCollector(value);
-                          if (value) addAudit('pot_collector_set', value);
-                        }}>
-                          <SelectTrigger className="w-full bg-input">
-                            <SelectValue placeholder="Select pot collector..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {people.map(name => (
-                              <SelectItem key={name} value={name}>{name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
               </>
+            )}
+
+            {/* ============ CUSTOM MODE (Poker, Fantasy, etc.) ============ */}
+            {gameMode === 'custom' && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Add players with their buy-in and payout amounts. Works for poker, fantasy leagues, or any game with a pot.
+                </p>
+
+                {/* Add custom game entry */}
+                <div className="bg-card rounded-xl p-4 space-y-3">
+                  <Input
+                    value={newCustomPlayer}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCustomPlayer(e.target.value)}
+                    placeholder="Player name"
+                    className="bg-input"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Buy-in ($)</label>
+                      <Input
+                        value={newCustomBuyIn}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCustomBuyIn(e.target.value)}
+                        placeholder="50"
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="bg-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Payout ($)</label>
+                      <Input
+                        value={newCustomPayout}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCustomPayout(e.target.value)}
+                        placeholder="0"
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="bg-input"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      const name = newCustomPlayer.trim();
+                      const buyIn = parseFloat(newCustomBuyIn) || 0;
+                      const payout = parseFloat(newCustomPayout) || 0;
+                      if (!name || buyIn <= 0) return;
+                      const entry: GameEntry = {
+                        playerName: name,
+                        unitCount: 1,
+                        costPerUnit: buyIn,
+                        totalOwed: buyIn,
+                        winnings: payout,
+                        appUsername: null,
+                      };
+                      setCustomEntries((prev: GameEntry[]) => [...prev, entry]);
+                      addAudit('game_player_added', `${name}: buy-in $${buyIn.toFixed(2)}, payout $${payout.toFixed(2)}`);
+                      setNewCustomPlayer('');
+                      setNewCustomBuyIn('');
+                      setNewCustomPayout('');
+                    }}
+                    disabled={!newCustomPlayer.trim() || !newCustomBuyIn || parseFloat(newCustomBuyIn) <= 0}
+                    className="w-full bg-primary text-primary-foreground"
+                  >
+                    Add Player
+                  </Button>
+                </div>
+
+                {/* Custom entries list */}
+                {customEntries.length > 0 && (
+                  <div className="bg-card rounded-xl p-4">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                      Players ({customEntries.length})
+                    </h3>
+                    {(() => {
+                      const totalBuyIns = customEntries.reduce((sum, e) => sum + e.totalOwed, 0);
+                      const totalPayouts = customEntries.reduce((sum, e) => sum + e.winnings, 0);
+                      return (
+                        <div className="flex justify-between text-xs text-muted-foreground mb-3 px-1">
+                          <span>Total buy-ins: ${totalBuyIns.toFixed(2)}</span>
+                          <span>Total payouts: ${totalPayouts.toFixed(2)}</span>
+                          {Math.abs(totalBuyIns - totalPayouts) > 0.01 && (
+                            <span className="text-amber-400">
+                              Diff: ${Math.abs(totalBuyIns - totalPayouts).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    <div className="space-y-2">
+                      {customEntries.map((entry, idx) => (
+                        <div key={`${entry.playerName}-${idx}`} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
+                          <span className="font-medium text-foreground">{entry.playerName}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-red-400">-${entry.totalOwed.toFixed(2)}</span>
+                            {entry.winnings > 0 && (
+                              <span className="text-green-400">+${entry.winnings.toFixed(2)}</span>
+                            )}
+                            <button
+                              onClick={() => {
+                                setCustomEntries((prev: GameEntry[]) => prev.filter((_, i) => i !== idx));
+                                addAudit('game_player_removed', entry.playerName);
+                              }}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Name mapping for custom mode */}
+                {people.length > 0 && customEntries.length > 0 && (() => {
+                  const unmappedEntries = customEntries
+                    .filter((s: GameEntry) => !people.includes(s.playerName) && !nameMap.has(s.playerName));
+                  const mapped = Array.from(nameMap.entries());
+
+                  if (unmappedEntries.length === 0 && mapped.length === 0) return null;
+
+                  return (
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-yellow-400 mb-1">
+                        Link Names
+                      </h3>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Link game names to WhatsApp names if they differ.
+                      </p>
+
+                      {mapped.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {mapped.map(([gameName, waName]: [string, string]) => (
+                            <div key={gameName} className="bg-muted/30 rounded-lg px-3 py-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">{gameName}</span>
+                                <span className="text-xs text-muted-foreground mx-2">=</span>
+                                <span className="font-medium text-green-400 flex-1">{waName}</span>
+                                <button
+                                  onClick={() => {
+                                    setNameMap((prev: Map<string, string>) => {
+                                      const next = new Map(prev);
+                                      next.delete(gameName);
+                                      return next;
+                                    });
+                                  }}
+                                  className="text-muted-foreground hover:text-destructive ml-2"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {unmappedEntries.map((s: GameEntry, idx: number) => (
+                        <div key={`${s.playerName}-${idx}`} className="mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-foreground flex-shrink-0">{s.playerName}</span>
+                            <span className="text-xs text-muted-foreground">=</span>
+                            <Select
+                              value=""
+                              onValueChange={(waName: string) => {
+                                if (!waName) return;
+                                setNameMap((prev: Map<string, string>) => {
+                                  const next = new Map(prev);
+                                  next.set(s.playerName, waName);
+                                  return next;
+                                });
+                                addAudit('name_mapped', `"${s.playerName}" (game) = "${waName}" (WhatsApp)`);
+                              }}
+                            >
+                              <SelectTrigger className="bg-input flex-1 min-w-0">
+                                <SelectValue placeholder="WhatsApp name..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {people.map((name: string) => (
+                                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+
+            {/* Pot collector - shared across both modes */}
+            {people.length > 0 && gameEntries.length > 0 && (
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Who collects/manages the pot?
+                </label>
+                <Select value={potCollector} onValueChange={(value: string) => {
+                  setPotCollector(value);
+                  if (value) addAudit('pot_collector_set', value);
+                }}>
+                  <SelectTrigger className="w-full bg-input">
+                    <SelectValue placeholder="Select pot collector..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {people.map(name => (
+                      <SelectItem key={name} value={name}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
           </>
         )}
@@ -1028,7 +1342,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
         </Button>
         {!canCalculate && (
           <p className="text-xs text-muted-foreground text-center mt-1">
-            Add at least 2 people and 1 expense or link a squares game
+            Add at least 2 people and 1 expense or add game entries
           </p>
         )}
       </div>

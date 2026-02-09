@@ -115,12 +115,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Build settlement data with linked identity info
+  // Uses generic GameEntry field names (unitCount, costPerUnit) alongside legacy names
   const settlements = Array.from(playerSquares.entries()).map(([name, count]) => {
     const identity = playerIdentities.get(name);
     return {
       playerName: name,
-      squareCount: count,
-      entryFee,
+      unitCount: count,
+      costPerUnit: entryFee,
       totalOwed: count * entryFee,
       winnings: playerWinnings.get(name) || 0,
       // Linked identity from app login (if they were logged in when claiming)

@@ -22,8 +22,8 @@ interface SettlementClaimScreenProps {
 
 interface SettlementPlayer {
   playerName: string;
-  squareCount: number;
-  entryFee: number;
+  unitCount: number;
+  costPerUnit: number;
   totalOwed: number;
   winnings: number;
   appUsername: string | null;
@@ -205,7 +205,7 @@ export function SettlementClaimScreen({ gameId, onBack }: SettlementClaimScreenP
                       value={p.playerName}
                       disabled={claimed}
                     >
-                      {p.playerName} ({p.squareCount} squares)
+                      {p.playerName} ({p.unitCount} squares)
                       {claimed ? ' - already claimed' : ''}
                     </SelectItem>
                   );
@@ -222,7 +222,7 @@ export function SettlementClaimScreen({ gameId, onBack }: SettlementClaimScreenP
               <div className="bg-muted/30 rounded-lg p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Squares owned</span>
-                  <span className="font-medium text-foreground">{p.squareCount}</span>
+                  <span className="font-medium text-foreground">{p.unitCount}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Entry fee owed</span>

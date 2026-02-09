@@ -1,5 +1,6 @@
 // Expense Splitting Algorithm
 // All computation is client-side - no financial data is stored
+// Generic: works for Squares, Poker, Fantasy, or any buy-in/payout game
 
 export interface Expense {
   id: string;
@@ -9,14 +10,22 @@ export interface Expense {
   splitAmong: string[]; // WhatsApp names of people sharing this expense
 }
 
-export interface SquaresSettlement {
+/**
+ * A player's entry in any game with buy-ins and payouts.
+ * - Squares: unitCount=7 squares, costPerUnit=$10, totalOwed=$70, winnings from quarters
+ * - Poker: unitCount=1 buy-in, costPerUnit=$50, totalOwed=$50, winnings from final pot
+ */
+export interface GameEntry {
   playerName: string;
-  squareCount: number;
-  entryFee: number;     // per square
-  totalOwed: number;    // squareCount * entryFee
-  winnings: number;     // amount won from quarters
+  unitCount: number;      // squares purchased, buy-ins, etc.
+  costPerUnit: number;    // $ per square, $ per buy-in
+  totalOwed: number;      // unitCount * costPerUnit
+  winnings: number;       // amount won (quarters, final pot, etc.)
   appUsername: string | null; // HawkTrivia username if they were logged in
 }
+
+// Backward-compatible alias
+export type SquaresSettlement = GameEntry;
 
 export interface Settlement {
   from: string;   // person who owes
@@ -33,16 +42,16 @@ export interface BalanceSummary {
 
 /**
  * Calculate how much each person's fair share is for all expenses,
- * factoring in squares entry fees and winnings.
+ * factoring in game entry fees and winnings.
  *
- * nameMap: maps Squares player names to WhatsApp names so they
+ * nameMap: maps game player names to WhatsApp names so they
  * are treated as the same person in the calculation.
  */
 export function calculateBalances(
   expenses: Expense[],
-  squaresSettlements: SquaresSettlement[],
-  potCollector: string | null, // who collected the squares pot money
-  nameMap?: Map<string, string>, // squaresName -> whatsappName
+  gameEntries: GameEntry[],
+  potCollector: string | null, // who collected the game pot money
+  nameMap?: Map<string, string>, // gameName -> whatsappName
 ): BalanceSummary[] {
   const balanceMap = new Map<string, { paid: number; share: number }>();
 
@@ -74,13 +83,13 @@ export function calculateBalances(
     }
   }
 
-  // Process squares entry fees
-  // Each player owes (squareCount * entryFee) to the pot collector
+  // Process game entry fees (squares buy-ins, poker buy-ins, etc.)
+  // Each player owes (unitCount * costPerUnit) to the pot collector
   if (potCollector) {
-    const totalPot = squaresSettlements.reduce((sum, s) => sum + s.totalOwed, 0);
-    const totalWinnings = squaresSettlements.reduce((sum, s) => sum + s.winnings, 0);
+    const totalPot = gameEntries.reduce((sum, s) => sum + s.totalOwed, 0);
+    const totalWinnings = gameEntries.reduce((sum, s) => sum + s.winnings, 0);
 
-    for (const settlement of squaresSettlements) {
+    for (const settlement of gameEntries) {
       const resolvedName = resolve(settlement.playerName);
       const player = getOrCreate(resolvedName);
       // They owe their entry fees
@@ -163,9 +172,10 @@ export function generateWhatsAppMessage(
   settlements: Settlement[],
   balances: BalanceSummary[],
   expenses: Expense[],
-  squaresSettlements: SquaresSettlement[],
+  gameEntries: GameEntry[],
   auditLog?: AuditEntry[],
   nameMap?: Map<string, string>,
+  gameLabel?: string, // e.g. "Squares", "Poker Night", "Fantasy League"
 ): string {
   const lines: string[] = [];
 
@@ -183,12 +193,13 @@ export function generateWhatsAppMessage(
     lines.push('');
   }
 
-  // Squares summary
-  if (squaresSettlements.length > 0) {
-    const totalPot = squaresSettlements.reduce((sum, s) => sum + s.totalOwed, 0);
-    lines.push(`*Squares Game:*`);
+  // Game summary (generic: squares, poker, etc.)
+  if (gameEntries.length > 0) {
+    const label = gameLabel || 'Game';
+    const totalPot = gameEntries.reduce((sum, s) => sum + s.totalOwed, 0);
+    lines.push(`*${label}:*`);
     lines.push(`Total pot: $${totalPot.toFixed(2)}`);
-    const winners = squaresSettlements.filter(s => s.winnings > 0);
+    const winners = gameEntries.filter(s => s.winnings > 0);
     if (winners.length > 0) {
       for (const w of winners) {
         lines.push(`- ${w.playerName} won $${w.winnings.toFixed(2)}`);
@@ -199,7 +210,7 @@ export function generateWhatsAppMessage(
 
   // Name mappings
   if (nameMap && nameMap.size > 0) {
-    lines.push('*Name Mappings (Squares -> WhatsApp):*');
+    lines.push('*Name Mappings (Game -> WhatsApp):*');
     for (const [sqName, waName] of nameMap) {
       lines.push(`- ${sqName} = ${waName}`);
     }
@@ -237,8 +248,12 @@ export type AuditAction =
   | 'person_removed'
   | 'expense_added'
   | 'expense_removed'
-  | 'squares_linked'
-  | 'squares_unlinked'
+  | 'game_linked'
+  | 'game_unlinked'
+  | 'game_player_added'
+  | 'game_player_removed'
+  | 'fee_override'
+  | 'payout_override'
   | 'pot_collector_set'
   | 'names_imported'
   | 'name_mapped'
@@ -256,10 +271,14 @@ const AUDIT_LABELS: Record<AuditAction, string> = {
   person_removed: 'Removed person',
   expense_added: 'Added expense',
   expense_removed: 'Removed expense',
-  squares_linked: 'Linked squares game',
-  squares_unlinked: 'Unlinked squares game',
+  game_linked: 'Linked game',
+  game_unlinked: 'Unlinked game',
+  game_player_added: 'Added game player',
+  game_player_removed: 'Removed game player',
+  fee_override: 'Set buy-in amount',
+  payout_override: 'Set payout amount',
   pot_collector_set: 'Set pot collector',
-  names_imported: 'Imported names from squares',
+  names_imported: 'Imported names',
   name_mapped: 'Linked name',
   settlement_calculated: 'Calculated settlement',
 };
