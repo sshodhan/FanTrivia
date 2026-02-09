@@ -46,6 +46,8 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   // State for squares integration
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [potCollector, setPotCollector] = useState<string>('');
+  // Admin-editable fee per square (null = use game default)
+  const [feeOverride, setFeeOverride] = useState<number | null>(null);
 
   // Name mapping: squares player name -> WhatsApp name
   // Used when someone claimed a square as "Naomi" but their WhatsApp is "Naomi Akiko"
@@ -73,8 +75,35 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
     fetcher
   );
 
-  const squaresSettlements: SquaresSettlement[] = settlementData?.settlements || [];
+  const rawSquaresSettlements: SquaresSettlement[] = settlementData?.settlements || [];
   const squaresPlayers: string[] = settlementData?.players || [];
+
+  // The effective fee per square: admin override or game default
+  const gameFee: number = settlementData?.game?.entryFee ?? 0;
+  const effectiveFee = feeOverride ?? gameFee;
+
+  // Recompute settlements with the admin's fee override
+  const squaresSettlements: SquaresSettlement[] = useMemo(() => {
+    if (effectiveFee === gameFee) return rawSquaresSettlements;
+    // Recalculate totalOwed and winnings with the new fee
+    const totalSquares = rawSquaresSettlements.reduce((sum, s) => sum + s.squareCount, 0);
+    const newTotalPot = totalSquares * effectiveFee;
+    const newQuarterPayout = newTotalPot > 0 ? newTotalPot * 0.25 : 0;
+    // Figure out which players had winnings (non-zero) to redistribute
+    return rawSquaresSettlements.map(s => {
+      const hadWinnings = s.winnings > 0 && gameFee > 0;
+      // Number of quarters won = original winnings / original quarter payout
+      const quartersWon = gameFee > 0 && s.winnings > 0
+        ? Math.round(s.winnings / (settlementData?.quarterPayout || 1))
+        : 0;
+      return {
+        ...s,
+        entryFee: effectiveFee,
+        totalOwed: s.squareCount * effectiveFee,
+        winnings: hadWinnings ? quartersWon * newQuarterPayout : 0,
+      };
+    });
+  }, [rawSquaresSettlements, effectiveFee, gameFee, settlementData?.quarterPayout]);
 
   // Fetch identity claims for the selected game
   const { data: claimsData, mutate: mutateClaims } = useSWR(
@@ -654,6 +683,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                     onValueChange={(value: string) => {
                       const prev = selectedGameId;
                       setSelectedGameId(value || null);
+                      setFeeOverride(null); // reset override when switching games
                       if (value) {
                         const game = games.find((g: { id: string; name: string }) => g.id === value);
                         addAudit('squares_linked', game?.name || value);
@@ -677,32 +707,76 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
 
                 {settlementData && (
                   <>
-                    {/* Game info */}
-                    <div className="bg-card rounded-xl p-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Entry fee</span>
-                        <span className="font-medium text-foreground">
-                          ${settlementData.game.entryFee.toFixed(2)}/square
-                        </span>
+                    {/* Game info + fee multiplier */}
+                    <div className="bg-card rounded-xl p-4 space-y-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">
+                          $ per square
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={feeOverride ?? gameFee}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                              const val = parseFloat(e.target.value);
+                              if (isNaN(val) || val < 0) return;
+                              if (val === gameFee) {
+                                setFeeOverride(null);
+                              } else {
+                                setFeeOverride(val);
+                              }
+                            }}
+                            onBlur={() => {
+                              if (feeOverride !== null && feeOverride !== gameFee) {
+                                addAudit('expense_added', `Set fee to $${feeOverride.toFixed(2)}/square (game default was $${gameFee.toFixed(2)})`);
+                              }
+                            }}
+                            className="bg-input w-28 text-center font-bold"
+                          />
+                          <span className="text-sm text-muted-foreground">per square</span>
+                          {feeOverride !== null && feeOverride !== gameFee && (
+                            <button
+                              onClick={() => setFeeOverride(null)}
+                              className="text-xs text-amber-400 hover:text-amber-300"
+                            >
+                              reset to ${gameFee.toFixed(2)}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total pot</span>
-                        <span className="font-medium text-foreground">
-                          ${settlementData.totalPot.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Quarters scored</span>
-                        <span className="font-medium text-foreground">
-                          {settlementData.quartersScored}/4
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Per-quarter payout</span>
-                        <span className="font-medium text-foreground">
-                          ${settlementData.quarterPayout.toFixed(2)}
-                        </span>
-                      </div>
+
+                      {(() => {
+                        const totalSquares = squaresSettlements.reduce((sum, s) => sum + s.squareCount, 0);
+                        const computedPot = totalSquares * effectiveFee;
+                        const computedQuarterPay = computedPot > 0 ? computedPot * 0.25 : 0;
+                        return (
+                          <>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Total squares</span>
+                              <span className="font-medium text-foreground">{totalSquares}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Total pot</span>
+                              <span className="font-medium text-foreground">
+                                ${computedPot.toFixed(2)}
+                                {feeOverride !== null && feeOverride !== gameFee && (
+                                  <span className="text-amber-400 text-xs ml-1">(overridden)</span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Quarters scored</span>
+                              <span className="font-medium text-foreground">{settlementData.quartersScored}/4</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Per-quarter payout</span>
+                              <span className="font-medium text-foreground">${computedQuarterPay.toFixed(2)}</span>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     {/* Ask people to claim their identity */}
