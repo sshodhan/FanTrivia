@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { SquaresGrid } from './squares-grid';
 import { CreateGameForm } from './create-game-form';
 import { AdminControls } from './admin-controls';
+import { AdminUsersSquaresPanel } from './admin-users-squares-panel';
 import { ShareSection } from './share-section';
 import { ClaimSquareSheet } from './claim-square-sheet';
 import { MultiSelectToolbar } from './multi-select-toolbar';
@@ -544,6 +545,14 @@ export function SquaresGameScreen({ onBack, initialShareCode }: SquaresGameScree
             entries={entries}
             winners={winners}
             onGameUpdated={() => mutateGame()}
+            username={user?.username || ''}
+          />
+        )}
+
+        {/* Admin Users & Squares view (admin or game creator) */}
+        {(isCreator || user?.is_admin) && (
+          <AdminUsersSquaresPanel
+            gameId={game.id}
             username={user?.username || ''}
           />
         )}
