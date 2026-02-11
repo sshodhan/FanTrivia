@@ -86,8 +86,7 @@ export function calculateBalances(
   }
 
   // Process game entry fees (squares buy-ins, poker buy-ins, etc.)
-  // Each player owes (unitCount * costPerUnit) to the pot collector
-  if (potCollector) {
+  if (gameEntries.length > 0) {
     const totalPot = gameEntries.reduce((sum, s) => sum + s.totalOwed, 0);
     const totalWinnings = gameEntries.reduce((sum, s) => sum + s.winnings, 0);
 
@@ -100,11 +99,13 @@ export function calculateBalances(
       player.paid += settlement.winnings;
     }
 
-    // The pot collector "paid out" the winnings from the pot
-    // and received all entry fees
-    const collector = getOrCreate(potCollector);
-    collector.paid += totalPot;       // collected all entry fees
-    collector.share += totalWinnings; // paid out all winnings
+    // If someone collected the pot physically, balance their books:
+    // they received all entry fees and paid out all winnings
+    if (potCollector) {
+      const collector = getOrCreate(potCollector);
+      collector.paid += totalPot;       // collected all entry fees
+      collector.share += totalWinnings; // paid out all winnings
+    }
   }
 
   // Build summaries
