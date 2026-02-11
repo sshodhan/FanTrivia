@@ -6,8 +6,10 @@ export interface Expense {
   id: string;
   paidBy: string;       // WhatsApp name of person who paid
   description: string;  // What the expense was for
-  amount: number;       // Total amount paid
+  amount: number;       // Total amount paid (or unitCount * costPerUnit)
   splitAmong: string[]; // WhatsApp names of people sharing this expense
+  unitCount?: number;   // optional: 3 bags, 2 cases, etc.
+  costPerUnit?: number; // optional: $5/bag, $25/case, etc.
 }
 
 /**
@@ -187,7 +189,10 @@ export function generateWhatsAppMessage(
     lines.push('*Shared Expenses:*');
     const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
     for (const exp of expenses) {
-      lines.push(`- ${exp.description}: $${exp.amount.toFixed(2)} (paid by ${exp.paidBy})`);
+      const unitDetail = exp.unitCount && exp.costPerUnit
+        ? ` (${exp.unitCount} x $${exp.costPerUnit.toFixed(2)})`
+        : '';
+      lines.push(`- ${exp.description}${unitDetail}: $${exp.amount.toFixed(2)} (paid by ${exp.paidBy})`);
     }
     lines.push(`Total: $${totalExpenses.toFixed(2)}`);
     lines.push('');

@@ -42,6 +42,10 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   const [newExpensePaidBy, setNewExpensePaidBy] = useState('');
   const [splitMode, setSplitMode] = useState<'everyone' | 'custom'>('everyone');
   const [customSplit, setCustomSplit] = useState<Set<string>>(new Set());
+  // Amount entry: 'flat' = enter total directly, 'units' = enter quantity x price
+  const [amountMode, setAmountMode] = useState<'flat' | 'units'>('flat');
+  const [newExpenseQty, setNewExpenseQty] = useState('');
+  const [newExpenseUnitPrice, setNewExpenseUnitPrice] = useState('');
 
   // Game mode: 'squares' = link to DB game, 'custom' = manual entry (poker, fantasy, etc.)
   const [gameMode, setGameMode] = useState<'squares' | 'custom'>('squares');
@@ -241,8 +245,23 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
   // Add an expense
   const handleAddExpense = useCallback(() => {
     const desc = newExpenseDesc.trim();
-    const amount = parseFloat(newExpenseAmount);
-    if (!desc || isNaN(amount) || amount <= 0 || !newExpensePaidBy) return;
+    if (!desc || !newExpensePaidBy) return;
+
+    let amount: number;
+    let unitCount: number | undefined;
+    let costPerUnit: number | undefined;
+
+    if (amountMode === 'units') {
+      const qty = parseFloat(newExpenseQty);
+      const price = parseFloat(newExpenseUnitPrice);
+      if (isNaN(qty) || qty <= 0 || isNaN(price) || price <= 0) return;
+      unitCount = qty;
+      costPerUnit = price;
+      amount = qty * price;
+    } else {
+      amount = parseFloat(newExpenseAmount);
+      if (isNaN(amount) || amount <= 0) return;
+    }
 
     const splitAmong = splitMode === 'everyone'
       ? [...people]
@@ -258,17 +277,21 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
         description: desc,
         amount,
         splitAmong,
+        ...(unitCount !== undefined && { unitCount, costPerUnit }),
       },
     ]);
 
-    addAudit('expense_added', `${desc} - $${amount.toFixed(2)} paid by ${newExpensePaidBy}, split among ${splitAmong.length} people`);
+    const unitDetail = unitCount ? ` (${unitCount} x $${costPerUnit!.toFixed(2)})` : '';
+    addAudit('expense_added', `${desc}${unitDetail} - $${amount.toFixed(2)} paid by ${newExpensePaidBy}, split among ${splitAmong.length} people`);
 
     setNewExpenseDesc('');
     setNewExpenseAmount('');
+    setNewExpenseQty('');
+    setNewExpenseUnitPrice('');
     setNewExpensePaidBy('');
     setSplitMode('everyone');
     setCustomSplit(new Set());
-  }, [newExpenseDesc, newExpenseAmount, newExpensePaidBy, splitMode, customSplit, people, addAudit]);
+  }, [newExpenseDesc, newExpenseAmount, newExpensePaidBy, splitMode, customSplit, people, addAudit, amountMode, newExpenseQty, newExpenseUnitPrice]);
 
   // Remove an expense
   const handleRemoveExpense = useCallback((id: string) => {
@@ -343,7 +366,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
               Balance Summary
             </h3>
             <div className="space-y-2">
-              {results.balances.map(b => (
+              {results.balances.map((b: { name: string; totalPaid: number; totalShare: number; netBalance: number }) => (
                 <div key={b.name} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
                   <div>
                     <span className="font-medium text-foreground">{b.name}</span>
@@ -368,7 +391,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
               <p className="text-muted-foreground text-center py-4">All settled up!</p>
             ) : (
               <div className="space-y-3">
-                {results.settlements.map((s, idx) => (
+                {results.settlements.map((s: { from: string; to: string; amount: number }, idx: number) => (
                   <div key={idx} className="flex items-center gap-3 bg-muted/30 rounded-lg px-4 py-3">
                     <span className="font-medium text-red-400 flex-1 text-right">{s.from}</span>
                     <div className="flex flex-col items-center">
@@ -512,7 +535,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
               </div>
             ) : (
               <div className="space-y-2">
-                {people.map(name => (
+                {people.map((name: string) => (
                   <div key={name} className="flex items-center justify-between bg-card rounded-lg px-4 py-3">
                     <span className="font-medium text-foreground">{name}</span>
                     <button
@@ -549,18 +572,78 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                   <Input
                     value={newExpenseDesc}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExpenseDesc(e.target.value)}
-                    placeholder="What was it for? (e.g. Venue deposit)"
+                    placeholder="What was it for? (e.g. Bags of ice, Venue deposit)"
                     className="bg-input"
                   />
-                  <Input
-                    value={newExpenseAmount}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExpenseAmount(e.target.value)}
-                    placeholder="Amount ($)"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className="bg-input"
-                  />
+
+                  {/* Amount entry mode toggle */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Amount</label>
+                    <div className="flex gap-2 mb-2">
+                      <button
+                        onClick={() => setAmountMode('flat')}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          amountMode === 'flat'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        Flat amount
+                      </button>
+                      <button
+                        onClick={() => setAmountMode('units')}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          amountMode === 'units'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        Qty x Price
+                      </button>
+                    </div>
+
+                    {amountMode === 'flat' ? (
+                      <Input
+                        value={newExpenseAmount}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExpenseAmount(e.target.value)}
+                        placeholder="Total amount ($)"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="bg-input"
+                      />
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Input
+                            value={newExpenseQty}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExpenseQty(e.target.value)}
+                            placeholder="Qty (e.g. 3)"
+                            type="number"
+                            min="0"
+                            step="1"
+                            className="bg-input"
+                          />
+                        </div>
+                        <div>
+                          <Input
+                            value={newExpenseUnitPrice}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewExpenseUnitPrice(e.target.value)}
+                            placeholder="$/each (e.g. 5)"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className="bg-input"
+                          />
+                        </div>
+                        {newExpenseQty && newExpenseUnitPrice && (
+                          <div className="col-span-2 text-xs text-muted-foreground text-right">
+                            = ${(parseFloat(newExpenseQty) * parseFloat(newExpenseUnitPrice) || 0).toFixed(2)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Paid by</label>
@@ -569,7 +652,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                         <SelectValue placeholder="Who paid?" />
                       </SelectTrigger>
                       <SelectContent>
-                        {people.map(name => (
+                        {people.map((name: string) => (
                           <SelectItem key={name} value={name}>{name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -602,7 +685,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                     </div>
                     {splitMode === 'custom' && (
                       <div className="flex flex-wrap gap-2">
-                        {people.map(name => (
+                        {people.map((name: string) => (
                           <button
                             key={name}
                             onClick={() => toggleCustomSplit(name)}
@@ -621,7 +704,11 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
 
                   <Button
                     onClick={handleAddExpense}
-                    disabled={!newExpenseDesc.trim() || !newExpenseAmount || !newExpensePaidBy}
+                    disabled={
+                      !newExpenseDesc.trim() ||
+                      !newExpensePaidBy ||
+                      (amountMode === 'flat' ? !newExpenseAmount : (!newExpenseQty || !newExpenseUnitPrice))
+                    }
                     className="w-full bg-primary text-primary-foreground"
                   >
                     Add Expense
@@ -634,12 +721,17 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                       Added Expenses
                     </h3>
-                    {expenses.map(exp => (
+                    {expenses.map((exp: Expense) => (
                       <div key={exp.id} className="bg-card rounded-lg px-4 py-3">
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-medium text-foreground">{exp.description}</span>
                             <span className="text-primary font-bold ml-2">${exp.amount.toFixed(2)}</span>
+                            {exp.unitCount && exp.costPerUnit && (
+                              <span className="text-muted-foreground text-xs ml-1">
+                                ({exp.unitCount} x ${exp.costPerUnit.toFixed(2)})
+                              </span>
+                            )}
                           </div>
                           <button
                             onClick={() => handleRemoveExpense(exp.id)}
@@ -947,7 +1039,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                         {people.length > 0 && squaresEntries.length > 0 && (() => {
                           const unmappedEntries = squaresEntries
                             .filter((s: GameEntry) => !people.includes(s.playerName) && !nameMap.has(s.playerName));
-                          const mapped = Array.from(nameMap.entries());
+                          const mapped: [string, string][] = Array.from(nameMap.entries());
 
                           if (unmappedEntries.length === 0 && mapped.length === 0) return null;
 
@@ -1186,8 +1278,8 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                       Players ({customEntries.length})
                     </h3>
                     {(() => {
-                      const totalBuyIns = customEntries.reduce((sum, e) => sum + e.totalOwed, 0);
-                      const totalPayouts = customEntries.reduce((sum, e) => sum + e.winnings, 0);
+                      const totalBuyIns = customEntries.reduce((sum: number, e: GameEntry) => sum + e.totalOwed, 0);
+                      const totalPayouts = customEntries.reduce((sum: number, e: GameEntry) => sum + e.winnings, 0);
                       return (
                         <div className="flex justify-between text-xs text-muted-foreground mb-3 px-1">
                           <span>Total buy-ins: ${totalBuyIns.toFixed(2)}</span>
@@ -1201,7 +1293,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                       );
                     })()}
                     <div className="space-y-2">
-                      {customEntries.map((entry, idx) => (
+                      {customEntries.map((entry: GameEntry, idx: number) => (
                         <div key={`${entry.playerName}-${idx}`} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
                           <span className="font-medium text-foreground">{entry.playerName}</span>
                           <div className="flex items-center gap-3">
@@ -1229,7 +1321,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                 {people.length > 0 && customEntries.length > 0 && (() => {
                   const unmappedEntries = customEntries
                     .filter((s: GameEntry) => !people.includes(s.playerName) && !nameMap.has(s.playerName));
-                  const mapped = Array.from(nameMap.entries());
+                  const mapped: [string, string][] = Array.from(nameMap.entries());
 
                   if (unmappedEntries.length === 0 && mapped.length === 0) return null;
 
@@ -1317,7 +1409,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                     <SelectValue placeholder="Select pot collector..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {people.map(name => (
+                    {people.map((name: string) => (
                       <SelectItem key={name} value={name}>{name}</SelectItem>
                     ))}
                   </SelectContent>
