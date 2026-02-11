@@ -87,11 +87,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ games: games || [] });
   }
 
-  // List all active games
+  // List all games (including completed, for settlement purposes)
   const { data: games, error } = await supabase
     .from('squares_games')
     .select('*')
-    .in('status', ['open', 'locked', 'in_progress'])
+    .in('status', ['open', 'locked', 'in_progress', 'completed'])
     .order('created_at', { ascending: false })
     .limit(20);
 

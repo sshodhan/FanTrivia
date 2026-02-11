@@ -344,7 +344,17 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
     }
   }, [results?.message]);
 
-  const canCalculate = people.length >= 2 && (expenses.length > 0 || gameEntries.length > 0);
+  // Count all unique participants: people from People tab + game entry player names
+  const allParticipants = useMemo(() => {
+    const names = new Set(people);
+    for (const entry of gameEntries) {
+      const resolved = nameMap.get(entry.playerName) ?? entry.playerName;
+      names.add(resolved);
+    }
+    return names;
+  }, [people, gameEntries, nameMap]);
+
+  const canCalculate = allParticipants.size >= 2 && (expenses.length > 0 || gameEntries.length > 0);
 
   // Results view
   if (showResults && results) {
@@ -1207,7 +1217,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
             {gameMode === 'custom' && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Add players with their buy-in and payout amounts. Works for poker, fantasy leagues, or any game with a pot.
+                  Add players with their buy-in. Payouts can be added later after the game ends.
                 </p>
 
                 {/* Add custom game entry */}
@@ -1232,7 +1242,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Payout ($)</label>
+                      <label className="text-xs text-muted-foreground mb-1 block">Payout (optional)</label>
                       <Input
                         value={newCustomPayout}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewCustomPayout(e.target.value)}
@@ -1294,22 +1304,52 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
                     })()}
                     <div className="space-y-2">
                       {customEntries.map((entry: GameEntry, idx: number) => (
-                        <div key={`${entry.playerName}-${idx}`} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2 text-sm">
-                          <span className="font-medium text-foreground">{entry.playerName}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-red-400">-${entry.totalOwed.toFixed(2)}</span>
-                            {entry.winnings > 0 && (
-                              <span className="text-green-400">+${entry.winnings.toFixed(2)}</span>
-                            )}
-                            <button
-                              onClick={() => {
-                                setCustomEntries((prev: GameEntry[]) => prev.filter((_, i) => i !== idx));
-                                addAudit('game_player_removed', entry.playerName);
+                        <div key={`${entry.playerName}-${idx}`} className="bg-muted/30 rounded-lg px-3 py-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-foreground">{entry.playerName}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-red-400 text-xs">-${entry.totalOwed.toFixed(2)}</span>
+                              <button
+                                onClick={() => {
+                                  setCustomEntries((prev: GameEntry[]) => prev.filter((_: GameEntry, i: number) => i !== idx));
+                                  addAudit('game_player_removed', entry.playerName);
+                                }}
+                                className="text-muted-foreground hover:text-destructive"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                          {/* Inline-editable payout */}
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-xs text-muted-foreground">Payout:</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={entry.winnings || ''}
+                              placeholder="0"
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setCustomEntries((prev: GameEntry[]) =>
+                                  prev.map((ent: GameEntry, i: number) =>
+                                    i === idx ? { ...ent, winnings: val } : ent
+                                  )
+                                );
                               }}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                            </button>
+                              onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                if (val > 0) {
+                                  addAudit('payout_override', `${entry.playerName}: payout $${val.toFixed(2)}`);
+                                }
+                              }}
+                              className="bg-input h-7 w-24 text-sm text-green-400"
+                            />
+                            {entry.winnings > 0 && (
+                              <span className="text-green-400 text-xs font-medium">
+                                net: {entry.winnings - entry.totalOwed >= 0 ? '+' : ''}{(entry.winnings - entry.totalOwed).toFixed(2)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1434,7 +1474,7 @@ export function ExpenseSplitterScreen({ onBack, onOpenClaimPage }: ExpenseSplitt
         </Button>
         {!canCalculate && (
           <p className="text-xs text-muted-foreground text-center mt-1">
-            Add at least 2 people and 1 expense or add game entries
+            Need at least 2 participants and 1 expense or game entry
           </p>
         )}
       </div>
