@@ -13,6 +13,7 @@ interface HomeScreenProps {
   onViewPhotos: () => void;
   onViewParty: () => void;
   onViewSquares: () => void;
+  onViewSplitter: () => void;
 }
 
 export function HomeScreen({
@@ -22,6 +23,7 @@ export function HomeScreen({
   onViewPhotos,
   onViewParty,
   onViewSquares,
+  onViewSplitter,
 }: HomeScreenProps) {
   const { user, todayPlayed } = useUser();
 
@@ -102,6 +104,18 @@ export function HomeScreen({
           <span className="text-2xl">🏈</span>
           <span>SB SQUARES</span>
           <span className="text-sm font-normal opacity-70 ml-1">- Party Game!</span>
+        </button>
+      </div>
+
+      {/* Expense Splitter Button */}
+      <div className="px-6 mb-6">
+        <button
+          onClick={onViewSplitter}
+          className="w-full h-14 rounded-xl bg-gradient-to-r from-green-500 via-emerald-400 to-teal-400 text-gray-900 font-bold text-base flex items-center justify-center gap-3 transition-all hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-400/30 border-2 border-emerald-300"
+        >
+          <span className="text-xl">💸</span>
+          <span>SETTLE UP</span>
+          <span className="text-sm font-normal opacity-70 ml-1">- Who Owes Who</span>
         </button>
       </div>
 

@@ -17,10 +17,12 @@ import { SettingsScreen } from '@/components/settings-screen';
 import { DailyCategoriesScreen } from '@/components/daily-categories';
 import { PartyPlanScreen } from '@/components/party-plan-screen';
 import { SquaresGameScreen } from '@/components/squares/squares-game-screen';
+import { ExpenseSplitterScreen } from '@/components/expense-splitter-screen';
+import { SettlementClaimScreen } from '@/components/settlement-claim-screen';
 import { BottomNav, type NavScreen } from '@/components/bottom-nav';
 import { dayIdentifierToNumber } from '@/lib/category-data';
 
-type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings' | 'squares';
+type AppScreen = 'entry' | 'home' | 'trivia' | 'categories' | 'results' | 'scoreboard' | 'players' | 'photos' | 'party' | 'settings' | 'squares' | 'splitter' | 'settle-claim';
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface GameResult {
@@ -44,6 +46,7 @@ function AppContent() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [showNav, setShowNav] = useState(true);
+  const [claimGameId, setClaimGameId] = useState<string | null>(null);
   const hasInitializedScreen = useRef(false);
 
   // Determine initial screen based on user registration (runs only on login/logout, not on data refresh)
@@ -93,7 +96,7 @@ function AppContent() {
 
   // Hide nav on certain screens + log screen transitions for debugging
   useEffect(() => {
-    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party', 'squares'];
+    const hideNavScreens: AppScreen[] = ['entry', 'trivia', 'results', 'party', 'squares', 'splitter', 'settle-claim'];
     setShowNav(!hideNavScreens.includes(currentScreen));
     console.log("[v0] SCREEN CHANGED to:", currentScreen);
   }, [currentScreen]);
@@ -247,6 +250,7 @@ function AppContent() {
           onViewPhotos={() => setCurrentScreen('photos')}
           onViewParty={() => setCurrentScreen('party')}
           onViewSquares={() => setCurrentScreen('squares')}
+          onViewSplitter={() => setCurrentScreen('splitter')}
         />
       )}
 
@@ -303,6 +307,23 @@ function AppContent() {
 
       {currentScreen === 'squares' && (
         <SquaresGameScreen onBack={() => setCurrentScreen('home')} />
+      )}
+
+      {currentScreen === 'splitter' && (
+        <ExpenseSplitterScreen
+          onBack={() => setCurrentScreen('home')}
+          onOpenClaimPage={(gameId: string) => {
+            setClaimGameId(gameId);
+            setCurrentScreen('settle-claim');
+          }}
+        />
+      )}
+
+      {currentScreen === 'settle-claim' && claimGameId && (
+        <SettlementClaimScreen
+          gameId={claimGameId}
+          onBack={() => setCurrentScreen('splitter')}
+        />
       )}
 
       {currentScreen === 'settings' && (
