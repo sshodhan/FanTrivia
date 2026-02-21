@@ -161,6 +161,30 @@ Deployed to Vercel. Shared the URL. Done.
 
 ---
 
+## Game Day: Hotfixing from the Couch
+
+Here's a story they don't put in the sprint retrospective.
+
+It's Super Bowl Sunday. Kickoff is 3:30 PM. Thirty friends are at the party, phones out, claiming squares on the board we'd built that same morning. The energy is perfect -- people are tapping cells, picking emojis, trash-talking about which numbers they'll get.
+
+Then someone messages me: **"It says I hit the max. I can only pick 5 squares?"**
+
+I'd set `max_squares_per_player` to 5 when I created the game. Seemed reasonable at the time. What I hadn't accounted for: with 30 people and a 100-square board, some folks wanted 8 or 10. And there was no admin control to change the limit after game creation. The setting was baked in at create time. To change it, you'd have to delete the game and start over -- losing everyone's claimed squares.
+
+The national anthem is playing. I'm on my couch. My laptop is across the room. But I have the **Claude mobile app** on my phone.
+
+I opened Claude, described the problem: *"I need a PATCH endpoint for /api/squares/settings that lets the game creator update max_squares_per_player on an open game. Validate 1-100 or null for unlimited. Also add an inline input to admin-controls.tsx so I can change it from the admin panel."*
+
+Claude wrote the entire fix: a new API route with authorization checks, input validation, audit logging, and the admin UI component with a number input and save button. Three files, 163 lines of code. I reviewed it on my phone screen, merged [PR #72](https://github.com/sshodhan/FanTrivia/pull/72), and Vercel auto-deployed.
+
+**Merged at 3:54 PM. First quarter hadn't started yet.**
+
+I bumped the limit to 10, told everyone to refresh, and went back to watching the game. Nobody at the party knew anything had happened. That's the thing about shipping fixes with AI -- the gap between "we have a problem" and "it's deployed" collapsed from hours to minutes.
+
+The commit message reads: `feat: add max squares per player admin control for Super Bowl Squares`. It was authored by Claude, reviewed on a phone, and deployed before the opening kickoff. That's the 2026 developer experience.
+
+---
+
 ## The Cheat Codes (What Made 7 Days Possible)
 
 ### 1. AI as a Force Multiplier, Not a Crutch
