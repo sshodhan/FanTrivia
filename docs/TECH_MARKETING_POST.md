@@ -1,6 +1,6 @@
 # We Built a Full-Stack Trivia Platform in 7 Days. Here's How.
 
-**TL;DR:** One week. One developer. 97 trivia questions, a live leaderboard, Super Bowl Squares with QR sharing, photo uploads, an expense splitter, and zero-password auth. Next.js 16 + Supabase did the heavy lifting. Here's the day-by-day breakdown.
+**TL;DR:** One week. One developer. One AI-powered toolkit. 97 trivia questions, a live leaderboard, Super Bowl Squares with QR sharing, photo uploads, an expense splitter, and zero-password auth. Next.js 16 + Supabase + Shadcn + v0 + Claude Code did the heavy lifting. Here's the day-by-day breakdown of building fast by standing on the shoulders of giant component libraries and AI pair programmers.
 
 ---
 
@@ -15,6 +15,9 @@ The constraints were brutal and clarifying:
 - **Multiple game modes.** Trivia, Squares, photo sharing, expense splitting.
 - **Live synchronization.** During the actual game, everyone sees the same question at the same time.
 - **One developer.** No hand-offs. No PR reviews. No meetings about meetings.
+- **Move fast.** Reuse everything that's already been solved. Write only the novel parts.
+
+The secret weapon wasn't working harder -- it was never writing code that already existed.
 
 Here's how each day went.
 
@@ -36,6 +39,14 @@ Deploy:     Vercel
 ```
 
 No Kubernetes. No microservices. No separate backend repo. No Docker Compose file that "works on my machine."
+
+But the real accelerant wasn't the framework -- it was the toolchain on top of it:
+
+- **Shadcn/ui** -- 57 pre-built, accessible UI components (buttons, dialogs, forms, cards, dropdowns) dropped in via CLI. Zero time spent on design system primitives.
+- **v0.dev** -- Vercel's AI UI generator for rapid screen prototyping. Describe what you want, get a working React component back. Nine separate PRs came from v0-generated code.
+- **Claude Code** -- AI pair programmer that handled feature branches end-to-end: trivia logic, Super Bowl Squares, expense splitting, admin controls. Not autocomplete -- full feature implementation across multiple files.
+
+This is the modern solo-developer stack: you write the business logic and the glue. AI writes the boilerplate. A component library handles the UI primitives. You ship in a week what used to take a month.
 
 For auth, we skipped every conventional approach and used **FingerprintJS** for device-level identification:
 
@@ -152,23 +163,39 @@ Deployed to Vercel. Shared the URL. Done.
 
 ## The Cheat Codes (What Made 7 Days Possible)
 
-### 1. Supabase = Database + Auth + Storage + Realtime in one dependency
+### 1. AI as a Force Multiplier, Not a Crutch
+
+Let's be specific about what the AI tools actually did:
+
+**v0.dev** generated initial UI layouts for 9 different screens. It's excellent at "give me a card grid with these fields" or "build a settings page with these controls." The output isn't production-ready -- you'll refactor naming, tighten types, adjust layouts -- but it gets you from blank file to 70% done in minutes instead of hours. That's 9 screens where I skipped the "stare at an empty editor" phase.
+
+**Claude Code** handled entire feature branches: writing API routes, database queries, React components, and TypeScript types across multiple files in a single pass. The expense splitter, admin controls, trivia category system, and Squares game logic all started as Claude Code branches that got reviewed and merged. It's like having a junior developer who's incredibly fast, never gets tired, and doesn't mind being told to redo things.
+
+The workflow: **I architected. AI drafted. I reviewed and shipped.** The creative and product decisions were mine. The typing was mostly not.
+
+### 2. 57 Shadcn Components = A Design System in One CLI Command
+
+```bash
+npx shadcn-ui@latest add button dialog card input form ...
+```
+
+57 accessible, composable, Tailwind-styled components. No building a button from scratch. No debugging focus trapping in modals. No accessibility audits on dropdown menus. The Shadcn "new-york" style gave the whole app visual cohesion without a single Figma file.
+
+**Hours saved: ~20+.** That's nearly 3 full days of the timeline just on UI primitives. Instead, those hours went into game logic and the features that actually make FanTrivia unique.
+
+### 3. Supabase = Database + Auth + Storage + Realtime in One Dependency
 
 We didn't evaluate 4 services. We picked one that handled Postgres, Row Level Security, file storage, and real-time subscriptions. The `supabase-js` client talks to all of them.
 
-### 2. Radix UI + Shadcn = 50+ components without building a design system
-
-Accessible, composable, unstyled primitives + a Tailwind-based component library. We never once wrote a modal from scratch or debugged focus trapping.
-
-### 3. Next.js API routes = No separate backend
+### 4. Next.js API Routes = No Separate Backend
 
 Every endpoint lives in `/app/api/`. Same repo. Same deploy. Same TypeScript types shared between frontend and backend. Zero CORS configuration.
 
-### 4. JSONB for evolving features
+### 5. JSONB for Evolving Features
 
 The Squares game, player stats, and game settings all use JSONB columns. When requirements changed mid-week (they always do), we added keys instead of migrations.
 
-### 5. Saying "no" aggressively
+### 6. Saying "No" Aggressively
 
 No password auth. No native app. No custom design system. No microservices. No WebSocket where polling works. Every "no" bought hours.
 
@@ -179,11 +206,13 @@ No password auth. No native app. No custom design system. No microservices. No W
 | Metric | Value |
 |---|---|
 | Development time | 7 days |
-| Developers | 1 |
+| Developers | 1 (+ AI) |
 | Trivia questions | 97+ |
 | Categories | 15 |
 | API routes | 20+ |
-| UI components | 50+ |
+| Reused UI components (Shadcn) | 57 |
+| v0.dev-generated screens | 9 |
+| Claude Code feature branches | 15+ |
 | Database tables | 10 |
 | Lines of SQL schema | 475 |
 | Time to first question | ~8 seconds |
@@ -204,12 +233,18 @@ No password auth. No native app. No custom design system. No microservices. No W
 
 ## The Takeaway
 
-The modern web stack is absurdly powerful for fast builds. Next.js 16 + Supabase + Vercel eliminated entire categories of infrastructure work. Radix UI + Tailwind eliminated design system work. FingerprintJS eliminated auth work.
+The 2026 solo-developer stack is unreasonably effective. Here's the layer cake:
 
-What's left is just the product: trivia logic, game mechanics, and the details that make people smile (like confetti when you win a square).
+1. **Infrastructure layer:** Supabase + Vercel = database, auth, storage, hosting. Zero ops.
+2. **UI layer:** Shadcn/ui = 57 accessible components. Zero design system work.
+3. **Prototyping layer:** v0.dev = screen layouts from natural language. Zero blank-file paralysis.
+4. **Implementation layer:** Claude Code = full feature branches from architecture descriptions. Zero boilerplate typing.
+5. **Product layer:** You. The decisions about what to build, what to skip, and what makes it fun.
 
-**You don't need a month. You need a week, the right stack, and the discipline to say "no" to everything that doesn't ship.**
+The AI tools didn't replace the developer. They replaced the tedious parts of development -- the parts where you already know what you want but haven't typed it yet. What's left is the creative work: product decisions, architecture trade-offs, and the details that make people smile (like confetti when you win a square).
+
+**You don't need a team. You need taste, the right stack, and the discipline to say "no" to everything that doesn't ship.**
 
 ---
 
-*Built with Next.js 16, React 19, Supabase, TypeScript, Radix UI, Tailwind CSS, FingerprintJS, SWR, Socket.io, canvas-confetti, and one very long Saturday.*
+*Built with Next.js 16, React 19, Supabase, TypeScript, 57 Shadcn components, Tailwind CSS, FingerprintJS, SWR, Socket.io, canvas-confetti, v0.dev, Claude Code, and one very long Saturday.*
