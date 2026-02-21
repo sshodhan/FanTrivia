@@ -1,116 +1,176 @@
-# We Built a Real-Time Trivia Engine for Super Bowl Sunday. Here's the Stack.
+# We Built a Full-Stack Trivia Platform in 7 Days. Here's How.
 
-**TL;DR:** We shipped a full-stack trivia platform with live game synchronization, device fingerprinting instead of passwords, and a Super Bowl Squares engine that calculates winners in real time -- all on Next.js 16, Supabase, and zero DevOps headaches.
-
----
-
-## The Problem
-
-Super Bowl parties are chaos. Everyone's on their phone anyway. So we asked: what if we turned that into the game itself?
-
-We needed something that could:
-
-- Serve 97+ trivia questions across 15 categories with a 15-second countdown timer
-- Rank players on a live leaderboard that updates every 30 seconds
-- Run a full Super Bowl Squares grid with QR-code sharing and automatic winner detection
-- Work on every phone at the party without anyone creating an account
-
-That last one was the hard constraint.
+**TL;DR:** One week. One developer. 97 trivia questions, a live leaderboard, Super Bowl Squares with QR sharing, photo uploads, an expense splitter, and zero-password auth. Next.js 16 + Supabase did the heavy lifting. Here's the day-by-day breakdown.
 
 ---
 
-## The Stack
+## Why One Week?
+
+The Super Bowl doesn't wait. We had the idea on a Monday and needed a working app by Sunday -- not a prototype, not an MVP with asterisks, but something 30+ people could use simultaneously at a party without anything catching fire.
+
+The constraints were brutal and clarifying:
+
+- **No sign-up flow.** Nobody at a party is verifying their email.
+- **Every phone must work.** No app store. No downloads. Just a URL.
+- **Multiple game modes.** Trivia, Squares, photo sharing, expense splitting.
+- **Live synchronization.** During the actual game, everyone sees the same question at the same time.
+- **One developer.** No hand-offs. No PR reviews. No meetings about meetings.
+
+Here's how each day went.
+
+---
+
+## Day 1: Foundation (Monday)
+
+**Shipped:** Project scaffolding, database schema, auth system
+
+The single best decision of the whole week: **Supabase + Next.js API routes.** This combo eliminated entire categories of work:
 
 ```
 Frontend:   Next.js 16 + React 19 + TypeScript 5
 UI:         Radix UI + Tailwind CSS 4
-Data:       SWR (stale-while-revalidate) + Socket.io
 Backend:    Next.js API Routes (stateless)
 Database:   Supabase (Postgres + Row Level Security)
-Auth:       FingerprintJS (no passwords, no OAuth)
+Auth:       FingerprintJS
 Deploy:     Vercel
 ```
 
-No Kubernetes. No microservices. No Lambda cold starts. Just a monorepo that ships.
+No Kubernetes. No microservices. No separate backend repo. No Docker Compose file that "works on my machine."
 
----
-
-## The Interesting Parts
-
-### 1. Zero-Friction Auth via Device Fingerprinting
-
-Nobody at a Super Bowl party wants to verify their email. So we used [FingerprintJS](https://fingerprint.com) to generate a stable device identifier, then pair it with a self-chosen username to create a user ID:
+For auth, we skipped every conventional approach and used **FingerprintJS** for device-level identification:
 
 ```
 userId = `${username}_${random4Digits}`
 ```
 
-No passwords. No OAuth flows. No "check your inbox." You pick a name, pick an avatar from 12 options, and you're in. The fingerprint handles returning-user detection so your scores persist across sessions.
+Pick a username, pick an avatar, you're in. The device fingerprint handles returning-user detection. Total time from "open URL" to "playing trivia": ~8 seconds.
 
-Is this enterprise-grade auth? No. Does it get 30 people playing trivia in under 60 seconds? Yes.
+Is this enterprise-grade? No. Did it save two full days of auth plumbing? Yes.
 
-### 2. Idempotent Answer Submission
-
-With 30 people hammering "Submit" on spotty party Wi-Fi, duplicate requests are inevitable. Every answer submission endpoint is idempotent -- if you've already answered question 7 in the "Legion of Boom" category, we return your existing answer instead of recording a duplicate. No `UNIQUE` constraint violations. No lost points. No angry fans.
-
-```typescript
-// Pseudocode for the approach
-const existing = await getAnswer(userId, questionId);
-if (existing) return { already_answered: true, ...existing };
-```
-
-### 3. Progressive Category Unlocking
-
-We didn't dump all 15 trivia categories on day one. Categories unlock over the week leading up to game day using a date-gated system. Day 1 you get "Seahawks Legends." By Friday you've unlocked "2025 Season Stats." Game day itself opens the final categories.
-
-This keeps engagement up across the whole week instead of the typical "play once, forget" pattern. Retention through artificial scarcity -- it works.
-
-### 4. The Squares Engine
-
-Super Bowl Squares is a classic party game, but managing a 10x10 grid on paper is a nightmare. Our digital version handles:
-
-- **Grid claiming** -- tap to claim a single square or batch-select a row
-- **Board locking** -- admin assigns random 0-9 digits to rows and columns
-- **Auto-scoring** -- enter the quarterly score, and the app finds the winner by matching the last digit of each team's score to the grid
-- **Celebration** -- confetti animations via `canvas-confetti` because shipping details matter
-
-The entire squares state lives in a single JSONB column. No schema migrations when we added Q1/Q2/Q3/Q4 tracking -- just another key in the object.
-
-```sql
--- Flexible enough to evolve without ALTER TABLE
-squares_data JSONB NOT NULL DEFAULT '{}'
-```
-
-### 5. Live Game Mode with Admin Controls
-
-During the actual Super Bowl, the app switches from async daily trivia to a synchronized live game. An admin dashboard controls:
-
-- Which question is currently displayed (all players see the same one)
-- Game pause/resume (halftime bathroom break)
-- Game mode transitions: `pre_game -> daily -> live -> ended`
-
-We poll every 2-3 seconds for game state instead of pure WebSocket because Vercel's serverless model plays nicer with polling, and 3-second latency is fine for trivia. Pick the boring technology.
-
-### 6. SWR Over WebSocket for the Leaderboard
-
-The leaderboard refreshes every 30 seconds using SWR's `refreshInterval`. We evaluated full WebSocket push for this and decided it was overengineered for the use case. SWR gives us:
-
-- Automatic deduplication of in-flight requests
-- Stale data display while revalidating (no loading spinners)
-- Built-in error retry
-- Zero server-side state to manage
-
-The leaderboard isn't a stock ticker. 30-second staleness is invisible to users.
+**Time saved by saying no:** OAuth integration (~4 hrs), email verification flow (~3 hrs), password reset (~2 hrs), session management (~2 hrs). That's 11 hours -- nearly 1.5 days of the entire timeline.
 
 ---
 
-## What We'd Do Differently
+## Day 2: The Trivia Engine (Tuesday)
 
-**More tests.** We have schema validation scripts but no integration test suite. For a party app with a one-week shelf life, this was a deliberate trade-off. For anything longer-lived, we'd want API-level tests against the Supabase local dev stack.
+**Shipped:** Question database, category system, scoring, timer
 
-**PWA push notifications.** We registered a service worker but never wired up push. "New category unlocked!" notifications would have boosted daily return rates.
+97 questions across 15 categories, seeded via SQL:
 
-**WebSocket for live mode only.** Our polling approach works, but during the live Super Bowl game, true push would have shaved 1-2 seconds off the question reveal. For 99% of usage (daily trivia), polling is the right call.
+- Super Bowl XLVIII, Legion of Boom, Russell Wilson Era
+- Seahawks Legends, 2025 Season Stats, Hall of Fame
+- Franchise Firsts, and 8 more
+
+Each question has a 15-second countdown. Scoring uses base points plus streak bonuses -- get 5 in a row and you're racking up multipliers.
+
+The key architectural choice: **idempotent answer submission.** With 30 phones on party Wi-Fi, double-taps are inevitable:
+
+```typescript
+const existing = await getAnswer(userId, questionId);
+if (existing) return { already_answered: true, ...existing };
+// Only record new answers
+```
+
+No duplicate scores. No database constraint errors. No support tickets from angry fans. This took 20 minutes to implement and saved hours of debugging later.
+
+---
+
+## Day 3: Leaderboard + Progressive Unlock (Wednesday)
+
+**Shipped:** Real-time scoreboard, category unlock system, SWR data layer
+
+The leaderboard refreshes every 30 seconds using **SWR's `refreshInterval`**. We considered WebSocket push and rejected it in about 10 minutes:
+
+- SWR gives us stale-while-revalidate (no loading spinners)
+- Automatic request deduplication
+- Built-in error retry
+- Zero server-side connection state
+
+The leaderboard isn't a stock ticker. 30-second staleness is invisible to users. **Choosing boring technology saved an entire day.**
+
+We also built a **progressive category unlock system** -- categories gate by date across the pre-game week. Day 1 opens "Seahawks Legends." Day 5 unlocks "2025 Season Stats." Game day opens the finale. This turned a one-session app into a week-long engagement loop with zero extra backend work -- just a date comparison in the API.
+
+---
+
+## Day 4: Super Bowl Squares (Thursday)
+
+**Shipped:** 10x10 grid, square claiming, board locking, auto-scoring, QR sharing
+
+This was the most complex single feature, and JSONB made it possible in one day:
+
+```sql
+squares_data JSONB NOT NULL DEFAULT '{}'
+```
+
+One flexible column instead of a rigid schema. When we needed to add Q1/Q2/Q3/Q4 tracking mid-afternoon, it was just another key in the object. No migration. No downtime. No schema debate.
+
+The flow:
+1. **Create a game** -- generates a 6-character share code + QR code
+2. **Claim squares** -- tap individual cells or batch-select entire rows
+3. **Lock the board** -- admin assigns random 0-9 digits to rows/columns
+4. **Enter scores** -- quarterly score input
+5. **Winner detection** -- last digit of each team's score maps to the grid
+6. **Confetti** -- `canvas-confetti` because details matter and it took 15 minutes
+
+---
+
+## Day 5: Social Features (Friday)
+
+**Shipped:** Photo gallery with uploads + likes, expense splitter, party tools
+
+Photo gallery uses Supabase Storage with an admin approval workflow. Like counts update via database triggers -- no application-level counter management.
+
+The expense splitter tracks who bought what for the party and calculates settlements. Not glamorous, but the friend who bought $200 of wings absolutely wants a Venmo breakdown.
+
+---
+
+## Day 6: Live Game Mode + Admin (Saturday)
+
+**Shipped:** Synchronized live trivia, admin dashboard, game state machine
+
+This is where the app shifts from "async daily trivia" to "everyone in the room sees the same question." The game state machine:
+
+```
+pre_game → daily → live → ended
+```
+
+An admin dashboard controls question progression, pause/resume (halftime), and mode transitions. We poll every 2-3 seconds for game state instead of WebSocket because **Vercel's serverless model makes polling the path of least resistance,** and 3-second latency is fine for trivia.
+
+The admin panel also logs every action for an audit trail -- essential when someone disputes a score after three beers.
+
+---
+
+## Day 7: Polish + Ship (Sunday)
+
+**Shipped:** Error tracking, PWA service worker, confetti, avatars, edge cases
+
+Morning was bug fixes and the error tracking system (client + server loggers with breadcrumbs). Afternoon was the stuff that makes it feel finished: 12 avatar options, streak animations, responsive layout testing on 6 different phone sizes.
+
+Deployed to Vercel. Shared the URL. Done.
+
+---
+
+## The Cheat Codes (What Made 7 Days Possible)
+
+### 1. Supabase = Database + Auth + Storage + Realtime in one dependency
+
+We didn't evaluate 4 services. We picked one that handled Postgres, Row Level Security, file storage, and real-time subscriptions. The `supabase-js` client talks to all of them.
+
+### 2. Radix UI + Shadcn = 50+ components without building a design system
+
+Accessible, composable, unstyled primitives + a Tailwind-based component library. We never once wrote a modal from scratch or debugged focus trapping.
+
+### 3. Next.js API routes = No separate backend
+
+Every endpoint lives in `/app/api/`. Same repo. Same deploy. Same TypeScript types shared between frontend and backend. Zero CORS configuration.
+
+### 4. JSONB for evolving features
+
+The Squares game, player stats, and game settings all use JSONB columns. When requirements changed mid-week (they always do), we added keys instead of migrations.
+
+### 5. Saying "no" aggressively
+
+No password auth. No native app. No custom design system. No microservices. No WebSocket where polling works. Every "no" bought hours.
 
 ---
 
@@ -118,25 +178,38 @@ The leaderboard isn't a stock ticker. 30-second staleness is invisible to users.
 
 | Metric | Value |
 |---|---|
+| Development time | 7 days |
+| Developers | 1 |
 | Trivia questions | 97+ |
 | Categories | 15 |
 | API routes | 20+ |
 | UI components | 50+ |
 | Database tables | 10 |
-| Time to first question | ~8 seconds (including "auth") |
-| Auth friction | Zero passwords |
 | Lines of SQL schema | 475 |
+| Time to first question | ~8 seconds |
+| Passwords required | 0 |
+| App store approvals | 0 |
 
 ---
 
-## Try It / Build Your Own
+## What We'd Do With a Day 8
 
-FanTrivia is built for Seahawks fans, but the architecture is team-agnostic. Swap the seed data and categories, and you've got a trivia platform for any fandom.
+**Tests.** Schema validation exists, but there's no integration test suite. For a one-week app, this was the right trade-off. For anything longer-lived, we'd test every API route against Supabase's local dev stack.
 
-The core insight: **the best party app is the one nobody has to install or sign up for.** Device fingerprinting + a web app + zero auth friction = maximum participation.
+**Push notifications.** The service worker is registered but push isn't wired up. "New category unlocked!" would have bumped daily returns.
 
-Ship the thing that gets people playing, not the thing that passes a security audit.
+**WebSocket for live mode only.** Polling works. But during the actual Super Bowl, true push would shave 1-2 seconds off question reveals. Worth it for that one use case.
 
 ---
 
-*Built with Next.js 16, React 19, Supabase, TypeScript, Radix UI, Tailwind CSS, FingerprintJS, SWR, Socket.io, and too much coffee during the playoffs.*
+## The Takeaway
+
+The modern web stack is absurdly powerful for fast builds. Next.js 16 + Supabase + Vercel eliminated entire categories of infrastructure work. Radix UI + Tailwind eliminated design system work. FingerprintJS eliminated auth work.
+
+What's left is just the product: trivia logic, game mechanics, and the details that make people smile (like confetti when you win a square).
+
+**You don't need a month. You need a week, the right stack, and the discipline to say "no" to everything that doesn't ship.**
+
+---
+
+*Built with Next.js 16, React 19, Supabase, TypeScript, Radix UI, Tailwind CSS, FingerprintJS, SWR, Socket.io, canvas-confetti, and one very long Saturday.*
