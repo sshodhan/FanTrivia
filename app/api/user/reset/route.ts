@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const { error: likesError, count: likesDeleted } = await supabase
       .from('photo_likes')
       .delete({ count: 'exact' })
-      .eq('user_id', user_id)
+      .eq('username', user.username)
 
     if (likesError) {
       softErrors.push({ step: '3_delete_likes', table: 'photo_likes', error: likesError.message })
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     const { error: photosError, count: photosDeleted } = await supabase
       .from('photo_uploads')
       .delete({ count: 'exact' })
-      .eq('user_id', user_id)
+      .eq('username', user.username)
 
     if (photosError) {
       softErrors.push({ step: '4_delete_photos', table: 'photo_uploads', error: photosError.message })
