@@ -8,7 +8,7 @@ import { UserProvider } from "@/lib/user-context"
 
 export const metadata: Metadata = {
   title: 'Hawktrivia - Seahawks Super Bowl Trivia',
-  description: 'Test your knowledge of Seahawks Super Bowl history! Compete with fellow 12s in daily trivia challenges.',
+  description: 'Test your Seahawks knowledge, compete in daily trivia, and explore Seahawks and Patriots player profiles with season and playoff statistics.',
   generator: 'v0.app',
   manifest: '/manifest.json',
   icons: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Hawktrivia - Seahawks Super Bowl Trivia',
-    description: 'Test your knowledge of Seahawks Super Bowl history! Compete with fellow 12s in daily trivia challenges.',
+    description: 'Test your Seahawks knowledge, compete in daily trivia, and explore Seahawks and Patriots player profiles with season and playoff statistics.',
     type: 'website',
     siteName: 'Hawktrivia',
   },
@@ -50,8 +50,7 @@ export const viewport: Viewport = {
   themeColor: '#001f3f',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  userScalable: true,
 }
 
 export default function RootLayout({
@@ -60,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark bg-background">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
