@@ -75,6 +75,7 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsFilter, setLogsFilter] = useState('');
   const [verboseLogging, setVerboseLogging] = useState(false);
+  const [partyInfoVisible, setPartyInfoVisible] = useState(false);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   // Player roster state
@@ -98,12 +99,19 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
     try {
       const stored = localStorage.getItem('adminVerboseLogging');
       setVerboseLogging(stored === 'true');
+      setPartyInfoVisible(localStorage.getItem('partyInfoVisible') === 'true');
     } catch {
       // Ignore localStorage errors
     }
   }, []);
 
   // Toggle verbose logging
+  const handleTogglePartyInfo = (enabled: boolean) => {
+    setPartyInfoVisible(enabled);
+    localStorage.setItem('partyInfoVisible', String(enabled));
+    window.dispatchEvent(new Event('party-info-visibility-change'));
+  };
+
   const handleToggleVerboseLogging = (enabled: boolean) => {
     setVerboseLogging(enabled);
     try {
@@ -844,8 +852,19 @@ export function AdminConsole({ onBack, onResetFlow }: AdminConsoleProps) {
 
         {activeTab === 'settings' && (
           <div className="space-y-4 pb-24">
-            {/* Game Day Mode */}
-            <div className="bg-card rounded-xl p-4">
+  {/* Party Info Visibility */}
+  <div className="bg-card rounded-xl p-4">
+  <div className="flex items-center justify-between">
+  <div>
+  <h3 className="font-bold text-foreground">Party Info</h3>
+  <p className="text-sm text-muted-foreground">Show the party information shortcut on the home screen</p>
+  </div>
+  <Switch checked={partyInfoVisible} onCheckedChange={handleTogglePartyInfo} />
+  </div>
+  </div>
+
+  {/* Game Day Mode */}
+  <div className="bg-card rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <h3 className="font-bold text-foreground">Game Day Mode</h3>
