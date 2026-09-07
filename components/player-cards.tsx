@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
 import type { Player as ApiPlayer } from '@/lib/database.types';
 import type { RosterSource } from '@/lib/rosters-2026';
+import { PlayerSeasonStats } from '@/components/player-season-stats';
 
 interface PlayerCardsProps {
   onBack: () => void;
@@ -198,6 +200,7 @@ function PlayerPortrait({ player, detail = false }: {
 }
 
 export function PlayerCards({ onBack }: PlayerCardsProps) {
+  const activePlayerTrigger = useRef<HTMLButtonElement | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2026-hawks');
   const [selectedUnit, setSelectedUnit] = useState<UnitFilter>('all');
@@ -349,7 +352,10 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
             {players.map((player) => (
               <button
                 key={player.id}
-                onClick={() => setSelectedPlayer(player)}
+                onClick={(event) => {
+                  activePlayerTrigger.current = event.currentTarget;
+                  setSelectedPlayer(player);
+                }}
                 className="bg-card rounded-xl p-4 text-left transition-all hover:scale-[1.02] hover:bg-card/80 active:scale-[0.98]"
               >
                 {/* Player Avatar / Image - Only show if validated */}
@@ -375,14 +381,13 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
 
       {/* Player Detail Modal */}
       {selectedPlayer && (
-        <div 
-          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-3"
-          onClick={() => setSelectedPlayer(null)}
-        >
-          <div 
-            className="bg-background w-full max-w-md max-h-[95vh] rounded-2xl overflow-hidden border-2 border-primary animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+        <Dialog open onOpenChange={(open) => { if (!open) setSelectedPlayer(null); }}>
+          <DialogContent
+            className="max-h-[95dvh] overflow-hidden p-0 sm:max-w-md"
+            showCloseButton={false}
+            onCloseAutoFocus={(event) => { event.preventDefault(); activePlayerTrigger.current?.focus(); }}
           >
+            <DialogDescription className="sr-only">Player profile and statistics for {selectedPlayer.name}.</DialogDescription>
             {/* Scrollable Content */}
             <div className="overflow-y-auto max-h-[95vh]">
               {/* Player Image Header - Taller full-bleed design */}
@@ -411,10 +416,15 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 {/* Player Info Overlay - positioned at bottom of image */}
                 <div className="absolute bottom-0 left-0 right-0 p-5">
                   <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-1">{currentCategory.subtitle}</p>
-                  <h2 className="text-4xl font-bold text-foreground leading-tight">{selectedPlayer.name}</h2>
+                  <DialogTitle className="sr-only">{selectedPlayer.name}</DialogTitle>
+                  <h2 aria-hidden="true" className="text-4xl font-bold text-foreground leading-tight">{selectedPlayer.name}</h2>
                   <p className="text-muted-foreground text-lg">{selectedPlayer.position}</p>
                 </div>
               </div>
+
+              {(selectedCategory === '2026-hawks' || selectedCategory === '2026-pats') && (
+                <PlayerSeasonStats key={selectedPlayer.id} playerId={selectedPlayer.id} />
+              )}
 
               {/* Stats Section */}
               <div className="p-4 border-l-4 border-primary">
@@ -459,8 +469,8 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
