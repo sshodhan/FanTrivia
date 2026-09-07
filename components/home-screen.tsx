@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser } from '@/lib/user-context';
+import { useEffect, useState } from 'react';
 import { AVATARS } from '@/lib/database.types';
 import { Button } from '@/components/ui/button';
 import { PartyInfoToggle } from '@/components/party-info-toggle';
@@ -26,6 +27,21 @@ export function HomeScreen({
   onViewSplitter,
 }: HomeScreenProps) {
   const { user, todayPlayed } = useUser();
+  const [partyInfoVisible, setPartyInfoVisible] = useState(false);
+
+  useEffect(() => {
+    const syncPartyInfoVisibility = () => {
+      setPartyInfoVisible(localStorage.getItem('partyInfoVisible') === 'true');
+    };
+
+    syncPartyInfoVisibility();
+    window.addEventListener('party-info-visibility-change', syncPartyInfoVisibility);
+    window.addEventListener('storage', syncPartyInfoVisibility);
+    return () => {
+      window.removeEventListener('party-info-visibility-change', syncPartyInfoVisibility);
+      window.removeEventListener('storage', syncPartyInfoVisibility);
+    };
+  }, []);
 
   const getAvatarEmoji = () => {
     if (!user?.avatar) return '🦅';
@@ -36,9 +52,11 @@ export function HomeScreen({
     <div className="min-h-screen flex flex-col bg-background pb-20">
       {/* Header */}
       <header className="p-6 text-center relative">
-        <div className="absolute left-3 top-5">
-          <PartyInfoToggle isActive={false} onToggle={onViewParty} />
-        </div>
+        {partyInfoVisible && (
+          <div className="absolute left-3 top-5">
+            <PartyInfoToggle isActive={false} onToggle={onViewParty} />
+          </div>
+        )}
         <div className="text-5xl mb-2">🦅</div>
         <h1 className="font-[var(--font-heading)] text-3xl font-bold text-primary tracking-tight">
           HAWKTRIVIA
