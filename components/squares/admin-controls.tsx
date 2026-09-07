@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { logClientDebug, logClientError } from '@/lib/error-tracking/client-logger';
 import type { SquaresGame, SquaresEntry, SquaresWinner } from '@/lib/database.types';
-import { getLatestQuarter, getWinningSquare, getWinningPosition, countClaimed, isBoardFull, getUniquePlayers } from '@/lib/squares-utils';
+import { getLatestQuarter, getWinningSquare, getWinningPosition, countClaimed, isBoardFull, getUniquePlayers, generateSquaresCsv, downloadCsv } from '@/lib/squares-utils';
 
 interface AdminControlsProps {
   game: SquaresGame;
@@ -390,14 +390,30 @@ export function AdminControls({ game, entries, winners, onGameUpdated, username 
           </button>
           {showPlayerPanel && (
             <div className="mt-2 space-y-2">
-              {/* Search Filter */}
-              <Input
-                type="text"
-                value={playerFilter}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlayerFilter(e.target.value)}
-                placeholder="Filter by name or user ID..."
-                className="bg-input text-sm"
-              />
+              {/* Search Filter + Export */}
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  value={playerFilter}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPlayerFilter(e.target.value)}
+                  placeholder="Filter by name or user ID..."
+                  className="bg-input text-sm flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const csv = generateSquaresCsv(entries, game);
+                    const safeName = game.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+                    downloadCsv(csv, `${safeName}_players.csv`);
+                  }}
+                  className="flex-shrink-0 gap-1.5"
+                  title="Export all player data to CSV"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  <span className="hidden sm:inline">CSV</span>
+                </Button>
+              </div>
               <div className="space-y-1 max-h-80 overflow-y-auto">
                 {players
                   .filter(p => {

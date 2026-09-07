@@ -1,6 +1,92 @@
 import type { SquaresGame, SquaresEntry, SquaresAuditAction } from './database.types';
 
 // ============================================
+// CSV EXPORT
+// ============================================
+
+/**
+ * Escape a value for CSV: wrap in double-quotes if it contains commas,
+ * double-quotes, or newlines. Internal double-quotes are doubled.
+ * Null/undefined become empty strings.
+ */
+function escapeCsvField(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * Generate a CSV string from squares entries.
+ * One row per square with columns: User, User ID, Square
+ * Square is formatted as "(row,col)" grid position.
+ * If the board is locked (row_numbers/col_numbers assigned),
+ * an additional column "Assigned Numbers" shows "[rowNum,colNum]".
+ */
+export function generateSquaresCsv(
+  entries: SquaresEntry[],
+  game?: SquaresGame | null,
+): string {
+  const hasNumbers = !!game?.row_numbers && !!game?.col_numbers;
+  const headers = hasNumbers
+    ? ['User', 'User ID', 'Square', 'Assigned Numbers']
+    : ['User', 'User ID', 'Square'];
+
+  const rows: string[] = [headers.join(',')];
+
+  // Sort entries for a deterministic export order: by player name, then position
+  const sorted = [...entries].sort((a, b) => {
+    const nameCompare = a.player_name.localeCompare(b.player_name);
+    if (nameCompare !== 0) return nameCompare;
+    if (a.row_index !== b.row_index) return a.row_index - b.row_index;
+    return a.col_index - b.col_index;
+  });
+
+  for (const entry of sorted) {
+    const user = escapeCsvField(entry.player_name);
+    const userId = escapeCsvField(entry.player_user_id ?? '');
+    const square = escapeCsvField(`(${entry.row_index},${entry.col_index})`);
+
+    if (hasNumbers) {
+      const assignedNumbers = escapeCsvField(
+        `[${game!.row_numbers![entry.row_index]},${game!.col_numbers![entry.col_index]}]`,
+      );
+      rows.push(`${user},${userId},${square},${assignedNumbers}`);
+    } else {
+      rows.push(`${user},${userId},${square}`);
+    }
+  }
+
+  return rows.join('\r\n');
+}
+
+/**
+ * Trigger a browser download of a CSV string as a file.
+ * Uses Blob + Object URL for broad browser compatibility.
+ * Includes a BOM for proper UTF-8 handling in Excel.
+ */
+export function downloadCsv(csvContent: string, filename: string): void {
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+
+  // Clean up
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
+// ============================================
 // PLAYER COLORS & EMOJIS
 // ============================================
 
