@@ -168,6 +168,35 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
   };
 }
 
+function PlayerPortrait({ player, detail = false }: {
+  player: DisplayPlayer;
+  detail?: boolean;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = player.imageUrl && player.imageValidated && failedUrl !== player.imageUrl;
+
+  return (
+    <div className={cn('flex size-full items-center justify-center', detail && 'absolute inset-0')}>
+      {showImage ? (
+        <img
+          src={player.imageUrl!}
+          alt={`${player.name} headshot`}
+          width={640}
+          height={640}
+          loading={detail ? 'eager' : 'lazy'}
+          decoding="async"
+          className="size-full object-cover object-top"
+          onError={() => setFailedUrl(player.imageUrl)}
+        />
+      ) : (
+        <span className={cn('font-bold text-muted-foreground/30', detail ? 'text-[120px]' : 'text-5xl')}>
+          #{player.number}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2026-hawks');
@@ -325,21 +354,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
               >
                 {/* Player Avatar / Image - Only show if validated */}
                 <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                  {player.imageUrl && player.imageValidated ? (
-                    <img
-                      src={player.imageUrl}
-                      alt={player.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
-                      }}
-                    />
-                  ) : (
-                    <span className="text-5xl font-bold text-muted-foreground/30">
-                      #{player.number}
-                    </span>
-                  )}
+                  <PlayerPortrait player={player} />
                 </div>
 
                 {/* Player Info */}
@@ -373,25 +388,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
               {/* Player Image Header - Taller full-bleed design */}
               <div className="relative h-[55vh] min-h-[380px] bg-card">
                 {/* Full-bleed player image - Only show if validated */}
-                {selectedPlayer.imageUrl && selectedPlayer.imageValidated && (
-                  <img
-                    src={selectedPlayer.imageUrl}
-                    alt={selectedPlayer.name}
-                    className="absolute inset-0 w-full h-full object-cover object-top grayscale"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
-                {/* Jersey number fallback when no image or not validated */}
-                {(!selectedPlayer.imageUrl || !selectedPlayer.imageValidated) && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[120px] font-bold text-muted-foreground/20">
-                      #{selectedPlayer.number}
-                    </span>
-                  </div>
-                )}
+                <PlayerPortrait key={selectedPlayer.id} player={selectedPlayer} detail />
                 {/* Gradient overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                 

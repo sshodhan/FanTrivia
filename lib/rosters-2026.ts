@@ -1,4 +1,5 @@
 import type { Player } from './database.types'
+import { getRosterHeadshot } from './roster-headshots'
 
 export type CurrentRosterCategory = '2026-hawks' | '2026-pats'
 
@@ -161,8 +162,8 @@ export function getCurrentRoster(category: CurrentRosterCategory): { players: Pl
     name,
     jersey_number: number,
     position: POSITIONS[position],
-    image_url: null,
-    image_validated: false,
+    image_url: getRosterHeadshot(category, name),
+    image_validated: getRosterHeadshot(category, name) !== null,
     stats: {
       Height: height.replace('-', ' ft ') + ' in',
       Weight: `${weight} lb`,
