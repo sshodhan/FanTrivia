@@ -4,13 +4,14 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { cn } from '@/lib/utils';
 import type { Player as ApiPlayer } from '@/lib/database.types';
+import type { RosterSource } from '@/lib/rosters-2026';
 
 interface PlayerCardsProps {
   onBack: () => void;
 }
 
 // Player category type
-type PlayerCategory = 'sb48' | '2025-hawks' | '2025-pats' | 'hof';
+type PlayerCategory = 'sb48' | '2026-hawks' | '2026-pats' | 'hof';
 
 // Unit filter type
 type UnitFilter = 'all' | 'offense' | 'defense' | 'special';
@@ -30,7 +31,8 @@ const OFFENSE_POSITIONS = [
   'Wide Receiver', 'WR',
   'Tight End', 'TE',
   'Offensive Tackle', 'OT', 'Left Tackle', 'LT', 'Right Tackle', 'RT',
-  'Offensive Guard', 'OG', 'Left Guard', 'LG', 'Right Guard', 'RG',
+  'Offensive Guard', 'OG', 'Guard', 'G', 'Left Guard', 'LG', 'Right Guard', 'RG',
+  'Offensive Guard / Tackle', 'G/T', 'T/G', 'T',
   'Center', 'C',
   'Offensive Line', 'OL',
 ];
@@ -80,20 +82,20 @@ const CATEGORIES: {
   statsLabel: string;
 }[] = [
   {
-    id: '2025-hawks',
-    label: '2025 Hawks',
+    id: '2026-hawks',
+    label: '2026 Hawks',
     emoji: '🦅',
-    title: '2025 Seahawks',
-    subtitle: 'Super Bowl LX Roster',
-    statsLabel: '2025 Season Stats',
+    title: '2026 Seahawks',
+    subtitle: '2026 Active Roster',
+    statsLabel: '2026 Player Profile',
   },
   {
-    id: '2025-pats',
-    label: '2025 Pats',
+    id: '2026-pats',
+    label: '2026 Pats',
     emoji: '🔴',
-    title: '2025 Patriots',
-    subtitle: 'Super Bowl LX Opponent',
-    statsLabel: '2025 Season Stats',
+    title: '2026 Patriots',
+    subtitle: '2026 Active Roster',
+    statsLabel: '2026 Player Profile',
   },
   {
     id: 'sb48',
@@ -131,9 +133,16 @@ interface PlayersResponse {
   players: ApiPlayer[];
   total: number;
   category: string;
+  source?: RosterSource;
 }
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string): Promise<PlayersResponse> => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Failed to load players');
+  const data = await response.json();
+  if (!Array.isArray(data.players)) throw new Error('Invalid roster response');
+  return data;
+};
 
 // Transform API player to display format
 function transformPlayer(player: ApiPlayer): DisplayPlayer {
@@ -159,9 +168,38 @@ function transformPlayer(player: ApiPlayer): DisplayPlayer {
   };
 }
 
+function PlayerPortrait({ player, detail = false }: {
+  player: DisplayPlayer;
+  detail?: boolean;
+}) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const showImage = player.imageUrl && player.imageValidated && failedUrl !== player.imageUrl;
+
+  return (
+    <div className={cn('flex size-full items-center justify-center', detail && 'absolute inset-0')}>
+      {showImage ? (
+        <img
+          src={player.imageUrl!}
+          alt={`${player.name} headshot`}
+          width={640}
+          height={640}
+          loading={detail ? 'eager' : 'lazy'}
+          decoding="async"
+          className="size-full object-cover object-top"
+          onError={() => setFailedUrl(player.imageUrl)}
+        />
+      ) : (
+        <span className={cn('font-bold text-muted-foreground/30', detail ? 'text-[120px]' : 'text-5xl')}>
+          #{player.number}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function PlayerCards({ onBack }: PlayerCardsProps) {
   const [selectedPlayer, setSelectedPlayer] = useState<DisplayPlayer | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2025-hawks');
+  const [selectedCategory, setSelectedCategory] = useState<PlayerCategory>('2026-hawks');
   const [selectedUnit, setSelectedUnit] = useState<UnitFilter>('all');
 
   const currentCategory = CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
@@ -283,6 +321,23 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
       {/* Unit Filter Pills */}
       {renderUnitFilter()}
 
+      {data?.source && (
+        <div className="border-b border-border px-4 py-3 text-sm text-muted-foreground">
+          <p>
+            {data.total} active players · Verified{' '}
+            <time dateTime={data.source.verifiedAt}>
+              {new Date(`${data.source.verifiedAt}T00:00:00Z`).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+              })}
+            </time>
+          </p>
+          <p>{data.source.scope}</p>
+          <a href={data.source.url} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
+            {data.source.label}
+          </a>
+        </div>
+      )}
+
       {/* Player Grid */}
       <div className="flex-1 overflow-auto p-4">
         {players.length === 0 ? (
@@ -290,7 +345,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
             <p>No players found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
             {players.map((player) => (
               <button
                 key={player.id}
@@ -299,21 +354,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
               >
                 {/* Player Avatar / Image - Only show if validated */}
                 <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                  {player.imageUrl && player.imageValidated ? (
-                    <img
-                      src={player.imageUrl}
-                      alt={player.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = `<span class="text-5xl font-bold text-muted-foreground/30">#${player.number}</span>`;
-                      }}
-                    />
-                  ) : (
-                    <span className="text-5xl font-bold text-muted-foreground/30">
-                      #{player.number}
-                    </span>
-                  )}
+                  <PlayerPortrait player={player} />
                 </div>
 
                 {/* Player Info */}
@@ -347,25 +388,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
               {/* Player Image Header - Taller full-bleed design */}
               <div className="relative h-[55vh] min-h-[380px] bg-card">
                 {/* Full-bleed player image - Only show if validated */}
-                {selectedPlayer.imageUrl && selectedPlayer.imageValidated && (
-                  <img
-                    src={selectedPlayer.imageUrl}
-                    alt={selectedPlayer.name}
-                    className="absolute inset-0 w-full h-full object-cover object-top grayscale"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
-                {/* Jersey number fallback when no image or not validated */}
-                {(!selectedPlayer.imageUrl || !selectedPlayer.imageValidated) && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[120px] font-bold text-muted-foreground/20">
-                      #{selectedPlayer.number}
-                    </span>
-                  </div>
-                )}
+                <PlayerPortrait key={selectedPlayer.id} player={selectedPlayer} detail />
                 {/* Gradient overlay for text readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
                 
@@ -421,7 +444,7 @@ export function PlayerCards({ onBack }: PlayerCardsProps) {
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-lg">⚡</span>
                   <h3 className="text-sm font-bold text-primary uppercase tracking-wide">
-                    Key Trivia
+                    {data?.source ? 'Roster Facts' : 'Key Trivia'}
                   </h3>
                 </div>
                 <div className="space-y-3">

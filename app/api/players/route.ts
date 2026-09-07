@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Player } from '@/lib/database.types'
+import { getCurrentRoster, isCurrentRosterCategory } from '@/lib/rosters-2026'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -1786,8 +1787,24 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const position = searchParams.get('position')
-    const category = (searchParams.get('category') || 'sb48') as PlayerCategory
+    const requestedCategory = searchParams.get('category') || 'sb48'
 
+    // Keep verified current rosters separate from the database's historical 2025 records.
+    if (isCurrentRosterCategory(requestedCategory)) {
+      const roster = getCurrentRoster(requestedCategory)
+      const players = position && position !== 'all'
+        ? roster.players.filter(player => player.position.toLowerCase().includes(position.toLowerCase()))
+        : roster.players
+
+      return NextResponse.json({
+        players,
+        total: players.length,
+        category: requestedCategory,
+        source: roster.source,
+      })
+    }
+
+    const category = requestedCategory as PlayerCategory
     const supabase = getSupabase()
 
     // Demo mode
